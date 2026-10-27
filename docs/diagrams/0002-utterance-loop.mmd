@@ -1,0 +1,21 @@
+flowchart TD
+    B["Persona beat for this turn<br/>next_disclosure_step"]
+    G["Generator agent<br/>drafts child utterance"]
+    K["Deterministic checks<br/>lint_child_utterance<br/>check_content_ceiling"]
+    V["Reviewer agent<br/>sounds like a child? on persona?<br/>no hints? content ok?"]
+    N["On check fail or reviewer reject:<br/>send reasons back<br/>up to 3 attempts"]
+    F["Fallback after 3 attempts or reviewer unsure:<br/>scripted line from persona<br/>+ flag_for_human_review"]
+    U["Send to agent under test"]
+    H["Human review queue<br/>fallbacks + 10 percent audit sample"]
+    B --> G
+    G --> K
+    K --> V
+    K --> N
+    V --> N
+    N --> G
+    N --> F
+    V --> F
+    V --> U
+    F --> U
+    F --> H
+    V --> H
