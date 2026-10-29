@@ -22,7 +22,7 @@ Feedback: many target moments only emerge over several turns, and children under
 
 Yes: one agent generates, and a second agent plus deterministic checks verify before anything reaches the agent under test.
 
-![Utterance loop: generator, deterministic checks, reviewer, retry, fallback](../docs/diagrams/0002-utterance-loop.svg)
+<img src="../docs/diagrams/0002-utterance-loop.svg" alt="Utterance loop: generator, deterministic checks, reviewer, retry, fallback" width="600" style="max-width: 100%; height: auto;">
 
 <sub>Diagram source: [0002-utterance-loop.mmd](../docs/diagrams/0002-utterance-loop.mmd)</sub>
 

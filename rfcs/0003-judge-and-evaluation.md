@@ -20,7 +20,7 @@ Feedback: decide early who scores, and if an LLM judge is used, check it against
 
 Yes, your understanding is right. The pipeline produces transcripts: the child simulator and the agent under test converse (RFC 0002). Humans then label those transcripts using the same rubric the judge uses, without seeing the judge's output or which model was tested.
 
-![Labeling flow: blind human labels, judge runs, and agreement checks](../docs/diagrams/0003-labeling-flow.svg)
+<img src="../docs/diagrams/0003-labeling-flow.svg" alt="Labeling flow: blind human labels, judge runs, and agreement checks" width="800" style="max-width: 100%; height: auto;">
 
 <sub>Diagram source: [0003-labeling-flow.mmd](../docs/diagrams/0003-labeling-flow.mmd)</sub>
 

@@ -117,7 +117,7 @@ No server or database runs; adding a scenario by pull request adds a page automa
 
 ### Data flow
 
-![Data flow from inputs through the run and scoring to the results folder and site](../docs/diagrams/0009-data-flow.svg)
+<img src="../docs/diagrams/0009-data-flow.svg" alt="Data flow from inputs through the run and scoring to the results folder and site" width="600" style="max-width: 100%; height: auto;">
 
 <sub>Diagram source: [0009-data-flow.mmd](../docs/diagrams/0009-data-flow.mmd)</sub>
 

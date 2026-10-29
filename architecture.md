@@ -40,7 +40,7 @@ Young children (under six) are starting to talk to AI chatbots. Ran An's paper, 
 
 ## 3. The whole pipeline at a glance
 
-![Pipeline overview: scenarios, orchestrator, conversation, transcripts, automatic checks, judge, human review, results, website](docs/diagrams/architecture-pipeline.svg)
+<img src="docs/diagrams/architecture-pipeline.svg" alt="Pipeline overview: scenarios, orchestrator, conversation, transcripts, automatic checks, judge, human review, results, website" width="600" style="max-width: 100%; height: auto;">
 
 <sub>Diagram source: [architecture-pipeline.mmd](docs/diagrams/architecture-pipeline.mmd)</sub>
 
@@ -85,7 +85,7 @@ It's deliberately boring: the order of steps never changes, so there is no reaso
 
 AIs are bad at sounding like small children. They are too fluent, too polite, and too helpful. So every line the pretend child says goes through this loop before the chatbot sees it:
 
-![How each pretend-child line is drafted, checked, reviewed, and retried](docs/diagrams/architecture-child-loop.svg)
+<img src="docs/diagrams/architecture-child-loop.svg" alt="How each pretend-child line is drafted, checked, reviewed, and retried" width="600" style="max-width: 100%; height: auto;">
 
 <sub>Diagram source: [architecture-child-loop.mmd](docs/diagrams/architecture-child-loop.mmd)</sub>
 
