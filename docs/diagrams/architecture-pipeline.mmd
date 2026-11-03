@@ -1,0 +1,19 @@
+flowchart TD
+    A["Step 1: Scenarios<br/>scripts for pretend children<br/>written by the team"]
+    B["Step 2: Orchestrator<br/>runs every scenario<br/>against every chatbot"]
+    C["Step 3: Conversation<br/>pretend child and chatbot<br/>take turns, up to 6 each"]
+    D[("Step 4: Transcripts saved<br/>one file per run")]
+    E["Step 5: Automatic checks<br/>simple programs, no AI"]
+    F["Step 6: Judge<br/>AI fills in the checklist<br/>quoting evidence"]
+    H["Step 7: Human review<br/>only unsure cases<br/>and a random spot check"]
+    I[("Step 8: Results")]
+    J["Step 9: Public website<br/>leaderboard and scenario browser"]
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> I
+    F --> H
+    H --> I
+    I --> J

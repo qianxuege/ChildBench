@@ -1,0 +1,12 @@
+flowchart LR
+    T[("Transcripts")] --> Bl["Blind: hide model name<br/>and judge output"]
+    Bl --> H1["Human labeler 1"]
+    Bl --> H2["Human labeler 2"]
+    T --> J["Judge agent<br/>x3 repeats"]
+    H1 --> A1["compute_agreement<br/>human vs human"]
+    H2 --> A1
+    A1 --> HC["Consensus labels<br/>disagreements discussed"]
+    HC --> A2["compute_agreement<br/>judge vs human"]
+    J --> A2
+    J --> A3["compute_agreement<br/>judge vs judge (test-retest)"]
+    A2 --> REP["Report: kappa + CI per criterion"]

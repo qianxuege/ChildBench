@@ -1,0 +1,49 @@
+flowchart TD
+    subgraph IN["Inputs"]
+        SC["scenarios YAML"]
+        RB["rubric YAML"]
+        CO["CHILDES vocabulary"]
+        CFG["run config + API keys"]
+    end
+    subgraph RUN["harness: conversation run"]
+        ORCH["Orchestrator"]
+        GEN["Child simulator<br/>generator + reviewer"]
+        CHK["lint_child_utterance<br/>check_content_ceiling"]
+        ADP["AgentAdapter<br/>Claude, Gemini, ChatGPT"]
+    end
+    subgraph SCORE["harness: scoring and validation"]
+        JD["Judge agent<br/>detect_pii_request<br/>verify_evidence_quote"]
+        LAB["Human labeling<br/>sheet or Streamlit"]
+        VAL["compute_agreement<br/>scikit-learn + scipy"]
+    end
+    subgraph OUT["results folder for one run"]
+        TR[("transcripts.jsonl")]
+        SCO[("scores.jsonl")]
+        RQ[("review_queue.jsonl")]
+        LBL[("labels.csv")]
+        REP["judge_validation.md"]
+    end
+    DB[("SQLite, built on demand")]
+    SITE["MkDocs site on GitHub Pages"]
+
+    SC --> ORCH
+    CFG --> ORCH
+    ORCH --> GEN
+    CO --> CHK
+    GEN --> CHK
+    GEN --> ADP
+    ADP --> GEN
+    ADP --> TR
+    GEN --> RQ
+    TR --> JD
+    RB --> JD
+    JD --> SCO
+    JD --> RQ
+    RQ --> LAB
+    LAB --> LBL
+    SCO --> VAL
+    LBL --> VAL
+    VAL --> REP
+    SCO --> DB
+    DB --> SITE
+    REP --> SITE

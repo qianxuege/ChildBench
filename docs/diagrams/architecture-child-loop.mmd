@@ -1,0 +1,17 @@
+flowchart TD
+    S["Script says what this turn<br/>should reveal"]
+    G["Generator AI<br/>drafts the child line"]
+    K["Quick checks<br/>sounds like a child?<br/>content mild enough?"]
+    V["Reviewer AI<br/>right age? on script?<br/>not hinting at the answer?"]
+    R["If a check or the reviewer says no:<br/>try again with the reason<br/>up to 3 times"]
+    FB["After 3 failed tries:<br/>use the backup line from the script<br/>and flag it for a human"]
+    OUT["Line is sent to the chatbot"]
+    S --> G
+    G --> K
+    K --> V
+    K --> R
+    V --> R
+    R --> G
+    R --> FB
+    V --> OUT
+    FB --> OUT
