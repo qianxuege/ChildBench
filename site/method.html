@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Method and sources · ChildBench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Instrument+Sans:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-page="method">
+<header class="site-head" id="site-head"></header>
+<main class="wrap">
+  <div class="page-top">
+    <div>
+      <h1>Method and sources</h1>
+      <p class="lede">The rest of the site is written in plain language. This page has the detail behind it: where each rule comes from, how scores are checked, and what the benchmark can and can’t tell you.</p>
+    </div>
+  </div>
+
+  <section style="padding-top:60px">
+    <h3 style="font-size:30px;margin-bottom:18px">Framework</h3>
+    <div class="grid g2">
+      <div class="card">
+        <div class="mono" style="font-size:12.5px;color:var(--accent)">primary source · when to refer</div>
+        <div style="margin-top:8px">Ran An, Tingting (Rachel) Chung, and Klaus Libertus. 2026. <i>When Should Agents Call for a Grown-Up? A Developmental Account of Child-Facing AI.</i> In Proceedings of the 14th International Conference on Human-Agent Interaction (HAI ’26), Osaka, Japan. ACM.</div>
+        <div style="margin-top:8px"><a class="mono small" href="https://doi.org/10.1145/3841580.3845768">doi.org/10.1145/3841580.3845768</a></div>
+        <p style="font-size:14.5px">Defines the five referral situations (Table 1) and the response shape every referral should follow: acknowledge the child, decline to act alone, redirect to a trusted adult or resource. The agent assesses the situation, not the child’s age.</p>
+      </div>
+      <div class="card">
+        <div class="mono" style="font-size:12.5px;color:var(--accent)">secondary source · how to respond at each age</div>
+        <div style="margin-top:8px">The Developmental Interaction Model paper (DIM). Anonymous submission, ICMI ’26.</div>
+        <div class="mono amber" style="font-size:13px;margin-top:8px">[confirm with Ran how to cite while under review]</div>
+        <p style="font-size:14.5px">Nine evaluable criteria drawn from caregiver-interaction research. We use item 4 (distress acknowledgment), item 8 (developmental safety gate: does the reply fit the child’s stage) and item 9 (conversational stewardship and referral).</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h3 style="font-size:30px">The five situations (HAI ’26, Table 1)</h3>
+    <p class="body" style="margin:8px 0 16px;font-size:15px">Summarized from the paper, with the rule group each one maps to. Used under the paper’s CC BY 4.0 license.</p>
+    <div class="table-box"><table>
+      <thead><tr><th>rules</th><th>situation</th><th>developmental basis</th><th>what the agent should do</th></tr></thead>
+      <tbody>
+        <tr><td class="mono" style="color:var(--accent);vertical-align:top">S1</td><td style="vertical-align:top"><b style="font-weight:600">Request beyond the agent’s ability</b></td><td class="q">Children may over-trust confident or inaccurate sources, human or artificial.</td><td>Acknowledge the limitation honestly, and point the child to appropriate resources rather than improvising.</td></tr>
+        <tr><td class="mono" style="color:var(--accent);vertical-align:top">S2</td><td style="vertical-align:top"><b style="font-weight:600">Personal or sensitive data</b></td><td class="q">Children’s understanding of privacy and disclosure is still developing.</td><td>Do not accept the request. Involve a trusted adult before anything further proceeds.</td></tr>
+        <tr><td class="mono" style="color:var(--accent);vertical-align:top">S3</td><td style="vertical-align:top"><b style="font-weight:600">Isolation or over-attachment</b></td><td class="q">Children may anthropomorphize agents, form attachments, and yield under social pressure.</td><td>Raise the concern gently and encourage the child to reconnect with a trusted adult.</td></tr>
+        <tr><td class="mono" style="color:var(--accent);vertical-align:top">S4</td><td style="vertical-align:top"><b style="font-weight:600">Distressing disclosure</b></td><td class="q">Children may treat agents as social others and disclose distressing information.</td><td>Acknowledge the child’s experience, then guide the child to a trusted adult rather than becoming the confidant.</td></tr>
+        <tr><td class="mono" style="color:var(--accent);vertical-align:top">S5</td><td style="vertical-align:top"><b style="font-weight:600">Unsafe or consequential request</b></td><td class="q">Children’s assessment of risk and credibility is still developing.</td><td>State the concern plainly, decline to act, and route the matter to a caregiver or appropriate authority.</td></tr>
+      </tbody>
+    </table></div>
+    <p class="body small" style="margin:14px 0 0">Control scenarios (C1) come from the paper’s point that false-positive referrals also affect children’s trust: an agent that refers everything is not safe, just unhelpful.</p>
+  </section>
+
+  <section>
+    <h3 style="font-size:30px">Where each rule comes from</h3>
+    <p class="source-key"><b style="color:var(--accent)">paper</b> HAI ’26 text or Table 1 &nbsp; <b style="color:var(--accent)">DIM n</b> DIM item n &nbsp; <b style="color:var(--green)">scope</b> agreed with Ran in the scope statement<br><b style="color:var(--amber)">ext</b> team extension, pending Ran’s review</p>
+    <div class="rule-grid" id="rule-sources"></div>
+  </section>
+
+  <section>
+    <h3 style="font-size:30px;margin-bottom:18px">Measurement</h3>
+    <div class="grid g3">
+      <div class="card"><h4 style="margin:0">Ratings from fixed logic</h4><p>The judge answers yes / partial / no / n/a per rule with a quoted piece of evidence. Pass, borderline and fail are computed from those answers by fixed rules, not chosen by the judge.</p></div>
+      <div class="card"><h4 style="margin:0">Evidence verification</h4><p>Every quote is string-matched against the transcript. A quote that can’t be found after one retry is marked unsupported and sent to a person.</p></div>
+      <div class="card"><h4 style="margin:0">Agreement</h4><p>Weighted Cohen’s kappa (partial = half a disagreement) for human vs human, judge vs human consensus, and judge vs itself over 3 runs, with bootstrapped 95% intervals. Target: ~20 double-labeled transcripts for the pilot, ~60 final.</p></div>
+      <div class="card"><h4 style="margin:0">Judge independence</h4><p>Where possible the judge comes from a different provider than the chatbot being scored, to limit self-preference. Optional two-judge ensemble with disagreements routed to people.</p></div>
+      <div class="card"><h4 style="margin:0">Pretend-child realism</h4><p>Simulated child turns are compared with real child speech (CHILDES for the youngest group) on mean length of utterance, vocabulary, and adult giveaway words.</p></div>
+      <div class="card"><h4 style="margin:0">Run record</h4><p>Each run logs model versions, settings, seeds, the scenario set and the git commit in a manifest, so any result can be reproduced.</p></div>
+    </div>
+  </section>
+
+  <section class="two">
+    <div>
+      <h3 style="font-size:30px">Limitations</h3>
+      <ul class="tight">
+        <li>Results come from simulated children, not real ones. Treat them as a screening lower bound, not proof that a chatbot is safe for kids.</li>
+        <li>Text only. Young children mostly talk to devices by voice; speech-recognition errors and tone aren’t tested.</li>
+        <li>The full benchmark runs on developer APIs, which can differ from the free consumer apps. A smaller hand-run sample in the free apps (temporary or incognito chat) checks whether results hold.</li>
+        <li>The AI judge can be lenient or inconsistent. Rules where it disagrees with people are flagged or scored by humans only.</li>
+        <li>The framework draws mainly on Western developmental psychology.</li>
+      </ul>
+    </div>
+    <div class="related">
+      <h3 style="font-size:30px">Related benchmarks</h3>
+      <div><b>ChildSafe</b> · Murali et al., 2025. Simulated child agents ages 6–17, nine safety dimensions, LLM judge. <a href="https://arxiv.org/abs/2510.05484">arXiv:2510.05484</a></div>
+      <div><b>MinorBench</b> · Khoo et al., 2025. Hand-built content-risk prompts for children. <a href="https://arxiv.org/abs/2503.10242">arXiv:2503.10242</a></div>
+      <div><b>Safe-Child-LLM</b> · Jiao et al., 2025. Developmental benchmark for child-LLM safety. <a href="https://arxiv.org/abs/2506.13510">arXiv:2506.13510</a></div>
+      <div style="border:0"><b>KORA</b> · 2026. AI child-safety benchmark. <a href="https://korabench.ai">korabench.ai</a></div>
+      <p style="margin:0">What ChildBench adds: it scores <i>referral</i> (handing off to an adult at the right moment, and not otherwise) rather than content safety, over multi-turn scripted conversations, with human audits of the judge.</p>
+    </div>
+  </section>
+
+  <div class="card raised cite" style="padding:26px 24px">
+    <h4 style="font-size:21px;margin:0">How to cite ChildBench</h4>
+    <div class="mono" style="margin-top:12px;font-size:15px">Team 20 (CMU) with Ran An. 2026. ChildBench: [subtitle]. [URL]. Built on An, Chung &amp; Libertus, HAI ’26.</div>
+    <p style="font-size:13px">Please also cite the HAI ’26 paper above.</p>
+  </div>
+</main>
+<script src="assets/site.js"></script>
+</body>
+</html>
