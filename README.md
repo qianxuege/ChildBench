@@ -73,7 +73,7 @@ Settings that matter:
 
 ## How scoring works today
 
-The judge's design is in [RFC 0003](rfcs/0003-judge-and-evaluation.md) and belongs to the Judge and review role. It isn't Adam's work, and this branch doesn't change `harness/agents/judge.py` or `harness/rating.py`. Questions and changes go to that role.
+The judge's design is in [RFC 0003](rfcs/0003-judge-and-evaluation.md) and belongs to the Judge and review role. It isn't Adam's work. `harness/agents/judge.py` and `harness/rating.py` arrive on this branch as they already were, so `git blame` showing Adam's name only means this commit was the first import into git. Questions and changes go to that role.
 
 In short:
 
