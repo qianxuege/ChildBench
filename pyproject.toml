@@ -1,0 +1,26 @@
+[project]
+name = "childbench-harness"
+version = "0.1.0"
+description = "ChildBench baseline harness: pretend child, agents under test, judge, tools, and results."
+requires-python = ">=3.11"
+dependencies = [
+  "pydantic>=2.6",
+  "pyyaml>=6.0",
+  "openai>=1.40",        # OpenAI-compatible client: Ollama, llama.cpp, LM Studio, vLLM, Gemini, OpenAI
+  "scikit-learn>=1.4",   # Cohen's kappa
+  "scipy>=1.11",         # bootstrap confidence intervals
+  "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+local = [
+  "torch>=2.2",          # only for the hf_local backend (run Gemma straight from a folder)
+  "transformers>=4.50",
+]
+dev = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+include = ["harness*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

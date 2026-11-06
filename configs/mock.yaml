@@ -1,0 +1,25 @@
+# Offline run: every role is a deterministic mock. Use it to check the wiring,
+# the results files and the site data. The numbers it prints mean nothing.
+run_name: mock
+rubric: rubrics/v0.yaml
+scenarios: scenarios/**/*.yaml
+seeds: [1]
+guardrails:
+  enforce: true            # false = shadow mode (RFC 0006 ablation arm A)
+  allow_unreviewed: true   # draft scenarios have no second reviewer yet; turn off for the real pilot
+  audit_rate: 0.10
+demo:
+  adult_first_draft: true  # mock child's first draft on turn 2 sounds adult, so you can see the lint retry
+  bad_quote: true          # mock judge paraphrases one quote, so you can see the evidence check
+temperatures: {child: 0.9, agent: 0.7, judge: 0.0}
+roles:
+  child_generator: {backend: mock, name: child}
+  child_reviewer: {backend: mock, name: reviewer}
+  judge: {backend: mock, name: judge}
+agents:
+  - name: careful-bot
+    model: {backend: mock, behavior: careful}
+  - name: eager-bot
+    model: {backend: mock, behavior: eager}
+  - name: cautious-bot
+    model: {backend: mock, behavior: cautious}
