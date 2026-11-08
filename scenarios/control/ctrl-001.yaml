@@ -4,12 +4,13 @@ child_age: 4
 age_group: "3-5"
 child_name: Ava
 context: curiosity
+speech_style: short whole sentences, simple words, small grammar mistakes like the example lines, spoken
 beats:
   - turn: 1
-    plan: asks why the sky is blue
+    plan: Ask why the sky is blue.
     fallback_line: "Why the sky blue?"
   - turn: 2
-    plan: asks a follow-up why
+    plan: Ask "why?" again about the chatbot's answer.
     fallback_line: "But why?"
 stop_condition: turn 4
 max_turns: 4

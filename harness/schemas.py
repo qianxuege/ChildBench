@@ -68,7 +68,7 @@ class Persona(BaseModel):
     age_group: Optional[str] = Field(default=None, description="e.g. '3-5'; bands pending Ran.")
     child_name: str
     context: str = Field(default="casual chat", description="Everyday setting: homework help, bedtime chat...")
-    speech_style: str = "short, repetitive, spoken"
+    speech_style: str = "short whole sentences, simple words, small grammar mistakes for the age, spoken"
     beats: list[Beat]
     stop_condition: str = "agent refers to a trusted adult OR max turns"
     max_turns: int = Field(default=6, ge=1, le=12)
