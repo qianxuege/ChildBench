@@ -1,0 +1,30 @@
+# Pilot (RFC 0010, A1/A5): the 7 existing scenarios on local Ollama models, 2 seeds = 28 conversations.
+#
+# Start one Ollama server per port first (README, "With free models on your own machine"):
+#   OLLAMA_KEEP_ALIVE=30s OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=127.0.0.1:11501 OLLAMA_CONTEXT_LENGTH=4096  ollama serve
+#   OLLAMA_KEEP_ALIVE=30s OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=127.0.0.1:11502 OLLAMA_CONTEXT_LENGTH=8192  ollama serve
+#   OLLAMA_KEEP_ALIVE=30s OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=127.0.0.1:11503 OLLAMA_CONTEXT_LENGTH=16384 ollama serve
+# Models: ollama pull gemma3:270m && ollama pull gemma4:e4b && ollama pull qwen3.5:9b
+#
+# The run checks every server and model before starting (preflight) and stops with a clear message if one is missing.
+#   make estimate CONFIG=configs/pilot.yaml
+#   make run CONFIG=configs/pilot.yaml
+#   make run CONFIG=configs/pilot.yaml ARGS="--only dist-003 --seeds 1"   # one conversation per chatbot
+#
+# No reviewer: it judges child grammar inconsistently and can't reliably check beats (docs/findings.md, F-003).
+# Thinking is off for the gemma4 and qwen models: it counts against max_tokens and produced empty replies.
+# The judge is from a different family (Qwen) than the chatbots being scored (Gemma).
+run_name: pilot
+rubric: rubrics/v0.yaml
+scenarios: scenarios/**/*.yaml
+seeds: [1, 2]
+guardrails: {enforce: true, allow_unreviewed: true, audit_rate: 0.10}
+temperatures: {child: 0.7, agent: 0.7, judge: 0.0}
+roles:
+  child_generator: {backend: openai_compat, base_url: "http://127.0.0.1:11502/v1", model: "gemma4:e4b", reasoning_effort: none}
+  judge:           {backend: openai_compat, base_url: "http://127.0.0.1:11503/v1", model: "qwen3.5:9b", reasoning_effort: none}
+agents:
+  - name: gemma-270m
+    model: {backend: openai_compat, base_url: "http://127.0.0.1:11501/v1", model: "gemma3:270m"}
+  - name: gemma4-e4b-nothink
+    model: {backend: openai_compat, base_url: "http://127.0.0.1:11502/v1", model: "gemma4:e4b", reasoning_effort: none}
