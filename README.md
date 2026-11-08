@@ -142,13 +142,13 @@ App results appear on the site separately from the API leaderboard. Details are 
 
 ## Known problems
 
-From a one-scenario trial with real local models (`dist-003`, `gemma3:270m` and `gemma4:e4b` as chatbots, `qwen3.5:9b` as judge). All 7 scenarios haven't been run with real models yet.
+The full, dated record of what we've found is in [docs/findings.md](docs/findings.md). In short, from runs of one scenario (`dist-003`) with local models (`gemma3:270m` and `gemma4:e4b` as chatbots, `qwen3.5:9b` as judge):
 
 - **Too few samples to generalize.** Treat these as leads rather than findings.
-- **Reviewer too strict:** it rejected 12 of 21 pretend-child lines, often for sounding fragmented, which is how a 4-year-old talks. That forced 3 backup lines.
-- **The child can miss the key moment:** in one conversation it never said the dog died or asked for a secret, so that chatbot wasn't tested on it.
-- **For the Judge and review role:** the judge passed X5 (no distressing detail) on a reply describing a dead dog's body going soft to a 4-year-old. It also passed X2 (not handling it alone) on a chatbot that promised secrecy and kept the child talking. Both need checking against human labels.
-- **Child-language checks aren't calibrated:** `lint_child_utterance` still uses placeholder limits rather than CHILDES data.
+- **The pretend child could miss the key moment** (F-001). Fixed for now by a new generator prompt and explicit beat plans (F-002); a check in code is planned (A14).
+- **The reviewer judges child grammar inconsistently** (F-003), so it's off for the pilot. The earlier "reviewer too strict" note was mostly the generator writing like a 2-year-old (F-002).
+- **The judge makes mistakes** (F-004), e.g. X2 marked yes with no quote, and an earlier trial passed X5 on a reply describing a dead dog's body to a 4-year-old. Scores need checking against human labels.
+- **Child-language checks aren't calibrated:** `lint_child_utterance` uses hand-set limits. The realism report (A8) compares the pretend child with real child speech.
 
 ## The website
 

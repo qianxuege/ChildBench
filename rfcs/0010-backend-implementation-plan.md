@@ -35,7 +35,7 @@ Section 11 breaks the work into small work packages, each sized for one Claude C
 |---|---|---|
 | **Before the meeting** (Nov 8–10) | A1 Ollama runs · A11 manual relay · A5 pilot run · 2-conversation app demo | B5 export (with preview mode) · site reads `site/data/` (with the frontend role) · B-op export the pilot · B4 labelling if time |
 | **Meeting** (Wed Nov 11) | Questions for Ran, Q1–Q10 | |
-| **After the meeting** (Nov 12–19) | A13 hosted models · A2 age groups · A3 child tool loop · A7 skills · A4 resume · A6 guardrails-off run · A8 realism report | B1 standalone scoring · B2 fixtures · B3 age-group numbers · B7 rubric v1 · B6 evaluate |
+| **After the meeting** (Nov 12–19) | A13 hosted models · A2 age groups · A3 child tool loop · A14 beat check · A7 skills · A4 resume · A6 guardrails-off run · A8 realism report | B1 standalone scoring · B2 fixtures · B3 age-group numbers · B7 rubric v1 · B6 evaluate |
 | **Full run** (Nov 20–22) | A9 full run · A12 full app sample | B8 full scoring, labelling, export; send to Ran Nov 22 |
 | **Final** (Nov 30 – Dec 2) | Rerun changed scenarios | Re-score, re-export |
 
@@ -152,7 +152,7 @@ What this plan keeps, changes or adds, compared with the earlier RFCs and the ba
 
 | Topic | Baseline | This plan | Why |
 |---|---|---|---|
-| Pretend child | Code calls the tools for the generator; reviewer on | After the meeting, **the child runs its own tool loop**, ending with `submit_child_line` (A3). The **reviewer is off** from the pilot on. | Requirement 1 wants the child to be an agent. The reviewer rejected 12 of 21 lines for sounding like a 4-year-old. |
+| Pretend child | Code calls the tools for the generator; reviewer on | After the meeting, **the child runs its own tool loop**, ending with `submit_child_line` (A3). The **reviewer is off** from the pilot on. | Requirement 1 wants the child to be an agent. The reviewer judges child grammar inconsistently and can't reliably check beats ([F-003](../docs/findings.md)). |
 | Hosted models | Not set up | **Q1**, then A13 (section 5) | Gemini credit vs OpenRouter |
 | Free-app check | To-do: paste a finished chat in afterwards | **Manual relay** before the meeting (section 7) | The child, the checks and the judge stay identical, so app and API results compare fairly, and no unchecked child line reaches a real product. |
 | Scoring | Inside the run | **Unchanged**, plus a standalone `make score` that re-scores saved transcripts (B1) | For rubric v1, the judge-guardrails-off comparison and fixtures |
@@ -586,6 +586,16 @@ Owners below are placeholders until the team reassigns work after the meeting.
 - **Files:** `harness/agents/child_simulator.py`, `harness/tools/child_line.py` (new), `harness/tools/__init__.py`, `harness/llm/mock.py`, `configs/`, `tests/`
 - **Done when:** `make mock` passes; `tool_calls.jsonl` shows the child calling `submit_child_line`; existing guardrail tests pass; one Ollama conversation works with the tool-loop child.
 
+**A14 · Beat check in code** · Owner A · Needs: — · Status: todo
+
+From [F-001](../docs/findings.md): nothing checks that a child line says what its beat asks for.
+
+- Add `must_say` to `Beat`: a short list of facts the line must contain, each as a few accepted words (e.g. `[[died, dead], [Mommy, mom]]` for "says the dog died, asks not to tell Mommy"). Optional, so existing files stay valid.
+- After the existing checks, code checks each `must_say` item on scripted turns. A miss is logged as `beat-delivered FAIL` in `guardrail_log.jsonl` and fed back to the generator ("you didn't say: died"). After 3 tries the beat's `fallback_line` is used and flagged `FALLBACK_USED`, as today. In shadow mode it logs `SHADOW_FAIL` instead of blocking.
+- Add `must_say` to the 7 existing scenarios, and to the scenario template when A7 writes it.
+- **Files:** `harness/schemas.py` (`Beat` only), `harness/agents/child_simulator.py`, `scenarios/`, `tests/`
+- **Done when:** a test shows a line missing a `must_say` item is retried and then replaced by the fallback line; `make check` passes on all 7 scenarios with `must_say`; one Ollama run of `dist-003` logs `beat-delivered PASS` on each scripted turn.
+
 **B1 · Standalone scoring** · Owner B · Needs: — · Status: todo
 
 - `make score RUN=<id>` loads `transcripts.jsonl`, runs the judge and writes `rescore_<label>/scores.jsonl`. `JUDGE_GUARDRAILS=off` turns off the quote retry; `RUBRIC=` picks the rubric. In-run scoring stays as it is.
@@ -766,3 +776,15 @@ Today is Sun Nov 8. The pilot meeting with Ran is Wed Nov 11.
 | **Fri Nov 20** | **A9 full run**; A12 full app sample (Nov 19–21, with any teammate) | Choose about 60 conversations for labelling |
 | Sat Nov 21 – Sun Nov 22 | — | B8 full scoring, labelling, kappa, export; send to Ran Nov 22 |
 | Nov 30 – Dec 2 | Final rerun | Re-score and final export |
+
+## Changelog
+
+One line per change to this plan, newest first, naming the finding or decision behind it. Findings are in [docs/findings.md](../docs/findings.md).
+
+| Date | Change | Why |
+|---|---|---|
+| Nov 8 | Added A14 (beat check in code) | [F-001](../docs/findings.md): the pretend child missed `dist-003`'s key beat |
+| Nov 8 | Reviewer stays off for the pilot; reason updated | [F-002](../docs/findings.md), [F-003](../docs/findings.md): the generator caused the broken speech, and the reviewer judges grammar inconsistently |
+| Nov 8 | New generator prompt, default `speech_style`, explicit beat plans in all 7 scenarios | [F-002](../docs/findings.md) |
+| Nov 8 | Scope revised: Ollama, relay, scoring and export before the Nov 11 meeting; questions for Ran Q1–Q10; realism report (A8); at-a-glance owners | Team decision; see "What changed on Nov 8" |
+
