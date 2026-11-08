@@ -2,7 +2,7 @@
 
 A benchmark of how chatbots respond to children: does the chatbot bring in a trusted adult at the right moments, and not otherwise?
 
-Team 20, CMU Intro to AI, with client Ran An. Built on An, Chung & Libertus, *When Should Agents Call for a Grown-Up?* (HAI '26). Pilot due Nov 12, final presentation Dec 3.
+Team 20, CMU Intro to AI, with client Ran An. Built on An, Chung & Libertus, *When Should Agents Call for a Grown-Up?* (HAI '26). Pilot run Nov 9, pilot meeting with Ran Nov 11, final presentation Dec 3.
 
 **Status: pre-pilot.** The pipeline runs from start to finish, but there are no results worth citing yet. See [Known problems](#known-problems).
 
@@ -10,6 +10,7 @@ Team 20, CMU Intro to AI, with client Ran An. Built on An, Chung & Libertus, *Wh
 |---|---|
 | [architecture.md](architecture.md) | Plain-language overview of the whole system |
 | [rfcs/](rfcs/) | The design decisions, one RFC per area |
+| [rfcs/0010](rfcs/0010-backend-implementation-plan.md) | The backend plan: what to build next, the two-person split, and work packages to run with Claude Code. Takes priority over the other RFCs where they differ |
 | [harness/README.md](harness/README.md) | Harness detail: results files, decisions so far, to-do list |
 | [docs/related-benchmarks.md](docs/related-benchmarks.md) | What other child-safety benchmarks do, with sources |
 
@@ -88,36 +89,56 @@ In short:
 
 The team plans to come back to weights later. [docs/related-benchmarks.md](docs/related-benchmarks.md#for-the-weights-discussion) has what others do and the questions to settle first.
 
-## Scenario plan (proposed)
+## Scenario plan
 
-As a first step, the team is thinking of:
+The plan is in [RFC 0010](rfcs/0010-backend-implementation-plan.md#5-scenarios-age-groups-and-controls), sections 1 and 5:
 
-- **20 core scenarios for every child**, each written for each age group.
-- **Extra scenarios for each age group**, for things that only come up at that age.
+- **About 20 core scenarios** across the five situations, about 4 per situation.
+- **About 5 core controls**, where no referral is needed, to measure over-escalation: a chatbot that sends the child to an adult when it should just help.
+- **Every core scenario and control is rewritten for each age group.** Each version is its own file with a `core_id` and an `age_group`. For example, the same idea becomes a casual chat at 6 and homework help at 10.
+- About 75 scenario files in all. Extra scenarios that fit only one age group are a stretch goal.
 
-| Age group | Status |
-|---|---|
-| Kindergarten | Proposed |
-| Primary school | Proposed |
-| Middle and high school (grades 6–12) | Proposed |
+| Key | Age group | Ages | Status |
+|---|---|---|---|
+| `early` | Kindergarten and younger | 4–6 | Proposed, pending Ran |
+| `primary` | Primary school | 7–10 | Proposed, pending Ran |
+| `secondary` | Middle and high school | 11–17 | Proposed, pending Ran; full run only if she approves |
 
-Nothing has been written to this plan yet. Today there are 7 draft scenarios, for ages 3, 4, 4, 4, 5, 5 and 10, and none has its second reviewer.
+The pilot uses the 5 existing core scenarios and the 2 existing controls, each in `early` and `primary`: 14 files. Today there are 7 draft scenarios, for ages 3, 4, 4, 4, 5, 5 and 10, none has its second reviewer, and the 7 `primary` versions still need writing.
 
 To settle, mostly with Ran:
 
 - **Ages:** the drafts include ages 3 and 4, which come before kindergarten. Do they stay?
 - **Width of the oldest group:** grades 6–12 covers roughly ages 11 to 18. ChildSafe splits that span into 12–14 and 15–17.
-- **The split of the 20:** how many per situation (S1–S5), and how many controls?
+- **The split:** RFC 0010 proposes about 4 per situation and about 5 controls. Does that work?
+- **Homework controls:** is a good answer doing the homework, or guiding the child?
 - **Older children:** who counts as the trusted adult, and what content level is allowed? Today every scenario is capped at "mild".
 - **Fit with the paper:** the HAI '26 framing and `architecture.md` focus on young children.
 
 What changes once it's agreed:
 
-- RFC 0005 says about 10 per situation for ages 3–5.
-- The site's age filter still shows 3–5, 6–8 and 9–12.
-- `age_group` in `harness/schemas.py` is free text, so the code needs no change.
+- The list of groups lives in `scenarios/age_groups.yaml` (RFC 0010, work package A2), so a change is a data edit, not a code change.
+- The site's age filter still shows 3–5, 6–8 and 9–12. It will read the groups from `site/data/meta.json` once the export exists.
 
-**Run size:** 20 core scenarios across 3 age groups is 60 scripts before the extras. With 3 chatbots and 3 seeds that's 540 conversations. The one-scenario local trial took about 70 seconds per conversation, so 540 would take around 10 hours on a laptop.
+**Run size:** about 75 scenario files × 3 chatbots × 2 seeds is about 450 conversations. The one-scenario local trial took about 70 seconds per conversation, so that would take around 9 hours on a laptop. Hosted models may be faster.
+
+## API and free apps
+
+The chatbots we test are ChatGPT, Gemini and Claude, reached two ways:
+
+- **The full benchmark runs through their developer APIs.** Every leaderboard number comes from these runs.
+- **A small sample is run by hand in the free apps' private chat modes:** ChatGPT and Gemini Temporary Chat, and Claude incognito. That's about 18 conversations, to check whether the API results match what people see in the apps.
+
+The hand runs use a **manual relay** in the terminal (`make run CONFIG=configs/app-sample.yaml`). Each turn, the harness shows the pretend child's checked line and copies it to the clipboard. You paste it into the app, copy the app's whole reply, and press Enter, and the harness reads the reply from the clipboard. The child, the checks and the judge are the same as in the API run, so the two compare fairly.
+
+Rules for hand runs:
+
+- use team adult accounts with default settings;
+- open a fresh private chat for every conversation;
+- paste only the lines the relay shows, and never edit the app's replies;
+- put nothing personal into the chats.
+
+App results appear on the site separately from the API leaderboard. Details are in [RFC 0010](rfcs/0010-backend-implementation-plan.md), section 4 ("Chatbots under test") and work packages A11 and A12.
 
 ## Known problems
 
@@ -148,10 +169,12 @@ Fix before publishing the site:
 ## Decisions on this branch to review
 
 - **Thinking is off** for `gemma4:e4b` as a chatbot, so it isn't quite being tested as shipped, and that changes its replies. The run labels it `gemma4-e4b-nothink`. Decide whether official runs should raise `max_tokens` instead. The chatbot's replies are still never edited.
-- **Local models instead of hosted ones.** The site plans for Claude, ChatGPT and Gemini, while the local config tests Gemma.
+- **Local models instead of hosted ones.** The site plans for Claude, ChatGPT and Gemini, while the local config tests Gemma. RFC 0010 settles this: the benchmark runs on the developer APIs, plus a hand-run free-app sample, and local models stay for free testing.
 - **Qwen is the preferred local model so far**, based on Adam's trial. It's only been used as the judge, and it hasn't been tried as the child or as a chatbot.
 
 ## Next steps
+
+The ordered plan, with an owner and a "done when" check for each piece, is in [RFC 0010, section 9](rfcs/0010-backend-implementation-plan.md#9-two-person-split-and-how-to-work-with-claude-code). In short:
 
 1. Fix the pretend child: loosen the reviewer on fragmented speech, and make sure the key moment is said.
 2. Check the judge on hand-written transcripts (Judge and review role).
