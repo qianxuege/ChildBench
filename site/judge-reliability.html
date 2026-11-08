@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How far to trust the judge · ChildBench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Instrument+Sans:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-page="reliability">
+<header class="site-head" id="site-head"></header>
+<main class="wrap">
+  <div class="page-top">
+    <div>
+      <h1>How far to trust the judge</h1>
+      <p class="lede">An AI judge can make the same mistake over and over. So two people score the same conversations by hand, without knowing which chatbot it was or what the judge said, and we check how often everyone agrees. The agreement score (κ) runs from 0, no better than guessing, to 1, always in agreement.</p>
+    </div>
+    <dl class="meta"><dt>labeled</dt><dd>[N] transcripts</dd><dt>target</dt><dd>~20 pilot · ~60 final</dd><dt>rubric</dt><dd>[v0]</dd></dl>
+  </div>
+  <div class="grid g3" style="margin-top:28px">
+    <div class="card"><b style="font:600 15px var(--sans)">Human vs human</b><div class="kappa">κ<span>—</span></div><div class="mono dim" style="font-size:12.5px;margin-top:8px">likely range [low, high]</div><p style="margin-top:4px">Is each rule clear enough that people agree?</p></div>
+    <div class="card"><b style="font:600 15px var(--sans)">Judge vs human consensus</b><div class="kappa">κ<span>—</span></div><div class="mono dim" style="font-size:12.5px;margin-top:8px">likely range [low, high]</div><p style="margin-top:4px">Does the judge agree with people?</p></div>
+    <div class="card"><b style="font:600 15px var(--sans)">Judge vs itself, 3 runs</b><div class="kappa">κ<span>—</span></div><div class="mono dim" style="font-size:12.5px;margin-top:8px">likely range [low, high]</div><p style="margin-top:4px">Does it give the same answer twice?</p></div>
+  </div>
+  <section style="padding-top:32px">
+    <div class="section-head" style="margin-bottom:14px"><h3>Agreement per rule</h3><div class="tabs" id="rel-tabs"></div></div>
+    <div class="table-box"><table id="rel-table"><thead><tr><th>rule</th><th>what it asks</th><th style="text-align:center">human vs human</th><th style="text-align:center">judge vs human</th><th style="text-align:center">judge vs itself</th><th>status</th></tr></thead><tbody></tbody></table></div>
+    <p class="body small" style="margin:14px 0 0">“Yes” against “partial” counts as half a disagreement. A wide range means we need more hand-scored conversations before trusting the judge on that rule.</p>
+  </section>
+  <div class="grid g2" style="margin-top:28px;gap:16px">
+    <div class="card" style="padding:24px">
+      <h4 style="font-size:21px;margin:0">Bias checks</h4>
+      <div class="kv" style="font-family:var(--sans);margin-top:14px;padding-bottom:12px;border-bottom:1px solid var(--line)"><div><b style="font-weight:600;font-size:15px">Longer answers scored higher?</b><div class="body small">Pad a reply and see if the score moves.</div></div><span class="mono body nowrap">[result]</span></div>
+      <div class="kv" style="font-family:var(--sans);margin-top:12px;padding-bottom:12px;border-bottom:1px solid var(--line)"><div><b style="font-weight:600;font-size:15px">Judge favours its own company?</b><div class="body small">Where possible, the judge is from a different provider than the chatbot.</div></div><span class="mono body nowrap">[n]% cross-provider</span></div>
+      <div class="kv" style="font-family:var(--sans);margin-top:12px;padding-bottom:12px;border-bottom:1px solid var(--line)"><div><b style="font-weight:600;font-size:15px">Too lenient?</b><div class="body small">Compare the judge’s pass rate with the human pass rate on the same transcripts.</div></div><span class="mono body nowrap">[gap]</span></div>
+      <div class="kv" style="font-family:var(--sans);margin-top:12px"><div><b style="font-weight:600;font-size:15px">Two-judge ensemble (optional)</b><div class="body small">Disagreements between judges go to a person.</div></div><span class="mono body nowrap">[on / off]</span></div>
+    </div>
+    <div class="card" style="padding:24px">
+      <h4 style="font-size:21px;margin:0 0 14px">What went to a person, and why</h4>
+      <div class="row thin" style="grid-template-columns:1fr 140px 40px"><span>Judge had low confidence</span><div class="track" style="height:7px"></div><div class="val body">[n]</div></div>
+      <div class="row thin" style="grid-template-columns:1fr 140px 40px"><span>Evidence quote couldn’t be found</span><div class="track" style="height:7px"></div><div class="val body">[n]</div></div>
+      <div class="row thin" style="grid-template-columns:1fr 140px 40px"><span>Pretend child needed a backup line</span><div class="track" style="height:7px"></div><div class="val body">[n]</div></div>
+      <div class="row thin" style="grid-template-columns:1fr 140px 40px"><span>Random 10% spot check</span><div class="track" style="height:7px"></div><div class="val body">[n]</div></div>
+      <p>Labelers work in a spreadsheet for the pilot, then a small Streamlit app. Labels are categorical, one row per transcript, so they can be compared automatically.</p>
+    </div>
+  </div>
+  <div class="card raised cite" style="padding:26px 24px;margin-top:32px">
+    <h4 style="font-size:21px;margin:0">What the agreement score means</h4>
+    <p>Say two people score 100 conversations on a yes/no rule and agree on 80 of them. If each says yes half the time, they’d agree on 50 just by chance. The score counts only the agreement beyond chance:</p>
+    <div class="formula">κ = (0.80 − 0.50) / (1 − 0.50) = <b>0.60</b></div>
+  </div>
+</main>
+<script src="assets/site.js"></script>
+</body>
+</html>

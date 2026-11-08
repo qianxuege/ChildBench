@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leaderboard · ChildBench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Instrument+Sans:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-page="leaderboard">
+<header class="site-head" id="site-head"></header>
+<main class="wrap">
+  <div class="page-top">
+    <div>
+      <h1>Leaderboard</h1>
+      <p class="lede">Each conversation is rated pass, borderline or fail against the checklist. We report rates per situation, not a single score, and show next to them how far to trust the judge.</p>
+    </div>
+    <dl class="meta"><dt>run</dt><dd>[run_id]</dd><dt>rubric</dt><dd>[v0]</dd><dt>date</dt><dd>[DATE]</dd></dl>
+  </div>
+  <div class="notice"><span><b>Results pending.</b> Rates fill in after the pilot run (Nov 12). Rows below are the planned chatbots.</span></div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div class="title"><h3>Outcomes by chatbot</h3><span class="mono small amber" id="sample-tag">illustrative numbers · not results</span></div>
+      <div class="tabs" id="state-tabs"></div>
+    </div>
+    <div class="tabs" id="filter-tabs"></div>
+    <div class="legend">
+      <div class="keys"><span><i class="swatch" style="background:var(--accent)"></i>Pass</span><span><i class="swatch" style="background:var(--gray-bar)"></i>Borderline</span><span><i class="swatch" style="background:var(--coral)"></i>Fail</span></div>
+      <span class="mono" style="font-size:12.5px">sorted by pass rate · % of conversations</span>
+    </div>
+    <div id="outcome-bars"></div>
+    <div class="axis" aria-hidden="true"><span style="left:0">0</span><span style="left:25%">25</span><span style="left:50%">50</span><span style="left:75%">75</span><span style="left:100%">100%</span></div>
+    <div class="divide"></div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;margin-bottom:14px"><h4>False referrals on control scenarios</h4><span class="body small">sends the child to an adult when nothing called for it · lower is better</span></div>
+    <div id="false-bars"></div>
+    <div class="axis" aria-hidden="true"><span style="left:0">0</span><span style="left:50%">25</span><span style="left:100%">50%</span></div>
+  </div>
+
+  <div class="panel">
+    <div class="title" style="display:flex;flex-wrap:wrap;gap:12px;align-items:baseline"><h3>Does general intelligence predict child-readiness?</h3><span class="mono small amber" id="plot-tag">positions illustrative</span></div>
+    <p class="body" style="max-width:780px;margin:12px 0 0;font-size:15px">Each dot is a chatbot: its Artificial Analysis Intelligence Index score across, its ChildBench pass rate up. If the dots don’t line up, ChildBench measures something general benchmarks miss. Uses the situation filter above.</p>
+    <div class="scatter-grid">
+      <div class="plot-wrap" role="img" aria-label="Scatter plot of Intelligence Index against ChildBench pass rate">
+        <span class="tick-y" style="top:0">100%</span><span class="tick-y" style="top:100px">75</span><span class="tick-y" style="top:200px">50</span><span class="tick-y" style="top:300px">25</span><span class="tick-y" style="top:400px">0</span>
+        <div class="plot">
+          <span class="gx"></span><span class="gy"></span>
+          <span class="corner" style="top:10px;left:12px">child-ready, less capable</span>
+          <span class="corner" style="top:10px;right:12px">capable and child-ready</span>
+          <span class="corner" style="bottom:10px;left:12px">neither</span>
+          <span class="corner amber" style="bottom:10px;right:12px">capable, not child-ready</span>
+          <div id="dots" style="position:absolute;inset:0"></div>
+        </div>
+        <span class="tick-x" style="left:54px;transform:none">40</span><span class="tick-x" style="left:calc(54px + (100% - 54px) * .1667)">45</span><span class="tick-x" style="left:calc(54px + (100% - 54px) * .3333)">50</span><span class="tick-x" style="left:calc(54px + (100% - 54px) * .5)">55</span><span class="tick-x" style="left:calc(54px + (100% - 54px) * .6667)">60</span><span class="tick-x" style="left:calc(54px + (100% - 54px) * .8333)">65</span><span class="tick-x" style="right:0;transform:none">70</span>
+        <span class="plot-label">Artificial Analysis Intelligence Index (0–100 scale, axis zoomed to 40–70)</span>
+      </div>
+      <div>
+        <div class="card raised" style="padding:18px 20px">
+          <h4 style="font-size:16px;margin:0 0 8px">Intelligence Index for the exact models run</h4>
+          <div class="kv"><span class="body">[Claude model id]</span><span>[–]</span></div>
+          <div class="kv"><span class="body">[Gemini model id]</span><span>[–]</span></div>
+          <div class="kv"><span class="body">[ChatGPT model id]</span><span>[–]</span></div>
+          <p style="font-size:12.5px;margin-top:10px" class="dim">index version [v5.0] · retrieved [DATE] · <a href="https://artificialanalysis.ai/">source</a></p>
+        </div>
+        <p class="body small" style="margin:14px 0 0">Match model versions exactly: an Index score only applies to the model and reasoning setting it was measured at.</p>
+      </div>
+    </div>
+  </div>
+
+  <section style="padding-top:40px">
+    <div class="section-head">
+      <h3>Full table</h3>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span class="body small">Situation columns show</span><div class="tabs" id="metric-tabs"></div></div>
+    </div>
+    <div class="table-box">
+      <table id="full-table">
+        <thead><tr><th>chatbot</th><th style="text-align:center">S1<br>ability</th><th style="text-align:center">S2<br>data</th><th style="text-align:center">S3<br>attachment</th><th style="text-align:center">S4<br>disclosure</th><th style="text-align:center">S5<br>unsafe</th><th class="vline" style="text-align:center">age-<br>appropriate<br>X4 + X5</th><th style="text-align:center">false<br>referrals<br>lower is<br>better</th><th style="text-align:center">referral<br>rate</th><th style="text-align:center">first<br>referral<br>turn</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="body small" style="margin:14px 0 0">Situation columns: share of conversations rated <span id="metric-word">pass</span>. Each cell: rate · conversations · range. Future chatbots join by adding one adapter; their replies are never edited or filtered.</p>
+    <div class="trust-grid">
+      <div class="card" style="padding:26px 24px">
+        <div class="section-head" style="margin-bottom:14px"><h4 style="font-size:21px;margin:0">How far to trust these numbers</h4><a class="small" href="judge-reliability.html">per-rule detail →</a></div>
+        <div class="grid g3">
+          <div class="card raised" style="padding:14px 16px"><div class="body small">Human vs human</div><div class="kappa" style="font-size:20px;margin-top:4px">κ<span>—</span></div><div class="dim mono" style="font-size:12px">[low, high]</div></div>
+          <div class="card raised" style="padding:14px 16px"><div class="body small">Judge vs human</div><div class="kappa" style="font-size:20px;margin-top:4px">κ<span>—</span></div><div class="dim mono" style="font-size:12px">[low, high]</div></div>
+          <div class="card raised" style="padding:14px 16px"><div class="body small">Judge vs itself, 3 runs</div><div class="kappa" style="font-size:20px;margin-top:4px">κ<span>—</span></div><div class="dim mono" style="font-size:12px">[low, high]</div></div>
+        </div>
+        <p>Rules where the judge doesn’t agree well with people are marked low-confidence or scored by humans only. [n] rules are currently human-only.</p>
+      </div>
+      <div class="card" style="padding:26px 24px">
+        <h4 style="font-size:21px;margin:0">What was run</h4>
+        <dl class="facts">
+          <div><dt>Scenarios</dt><dd>[N] + [N] controls</dd></div><div><dt>Age groups</dt><dd>[bands]</dd></div>
+          <div><dt>Seeds per scenario</dt><dd>[N]</dd></div><div><dt>Max turns</dt><dd>6</dd></div>
+          <div><dt>Pretend-child model</dt><dd>[MODEL]</dd></div><div><dt>Judge models</dt><dd>[MODEL], [MODEL]</dd></div>
+          <div><dt>Free-app spot check</dt><dd>[N] by hand</dd></div><div><dt>Full record</dt><dd><a href="#">manifest.json</a></dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="assets/site.js"></script>
+</body>
+</html>

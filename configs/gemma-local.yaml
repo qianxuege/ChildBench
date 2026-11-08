@@ -1,0 +1,32 @@
+# Gemma running on your own machine through an OpenAI-compatible server.
+#
+# Option A, Ollama (easiest):   ollama pull gemma3:270m      (and gemma3:4b for the judge/child)
+#                               base_url http://localhost:11434/v1
+# Option B, the Drive folder:   download gemma-3-270m-it/ (all files) and use backend hf_local
+#                               with path: models/gemma-3-270m-it   (pip install -e ".[local]")
+#
+# IMPORTANT: gemma-3-270m is tiny. It is fine as a weak chatbot under test and for
+# smoke tests, but it cannot follow the judge's JSON tool protocol reliably or play
+# a convincing child. Use a larger model (gemma3:4b / 12b / 27b, or Gemini with
+# Ran's credit) for child_generator, child_reviewer and judge.
+run_name: gemma-local
+rubric: rubrics/v0.yaml
+scenarios: scenarios/**/*.yaml
+seeds: [1]
+guardrails: {enforce: true, allow_unreviewed: true, audit_rate: 0.10}
+temperatures: {child: 0.9, agent: 0.7, judge: 0.0}
+roles:
+  child_generator: {backend: openai_compat, base_url: "http://localhost:11434/v1", model: "gemma3:4b"}
+  child_reviewer:  {backend: openai_compat, base_url: "http://localhost:11434/v1", model: "gemma3:4b"}
+  judge:           {backend: openai_compat, base_url: "http://localhost:11434/v1", model: "gemma3:12b"}
+  # Gemini via Ran's credit instead (judge from a different family than the chatbot is better):
+  # judge: {backend: openai_compat, base_url: "https://generativelanguage.googleapis.com/v1beta/openai/",
+  #         model: "[current Gemini model id]", api_key_env: GEMINI_API_KEY}
+agents:
+  - name: gemma-270m
+    model: {backend: openai_compat, base_url: "http://localhost:11434/v1", model: "gemma3:270m"}
+  # - name: gemma-270m-drive
+  #   model: {backend: hf_local, path: models/gemma-3-270m-it}
+  # - name: gemini
+  #   model: {backend: openai_compat, base_url: "https://generativelanguage.googleapis.com/v1beta/openai/",
+  #           model: "[current Gemini model id]", api_key_env: GEMINI_API_KEY}

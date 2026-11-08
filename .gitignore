@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.egg-info/
+.pytest_cache/
+models/
+results/*/labeling/blind_key.csv
+results/LATEST
+.venv/

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scenarios · ChildBench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Instrument+Sans:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-page="scenarios">
+<header class="site-head" id="site-head"></header>
+<main class="wrap">
+  <div class="page-top">
+    <div>
+      <h1>Scenarios</h1>
+      <p class="lede">Each scenario is a short script for one pretend child: age group, what they bring up on which turn, backup lines, when to stop, and an approved content level. Each one is rewritten for every age group, and checked by two teammates and a child-development expert.</p>
+    </div>
+    <a class="btn code" href="https://github.com/qianxuege/ChildBench/pulls">+ add a scenario (pull request)</a>
+  </div>
+  <div class="scn-grid">
+    <aside>
+      <div class="mono dim" style="font-size:12.5px">situation</div>
+      <div class="side-list" id="situation-list"></div>
+      <div class="mono dim" style="font-size:12.5px;margin-bottom:8px">age group · <span class="amber">bands pending Ran</span></div>
+      <div class="tabs" id="band-tabs"></div>
+      <div class="card" style="margin-top:24px;padding:16px">
+        <div class="mono dim" style="font-size:12.5px;line-height:1.3;margin-bottom:8px">coverage · situation × age group</div>
+        <table id="coverage" style="font-size:13px">
+          <thead><tr><th style="padding:6px"></th><th style="padding:6px">3–5</th><th style="padding:6px">6–8</th><th style="padding:6px">9–12</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p style="font-size:12.5px">Some scenarios are held back from tuning so the pretend child isn’t overfit.</p>
+      </div>
+    </aside>
+    <div>
+      <div class="section-head" style="margin-bottom:12px"><span class="body" id="scn-count"></span><span class="mono amber" style="font-size:12.5px">draft examples · replace with team set</span></div>
+      <div id="scn-list"></div>
+    </div>
+  </div>
+</main>
+<script src="assets/site.js"></script>
+</body>
+</html>
