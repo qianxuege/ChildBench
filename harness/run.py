@@ -15,6 +15,7 @@ import json
 import platform
 import subprocess
 import sys
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -79,6 +80,76 @@ def coverage(personas: dict[str, Persona]) -> str:
     return "\n".join(lines)
 
 
+BASELINE_SECONDS_PER_CONVERSATION = 70  # one-scenario local trial on a 24 GB Mac (README, Known problems)
+
+
+def model_usage(models) -> dict[str, int]:
+    """Sum the token counters of every model that keeps them (mock models don't)."""
+    total = {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0}
+    for m in models:
+        if hasattr(m, "usage"):
+            for k, v in m.usage().items():
+                total[k] += v
+    return total
+
+
+def usage_delta(after: dict[str, int], before: dict[str, int]) -> dict[str, int]:
+    return {k: after[k] - before.get(k, 0) for k in after}
+
+
+def preflight(models) -> list[str]:
+    """Ask each distinct server/model pair whether it's ready. Returns error messages (empty = all ready)."""
+    errors, seen = [], set()
+    for m in models:
+        key = (getattr(m, "base_url", None), m.model_id)
+        if not hasattr(m, "preflight") or key in seen:
+            continue
+        seen.add(key)
+        err = m.preflight()
+        if err:
+            errors.append(err)
+    return errors
+
+
+def past_timing(results_dir: Path, run_name: str) -> dict | None:
+    """Average timing from earlier runs of the same config, newest first, for `--estimate`."""
+    talk, score, runs = [], [], 0
+    for mf in sorted(results_dir.glob(f"*_{run_name}_*/manifest.json"), reverse=True):
+        try:
+            t = json.loads(mf.read_text()).get("timing")
+        except (OSError, json.JSONDecodeError):
+            continue
+        if not t or not t.get("conversations"):
+            continue
+        runs += 1
+        talk.append(t["talk_seconds"] / t["conversations"])
+        score.append(t["score_seconds"] / t["conversations"])
+        if runs == 3:
+            break
+    if not runs:
+        return None
+    return {"runs": runs, "talk": sum(talk) / runs, "score": sum(score) / runs}
+
+
+def estimate(cfg: dict, n_personas: int, n_seeds: int, results_dir: Path) -> None:
+    n_agents = len(cfg["agents"])
+    n = n_personas * n_agents * n_seeds
+    has_rev = bool(cfg["roles"].get("child_reviewer"))
+    print(f"\nestimate: {n_personas} scenarios x {n_agents} chatbots x {n_seeds} seeds = {n} conversations")
+    print(f"  model calls, at most ~{n * 6 * (2 + (1 if has_rev else 0)) + n * 14} (turn cap 6, judge cap 14 steps)")
+    name = cfg.get("run_name", "run")
+    past = past_timing(results_dir, name)
+    if past:
+        total = n * (past["talk"] + past["score"])
+        print(f"  time, from the last {past['runs']} '{name}' run(s): ~{past['talk']:.0f} s talking + "
+              f"~{past['score']:.0f} s scoring per conversation = about {total / 60:.0f} min")
+    else:
+        total = n * BASELINE_SECONDS_PER_CONVERSATION
+        print(f"  time: no earlier '{name}' run to learn from; at the baseline's ~{BASELINE_SECONDS_PER_CONVERSATION} s per "
+              f"conversation, talking takes about {total / 60:.0f} min, plus scoring")
+    print("  cost: not estimated yet (A13 adds per-model prices); local Ollama runs are free")
+
+
 def converse(persona: Persona, agent: AgentUnderTest, child: ChildSimulator, ctx: RunContext, seed: int) -> Transcript:
     tid = f"{persona.id}__{agent.name}__s{seed}"
     history: list[Turn] = []
@@ -121,6 +192,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--seeds", nargs="*", type=int)
     ap.add_argument("--check-only", action="store_true", help="validate scenarios and rubric, then exit")
     ap.add_argument("--out", default="results")
+    ap.add_argument("--estimate", action="store_true", help="print conversation count and expected time, then exit")
+    ap.add_argument("--skip-preflight", action="store_true", help="don't check that model servers are up before running")
     args = ap.parse_args(argv)
     load_dotenv(REPO_ROOT / ".env")
 
@@ -148,36 +221,57 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     seeds = args.seeds or cfg.get("seeds", [1])
+    if args.estimate:
+        estimate(cfg, len(personas), len(seeds), REPO_ROOT / args.out)
+        return 0
     roles, temps, demo = cfg["roles"], cfg.get("temperatures", {}), cfg.get("demo", {})
+    gen = make_model(roles["child_generator"])
+    rev = make_model(roles["child_reviewer"]) if roles.get("child_reviewer") else None
+    judge_model = make_model(roles["judge"])
+    agent_models = [make_model(a["model"]) for a in cfg["agents"]]
+    all_models = [m for m in [gen, rev, judge_model, *agent_models] if m is not None]
+    if not args.skip_preflight:
+        problems = preflight(all_models)
+        if problems:
+            raise SystemExit("preflight failed, nothing was run:\n  - " + "\n  - ".join(problems))
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     run_id = f"{stamp}_{cfg.get('run_name', 'run')}_{uuid.uuid4().hex[:4]}"
     out_dir = REPO_ROOT / args.out / run_id
     ctx = RunContext(run_id, out_dir, rubric, personas, enforce=g.get("enforce", True),
                      audit_rate=g.get("audit_rate", 0.10), seed=cfg.get("audit_seed", 0))
 
-    gen = make_model(roles["child_generator"])
-    rev = make_model(roles["child_reviewer"]) if roles.get("child_reviewer") else None
-    judge_model = make_model(roles["judge"])
     child = ChildSimulator(gen, rev, ctx, temperature=temps.get("child", 0.9), demo_adult_first_draft=demo.get("adult_first_draft", False))
     judge = Judge(judge_model, ctx, temperature=temps.get("judge", 0.0), demo_bad_quote=demo.get("bad_quote", False))
-    agents = [AgentUnderTest(a["name"], make_model(a["model"]), system_prompt=a.get("system_prompt"),
+    agents = [AgentUnderTest(a["name"], m, system_prompt=a.get("system_prompt"),
                              temperature=temps.get("agent", 0.7), mock_behavior=a["model"].get("behavior"))
-              for a in cfg["agents"]]
+              for a, m in zip(cfg["agents"], agent_models)]
 
     n = len(personas) * len(agents) * len(seeds)
     print(f"\nrun {run_id}: {len(personas)} scenarios x {len(agents)} chatbots x {len(seeds)} seeds = {n} conversations")
     print(f"max model calls ~ {n * 6 * (2 + (1 if rev else 0)) + n * 14} (turn cap 6, judge cap 14 steps)")
+    per_conv: dict[str, dict] = {}
+    talk_start = time.perf_counter()
     for p in personas.values():
         for a in agents:
             for s in seeds:
+                t0, u0 = time.perf_counter(), model_usage(all_models)
                 t = converse(p, a, child, ctx, s)
+                secs = time.perf_counter() - t0
+                per_conv[t.transcript_id] = {"talk_seconds": round(secs, 2),
+                                             "talk_tokens": usage_delta(model_usage(all_models), u0)}
                 ctx.transcripts[t.transcript_id] = t
                 ctx.write("transcripts.jsonl", t)
-                print(f"  talked   {t.transcript_id:<40} {len(t.turns) // 2} turns · {t.ended_because}")
+                print(f"  talked   {t.transcript_id:<40} {len(t.turns) // 2} turns · {t.ended_because} · {secs:.0f} s")
+    talk_seconds = time.perf_counter() - talk_start
+    score_start = time.perf_counter()
     for tid, t in ctx.transcripts.items():
+        t0, u0 = time.perf_counter(), model_usage(all_models)
         rec = judge.score(t, seed=t.seed)
+        secs = time.perf_counter() - t0
+        per_conv[tid].update({"score_seconds": round(secs, 2), "score_tokens": usage_delta(model_usage(all_models), u0)})
         status = rec.overall + (" (provisional)" if rec.provisional else "") if rec else "JUDGE FAILED"
-        print(f"  scored   {tid:<40} {status}")
+        print(f"  scored   {tid:<40} {status} · {secs:.0f} s")
+    score_seconds = time.perf_counter() - score_start
 
     summary = summarize(ctx.transcripts, ctx.scored, ctx.queued)
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2))
@@ -192,6 +286,13 @@ def main(argv: list[str] | None = None) -> int:
         "guardrails": {"enforce": ctx.enforce, "audit_rate": ctx.audit_rate},
         "counts": {"transcripts": len(ctx.transcripts), "scored": len(ctx.scored), "review_items": len(ctx.queued),
                    "tool_calls": ctx.tool_calls},
+        "timing": {"conversations": len(ctx.transcripts), "talk_seconds": round(talk_seconds, 2),
+                   "score_seconds": round(score_seconds, 2), "per_conversation": per_conv},
+        "tokens": {"total": model_usage(all_models),
+                   "by_role": {"child_generator": model_usage([gen]), "child_reviewer": model_usage([rev] if rev else []),
+                               "judge": model_usage([judge_model]),
+                               "agents": {a.name: model_usage([a.model]) for a in agents}},
+                   "note": "from each response's usage; 0 for mock models"},
         "provider_data_retention": cfg.get("provider_data_retention", "[record each provider's retention/training settings before publishing]"),
     }
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, default=str))

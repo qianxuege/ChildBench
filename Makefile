@@ -1,4 +1,4 @@
-.PHONY: install test mock gemma local check labels site
+.PHONY: install test mock gemma local check labels site run estimate
 
 install:
 	pip install -e ".[dev]"
@@ -29,3 +29,13 @@ labels:
 # Public website, static files only: http://127.0.0.1:11510
 site:
 	python -m http.server 11510 --bind 127.0.0.1 --directory site
+
+# A real run from any config. Extra flags go in ARGS, e.g. `make run CONFIG=configs/pilot.yaml ARGS="--only dist-003 --seeds 1"`.
+run:
+	@test -n "$(CONFIG)" || (echo "usage: make run CONFIG=configs/pilot.yaml [ARGS=...]" && exit 1)
+	python -m harness.run --config $(CONFIG) $(ARGS)
+
+# Conversation count and expected time for a config, without running anything.
+estimate:
+	@test -n "$(CONFIG)" || (echo "usage: make estimate CONFIG=configs/pilot.yaml [ARGS=...]" && exit 1)
+	python -m harness.run --config $(CONFIG) --estimate $(ARGS)

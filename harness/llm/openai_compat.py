@@ -31,6 +31,27 @@ class OpenAICompatModel:
         self.base_url = base_url or "https://api.openai.com/v1"
         # Thinking counts against max_tokens, so a thinking model can return empty text. "none" turns it off.
         self.reasoning_effort = reasoning_effort
+        # Running totals from each response's `usage`; run.py reads them to record tokens per conversation.
+        self.calls = 0
+        self.prompt_tokens = 0
+        self.completion_tokens = 0
+
+    def usage(self) -> dict[str, int]:
+        return {"calls": self.calls, "prompt_tokens": self.prompt_tokens, "completion_tokens": self.completion_tokens}
+
+    def preflight(self, timeout: float = 5.0) -> Optional[str]:
+        """Check the server answers and serves this model. Returns an error message, or None if it's ready."""
+        client = self.client.with_options(timeout=timeout, max_retries=0)
+        try:
+            served = {m.id for m in client.models.list()}
+        except Exception as e:
+            local = any(h in self.base_url for h in ("127.0.0.1", "localhost", "[::1]"))
+            hint = " Is `ollama serve` running on that port?" if local else " Check the URL and the API key in .env."
+            return f"can't reach {self.base_url} for model {self.model_id}: {type(e).__name__}.{hint}"
+        if served and self.model_id not in served:
+            return (f"{self.base_url} doesn't serve model {self.model_id} (it has: {', '.join(sorted(served)) or 'none'}). "
+                    f"For Ollama: `ollama pull {self.model_id}`.")
+        return None
 
     def complete(
         self,
@@ -54,5 +75,10 @@ class OpenAICompatModel:
                 resp = self.client.chat.completions.create(**kwargs)
             else:
                 raise ModelError(f"{self.model_id} @ {self.base_url}: {e}") from e
+        self.calls += 1
+        u = getattr(resp, "usage", None)
+        if u is not None:
+            self.prompt_tokens += getattr(u, "prompt_tokens", 0) or 0
+            self.completion_tokens += getattr(u, "completion_tokens", 0) or 0
         text = resp.choices[0].message.content or ""
         return text.strip()

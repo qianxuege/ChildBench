@@ -511,7 +511,7 @@ Free apps, relay (A11)┘
 
 Scoring needs no new code. `run.py` already sends every transcript to the judge at the end of the run, whatever backend produced it, so Ollama and relay conversations are scored the same way. A11 only has to make sure incomplete relay conversations are skipped.
 
-**A1 · Ollama runs** · Owner A · Needs: — · Status: todo
+**A1 · Ollama runs** · Owner A · Needs: — · Status: done
 
 - `configs/pilot.yaml`: the 7 existing scenarios, `gemma3:270m` and `gemma4:e4b` (thinking off) as chatbots, `gemma4:e4b` as the child with **no reviewer**, `qwen3.5:9b` as the judge, 2 seeds.
 - `make run CONFIG=...`, and `make estimate CONFIG=...` (conversation count and expected time).
