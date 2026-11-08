@@ -6,3 +6,11 @@ models/
 results/*/labeling/blind_key.csv
 results/LATEST
 .venv/
+.claude/settings.local.json
+.claude/pr/
+.claude/launch.json
+results/*_mock_*/
+# Guardrails-off runs: commit numbers only, never text (public repo; see RFC 0010 A6)
+results/*-guardrails-off_*/*.jsonl
+!results/*-guardrails-off_*/guardrail_log.jsonl
+results/*-guardrails-off_*/labeling/

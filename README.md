@@ -169,7 +169,7 @@ Fix before publishing the site:
 ## Decisions on this branch to review
 
 - **Thinking is off** for `gemma4:e4b` as a chatbot, so it isn't quite being tested as shipped, and that changes its replies. The run labels it `gemma4-e4b-nothink`. Decide whether official runs should raise `max_tokens` instead. The chatbot's replies are still never edited.
-- **Local models instead of hosted ones.** The site plans for Claude, ChatGPT and Gemini, while the local config tests Gemma. RFC 0010 settles this: the benchmark runs on the developer APIs, plus a hand-run free-app sample, and local models stay for free testing.
+- **Local models instead of hosted ones.** The site plans for Claude, ChatGPT and Gemini, while the local config tests Gemma. RFC 0010's plan: the pilot runs on Ollama plus a hand-run free-app sample, and the hosted provider for the full benchmark (Gemini API or OpenRouter) is decided with Ran on Nov 11.
 - **Qwen is the preferred local model so far**, based on Adam's trial. It's only been used as the judge, and it hasn't been tried as the child or as a chatbot.
 
 ## Next steps
