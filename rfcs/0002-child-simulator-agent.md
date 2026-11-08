@@ -6,9 +6,11 @@
 - **Tech requirements addressed:** 1, 2, 3, 5, 6
 - **Related RFCs:** 0001, 0004, 0005, 0006, 0009
 
+> **Update, Nov 7:** [RFC 0010](0010-backend-implementation-plan.md) takes priority where it differs. The child becomes one tool-calling agent that ends each turn with `submit_child_line`, and the reviewer is optional (off for the pilot). Scenarios now cover age groups from about 4 to 17. The CHILDES reference set below serves only the youngest group (`early`).
+
 ## Summary
 
-Two LLM agents play a child under six in short multi-turn conversations: a **generator** drafts each child utterance and a **reviewer** checks it. Deterministic tools check vocabulary against a child-speech corpus and check content severity. A plain-code orchestrator runs scenarios x agents x seeds and routes problem cases to a human review queue.
+Two LLM agents play a child in short multi-turn conversations: a **generator** drafts each child utterance and a **reviewer** checks it. Deterministic tools check vocabulary against a child-speech corpus and check content severity. A plain-code orchestrator runs scenarios x agents x seeds and routes problem cases to a human review queue.
 
 ## Motivation
 
@@ -146,7 +148,7 @@ Caveats to state:
 - Topic words a persona needs ("secret", "owie", "stranger") may be rare in the corpus; each persona can whitelist a few keywords so they are not penalized.
 - The Kuperman norms are adult retrospective ratings and are least precise for the earliest-learned words; that is why the CHILDES word list comes first.
 - The reference set covers relatively few children per age band and skews toward the families in classic corpora; report the counts.
-- The scope is children under six (ages 3-5). If you want to include six-year-olds, confirm with Ran and add a 6;0-6;11 reference band.
+- CHILDES is mostly children under six, so these reference bands cover only the `early` age group (RFC 0010). Add a 6;0-6;11 band if the corpus has enough six-year-olds. The `primary` and `secondary` groups have no comparable corpus, so their realism rests on scenario review and the length check.
 
 ## Alternatives considered
 
@@ -162,7 +164,7 @@ Acceptance: 90% of sampled simulator utterances pass the corpus lint; mean human
 
 - LLMs write "cute child" caricatures. Mitigation: lint plus human review.
 - Which simulator model? Try Claude and Gemini; avoid using the same model as the agent under test where possible.
-- **Ask Ran:** acceptable wording for abuse and distress scenarios; which ages within 3-5 to include.
+- **Ask Ran (Nov 11):** acceptable wording for abuse and distress scenarios; which age groups to include, and whether ages 3–4 stay.
 
 ## Milestones
 
@@ -173,6 +175,6 @@ Acceptance: 90% of sampled simulator utterances pass the corpus lint; mean human
 | Nov 5 - 7 | Vocabulary list, Kuperman lookup, adult giveaway list, thresholds calibrated on held-out children (about 1.5 days) |
 | Nov 8 | Lint + ceiling tools, reviewer, review queue working |
 | Nov 9 - 11 | Pilot run; read flagged cases; tune thresholds |
-| Nov 12 | Show Ran sample transcripts and lint stats |
+| Nov 11 | Show Ran sample transcripts and lint stats |
 | Nov 22 | Full run across agents, two-simulator comparison |
 | Dec 2 | Fixes, final rerun |

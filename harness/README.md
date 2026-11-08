@@ -78,5 +78,5 @@ use Gemma 4B+ or Gemini (Ran's credit, `GEMINI_API_KEY` in `.env`) for the other
 3. **Second reviewer on every scenario**, then set `allow_unreviewed: false`.
 4. Publishing scan (run `check_content_ceiling` on every turn before the site shows it).
 5. Site export from `summary.json`, judge test-retest (3 runs), length-bias check, two-judge option.
-6. Import for the hand-run free-app spot check (paste a Temporary/Incognito chat, score it the same way).
+6. Free-app spot check through a manual relay (`backend: manual`): the harness hands each checked child line to a person to paste into the app, and reads the reply back from the clipboard. This replaces the paste-in import idea. See RFC 0010, section 4 and work package A11.
 7. `skills/` folder (RFC 0007), GitHub Actions, SQLite build, async parallel runs.

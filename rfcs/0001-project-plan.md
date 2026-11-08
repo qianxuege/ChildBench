@@ -34,6 +34,7 @@ We originally wanted to test real child-facing products such as [Curio](https://
 | Skill folder | [0007](0007-skill-folder.md) |
 | Situations, rules, and rubric | [0008](0008-referral-rules-and-rubric.md) |
 | Technology stack, repository, data flow, and site | [0009](0009-technology-stack-and-repo.md) |
+| Backend plan, age groups, controls, two-person split (takes priority over 0002 to 0009 where they differ) | [0010](0010-backend-implementation-plan.md) |
 
 ### Design principles
 
@@ -70,19 +71,20 @@ See 0002 (simulator realism) and 0003 (judge agreement). End-to-end acceptance t
 
 ## Pilot definition
 
-The pilot is the first end-to-end run, finished by **Nov 12**:
+The pilot is the first end-to-end run, finished by **Nov 11**:
 
 - Pipeline coded: orchestrator, simulator, 2 agent adapters, judge, review queue, tools.
-- About 10 scenarios (2 per situation), 2 agents under test, 2 seeds each.
+- 14 scenario files: 5 core scenarios (one per situation) and 2 controls, each written for two age groups (`early` and `primary`, RFC 0010). 2 agents under test, 2 seeds each, for 56 conversations. The run is on Nov 9.
 - About 20 transcripts labeled by two teammates; preliminary judge-vs-human kappa (with wide uncertainty, stated as such).
-- Meeting with Ran on Nov 12 to discuss preliminary results and decide rubric wording, content level, and expansion.
+- Meeting with Ran on Nov 11 to discuss preliminary results and decide rubric wording, content level, age groups, controls and expansion.
 
 ## Risks and open questions
 
 - Simulator quality bounds benchmark validity (see 0002).
 - API cost: need a budget estimate per full run. Ran has Gemini credit and possibly Claude access; no GPT credit.
 - Does Ran want the benchmark to support agents with tool use, or chat only? **Ask Ran.**
-- Ran's HAI '26 paper is presented Nov 16-19 in Osaka, so she may be unavailable that week. Plan Ran touchpoints for Nov 12 and Nov 22.
+- Ran's HAI '26 paper is presented Nov 16-19 in Osaka, so she may be unavailable that week. Plan Ran touchpoints for Nov 11 and Nov 22.
+- **Scope widened to age groups.** The paper focuses on young children; the client now wants scenarios rewritten for age groups up to 17 (RFC 0010). **Ask Ran on Nov 11** which groups to include, whether ages 3–4 stay, and who counts as the trusted adult and what content level applies for older children.
 
 ## Milestones
 
@@ -90,9 +92,9 @@ The pilot is the first end-to-end run, finished by **Nov 12**:
 |---|---|
 | Oct 26 - Nov 1 | Define: persona template, rubric v0 (RFC 0008), repo skeleton, API keys, hello-world loop. Progress update with Ran. |
 | Nov 2 - Nov 8 | Build: orchestrator, simulator, judge, tools, adapters, pilot scenarios. |
-| Nov 9 - Nov 11 | Pilot run, testing, labeling ~20 transcripts, one-page preliminary results. |
-| **Nov 12** | **Pilot complete. Meet Ran with preliminary results.** |
-| Nov 13 - Nov 22 | Scale to ~50 scenarios, full run, guardrail ablation, judge validation. Send sample to Ran Nov 22. |
+| Nov 9 - Nov 10 | Pilot run (Nov 9), testing, labeling ~20 transcripts, one-page preliminary results. |
+| **Nov 11** | **Pilot complete. Meet Ran with preliminary results.** |
+| Nov 12 - Nov 22 | Scale to ~75 scenario files (~25 core scenarios and controls × age groups), full run Nov 20, guardrail ablation, judge validation. Send sample to Ran Nov 22. |
 | Nov 23 - Nov 29 | Thanksgiving week (Nov 26): no new runs; site, leaderboard, writing. |
 | Nov 30 - Dec 2 | Code and data freeze, final rerun, rehearsals. |
 | Dec 3 | Final presentation. |
