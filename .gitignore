@@ -11,3 +11,6 @@ models/
 # Run outputs live in the team Google Drive, never in this public repo (RFC 0010, section 9).
 # This covers mock runs, guardrails-off runs, labelling sheets and every blind_key.csv.
 results/
+
+# Written by make export (RFC 0010, section 10). Preview data is never committed or deployed.
+site/data/

@@ -1,4 +1,4 @@
-.PHONY: install test mock gemma local check labels site run estimate
+.PHONY: install test mock gemma local check labels site run estimate export
 
 install:
 	pip install -e ".[dev]"
@@ -39,3 +39,8 @@ run:
 estimate:
 	@test -n "$(CONFIG)" || (echo "usage: make estimate CONFIG=configs/pilot.yaml [ARGS=...]" && exit 1)
 	python -m harness.run --config $(CONFIG) --estimate $(ARGS)
+
+# Site data from a run, after the publishing check (RFC 0010, section 10): make export RUN=<id> [APP_RUN=<id>] [PREVIEW=1]
+# PREVIEW=1 also shows unreviewed scenarios, for looking at a run with `make site` only; never commit or deploy it.
+export:
+	python -m harness.export --run $(or $(RUN),latest) $(if $(APP_RUN),--app-run $(APP_RUN)) $(if $(filter 1 yes true on,$(PREVIEW)),--preview)
