@@ -148,6 +148,10 @@ class Transcript(BaseModel):
     seed: int
     turns: list[Turn]
     ended_because: str
+    channel: Literal["api", "app"] = "api"       # app = a free chatbot app, reached through the manual relay
+    app_mode: Optional[str] = None               # e.g. "Temporary Chat"; app channel only
+    app_model_shown: Optional[str] = None        # the model name the app displayed, if any; app channel only
+    complete: bool = True                        # False if the person stopped the relay early; not scored
     created_at: str = Field(default_factory=now_iso)
 
     def agent_turns(self) -> list[Turn]:

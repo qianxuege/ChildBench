@@ -29,6 +29,7 @@ from .agents.child_simulator import ChildSimulator
 from .agents.judge import Judge
 from .context import RunContext
 from .llm import ModelError, make_model
+from .llm.manual import ManualModel, ManualStop
 from .schemas import SITUATION_CODE, Persona, Rubric, Transcript, Turn
 from .summary import print_table, summarize
 from .tools.referral import detect_referral
@@ -81,6 +82,7 @@ def coverage(personas: dict[str, Persona]) -> str:
 
 
 BASELINE_SECONDS_PER_CONVERSATION = 70  # one-scenario local trial on a 24 GB Mac (README, Known problems)
+RELAY_MINUTES_PER_CONVERSATION = 5      # a person relaying to a free app (RFC 0010, section 7)
 
 
 def model_usage(models) -> dict[str, int]:
@@ -143,6 +145,9 @@ def estimate(cfg: dict, n_personas: int, n_seeds: int, results_dir: Path) -> Non
         total = n * (past["talk"] + past["score"])
         print(f"  time, from the last {past['runs']} '{name}' run(s): ~{past['talk']:.0f} s talking + "
               f"~{past['score']:.0f} s scoring per conversation = about {total / 60:.0f} min")
+    elif any(a["model"].get("backend") == "manual" for a in cfg["agents"]):
+        print(f"  time: relay conversations are run by a person, about {RELAY_MINUTES_PER_CONVERSATION} min each, "
+              f"so about {n * RELAY_MINUTES_PER_CONVERSATION} min of relaying, plus scoring")
     else:
         total = n * BASELINE_SECONDS_PER_CONVERSATION
         print(f"  time: no earlier '{name}' run to learn from; at the baseline's ~{BASELINE_SECONDS_PER_CONVERSATION} s per "
@@ -156,13 +161,30 @@ def converse(persona: Persona, agent: AgentUnderTest, child: ChildSimulator, ctx
     pushed_back = False
     last_beat = persona.beats[-1].turn
     ended = "turn limit"
+    complete = True
+    relay = isinstance(agent.model, ManualModel)
     for turn in range(1, persona.max_turns + 1):
-        text, used_fallback, attempts, phase = child.utterance(persona, tid, turn, history, seed, pushed_back)
-        if phase == "pushback":
-            pushed_back = True
-        history.append(Turn(turn=turn, speaker="child", text=text, used_fallback=used_fallback, attempts=attempts))
         try:
+            text, used_fallback, attempts, phase = child.utterance(persona, tid, turn, history, seed, pushed_back)
+            if phase == "pushback":
+                pushed_back = True
+            history.append(Turn(turn=turn, speaker="child", text=text, used_fallback=used_fallback, attempts=attempts))
             reply = agent.reply(history, seed)
+        except KeyboardInterrupt:
+            if not relay:
+                raise   # automated runs: Ctrl+C quits at once, as before
+            # Relay runs: keep what's finished. Save this conversation as incomplete, skip the rest, still score.
+            print("\n  Ctrl+C: this conversation is saved as incomplete, the rest of the run is skipped, and finished "
+                  "conversations are scored now. Press Ctrl+C again to quit at once.")
+            if history and history[-1].speaker == "child" and history[-1].turn == turn:
+                history.pop()   # the app never answered this line
+            ended, complete = "stopped with Ctrl+C", False
+            agent.model.quit_requested = True
+            break
+        except ManualStop:
+            history.pop()   # the person never sent this child line to the app
+            ended, complete = "stopped by the person relaying", False
+            break
         except ModelError as e:
             ended = f"agent error: {e}"
             break
@@ -180,9 +202,12 @@ def converse(persona: Persona, agent: AgentUnderTest, child: ChildSimulator, ctx
                 continue  # the child resists once on the next turn
             ended = "referred again after push-back" if pushed_back else "referred"
             break
+    manual = agent.model if isinstance(agent.model, ManualModel) else None
     return Transcript(transcript_id=tid, run_id=ctx.run_id, scenario_id=persona.id, situation=persona.situation,
                       child_age=persona.child_age, agent_name=agent.name, agent_model=agent.model_id, seed=seed,
-                      turns=history, ended_because=ended)
+                      turns=history, ended_because=ended, complete=complete,
+                      channel="app" if manual else "api", app_mode=manual.mode if manual else None,
+                      app_model_shown=manual.model_shown if manual else None)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -228,7 +253,12 @@ def main(argv: list[str] | None = None) -> int:
     gen = make_model(roles["child_generator"])
     rev = make_model(roles["child_reviewer"]) if roles.get("child_reviewer") else None
     judge_model = make_model(roles["judge"])
+    for role, spec in roles.items():
+        if spec and spec.get("backend") == "manual":
+            raise SystemExit(f"roles.{role} can't use backend: manual. The relay is only for chatbots under test.")
     agent_models = [make_model(a["model"]) for a in cfg["agents"]]
+    if any(isinstance(m, ManualModel) for m in agent_models) and not g.get("enforce", True):
+        raise SystemExit("guardrails.enforce must be true for relay runs: an unchecked child line would reach a real app.")
     all_models = [m for m in [gen, rev, judge_model, *agent_models] if m is not None]
     if not args.skip_preflight:
         problems = preflight(all_models)
@@ -250,18 +280,25 @@ def main(argv: list[str] | None = None) -> int:
     print(f"\nrun {run_id}: {len(personas)} scenarios x {len(agents)} chatbots x {len(seeds)} seeds = {n} conversations")
     print(f"max model calls ~ {n * 6 * (2 + (1 if rev else 0)) + n * 14} (turn cap 6, judge cap 14 steps)")
     per_conv: dict[str, dict] = {}
+    incomplete: list[str] = []
     talk_start = time.perf_counter()
-    for p in personas.values():
-        for a in agents:
-            for s in seeds:
-                t0, u0 = time.perf_counter(), model_usage(all_models)
-                t = converse(p, a, child, ctx, s)
-                secs = time.perf_counter() - t0
-                per_conv[t.transcript_id] = {"talk_seconds": round(secs, 2),
-                                             "talk_tokens": usage_delta(model_usage(all_models), u0)}
-                ctx.transcripts[t.transcript_id] = t
-                ctx.write("transcripts.jsonl", t)
-                print(f"  talked   {t.transcript_id:<40} {len(t.turns) // 2} turns · {t.ended_because} · {secs:.0f} s")
+    plan = [(p, a, s) for p in personas.values() for a in agents for s in seeds]
+    for p, a, s in plan:
+        if isinstance(a.model, ManualModel):
+            a.model.label, a.model.max_turns = f"{p.id} · {a.name}", p.max_turns
+        t0, u0 = time.perf_counter(), model_usage(all_models)
+        t = converse(p, a, child, ctx, s)
+        secs = time.perf_counter() - t0
+        per_conv[t.transcript_id] = {"talk_seconds": round(secs, 2),
+                                     "talk_tokens": usage_delta(model_usage(all_models), u0)}
+        ctx.write("transcripts.jsonl", t)
+        if t.complete:
+            ctx.transcripts[t.transcript_id] = t   # only complete conversations are scored
+        else:
+            incomplete.append(t.transcript_id)
+        print(f"  talked   {t.transcript_id:<40} {len(t.turns) // 2} turns · {t.ended_because} · {secs:.0f} s")
+        if getattr(a.model, "quit_requested", False):
+            break   # Ctrl+C in a relay run: skip the remaining conversations, still score
     talk_seconds = time.perf_counter() - talk_start
     score_start = time.perf_counter()
     for tid, t in ctx.transcripts.items():
@@ -284,7 +321,7 @@ def main(argv: list[str] | None = None) -> int:
         "models": {"child_generator": gen.model_id, "child_reviewer": rev.model_id if rev else None,
                    "judge": judge_model.model_id, "agents": {a.name: a.model_id for a in agents}},
         "guardrails": {"enforce": ctx.enforce, "audit_rate": ctx.audit_rate},
-        "counts": {"transcripts": len(ctx.transcripts), "scored": len(ctx.scored), "review_items": len(ctx.queued),
+        "counts": {"transcripts": len(ctx.transcripts), "incomplete": incomplete, "scored": len(ctx.scored), "review_items": len(ctx.queued),
                    "tool_calls": ctx.tool_calls},
         "timing": {"conversations": len(ctx.transcripts), "talk_seconds": round(talk_seconds, 2),
                    "score_seconds": round(score_seconds, 2), "per_conversation": per_conv},
