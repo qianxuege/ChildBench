@@ -9,6 +9,7 @@ Backends:
     openai_compat  any OpenAI-compatible server: Ollama, llama.cpp, LM Studio, vLLM,
                    Gemini's OpenAI endpoint, OpenAI itself
     hf_local       load a Hugging Face model folder directly (e.g. gemma-3-270m-it)
+    manual         a person relays lines to a free chatbot app (chatbots under test only; RFC 0010, A11)
 """
 
 from __future__ import annotations
@@ -59,4 +60,9 @@ def make_model(spec: dict[str, Any]) -> ChatModel:
         from .hf_local import HFLocalModel
 
         return HFLocalModel(path=spec["path"], device=spec.get("device", "auto"))
+    if backend == "manual":
+        from .manual import Clipboard, ManualModel
+
+        return ManualModel(app=spec["app"], mode=spec.get("mode", "private chat"),
+                           clipboard=Clipboard(enabled=spec.get("clipboard", True)))
     raise ValueError(f"unknown backend: {backend}")

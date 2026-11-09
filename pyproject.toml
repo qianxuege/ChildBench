@@ -17,6 +17,7 @@ local = [
   "torch>=2.2",          # only for the hf_local backend (run Gemma straight from a folder)
   "transformers>=4.50",
 ]
+app = ["pyperclip>=1.8"]  # clipboard for the manual relay on Windows/Linux; macOS uses pbcopy/pbpaste
 dev = ["pytest>=8"]
 
 [tool.setuptools.packages.find]

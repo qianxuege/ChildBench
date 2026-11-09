@@ -70,7 +70,7 @@ Settings that matter:
 | `site/` | Public website | 0009 | 5. Site, report, deck |
 | `configs/` | Run settings: `mock`, `gemma-local`, `local` | | |
 
-`results/` holds one folder per run. Local runs are deliberately not committed on this branch. They are either mock numbers or trials with known problems.
+`results/` holds one folder per run. It's gitignored: run folders live in the team Google Drive, under their run id, never in this public repo (RFC 0010, section 9).
 
 ## How scoring works today
 

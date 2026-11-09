@@ -50,7 +50,7 @@ git switch -c wp/<id-lowercase>-<short-name> origin/main
 
 For example: `wp/a11-manual-relay`. If the branch already exists, ask whether to continue on it or start over.
 
-Then mark the issue as started (see "GitHub issue and board" below): comment `Started on branch wp/<…>.`, and set its board Status to *In Progress*.
+Then mark the issue as started (see "GitHub issue and board" below): comment `Started on branch wp/<…>.`, and set its board Status to *In progress*.
 
 ## 4. Implement
 
@@ -90,12 +90,12 @@ Then mark the issue as started (see "GitHub issue and board" below): comment `St
 
 3. Show the developer the diff summary and the note, and **ask before committing and pushing**.
 4. Once they say yes: commit, push the branch, and open a PR into `main` with the handoff note as its description, ending with `Closes #<issue>` so merging closes the issue.
-5. Update the issue: comment with the PR link and any manual step left, and set its board Status to *In Review* if the board has that option (otherwise leave it at *In Progress*; merging closes the issue).
+5. Update the issue: comment with the PR link and any manual step left. Leave the card at *In progress*; merging the PR closes the issue and the board moves it to *Done*.
 6. Tell the developer to merge the PR before anyone starts a package that needs it.
 
 ## GitHub issue and board
 
-The board is GitHub Project **4** owned by `qianxuege` ("ChildBench"). Use only what the package needs: its own issue and its own card. Never change other people's issues or cards, project settings, fields or views.
+The board is GitHub Project **4** owned by `qianxuege`, titled "Child Agent Benchmark PM Board". Its Status columns are **Backlog, Ready, In progress, Done**; there's no review column. Its built-in automations move a card to Done when its issue closes, so merging a PR that says `Closes #N` finishes the card. Use only what the package needs: its own issue and its own card. Never change other people's issues or cards, project settings, fields or views.
 
 ```bash
 # project id, Status field id and its options (cache these for the session)
@@ -110,7 +110,7 @@ gh project item-add 4 --owner qianxuege --url https://github.com/qianxuege/Child
 gh project item-edit --id <item id> --project-id <project id> --field-id <status field id> --single-select-option-id <option id>
 ```
 
-- Match the Status option by name, ignoring case (`in progress`, `in review`, `done`). If an option doesn't exist, skip that step and say so.
+- Match the Status option by name, ignoring case (`in progress`, `done`). If the board's columns have changed and an option doesn't exist, skip that step and say so.
 - If `gh` reports a missing `project` scope, skip the board steps, finish everything else, and tell the developer to run `gh auth refresh -s project`.
 - Issue comments are public. Keep them to facts: branch, PR link, checks, manual steps left. No keys, run data or child lines.
 

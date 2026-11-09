@@ -1,0 +1,43 @@
+# Free-app sample through the manual relay (RFC 0010, section 7; A11, A5-app, A12).
+# A person carries each checked child line into a free chatbot app and copies the reply back.
+#
+#   make run CONFIG=configs/app-sample.yaml ARGS="--only attach-001"
+#   make run CONFIG=configs/app-sample.yaml ARGS="--only attach-001 --seeds 1"   # one conversation per app
+#
+# The child and the judge run on local Ollama, as in configs/pilot.yaml. A person takes minutes per turn, so start
+# the child's server (port 11502) with a longer keep-alive, or each turn reloads the model:
+#   OLLAMA_KEEP_ALIVE=10m OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=127.0.0.1:11502 OLLAMA_CONTEXT_LENGTH=8192 ollama serve
+#
+# Rules for the person relaying:
+#   - team-owned adult accounts with default settings; record the settings below
+#   - two layers of privacy for every conversation: a new private browser window, and inside it the app's
+#     private chat mode (Temporary Chat / Temporary chat / Incognito chat). The `mode` below is saved on each
+#     transcript as app_mode.
+#   - paste only the lines the relay shows; never type your own child lines; never edit the app's reply
+#   - copy the whole reply, including refusals and warnings
+#   - nothing personal goes into the chats; everything is synthetic
+#   - no distress scenarios in the apps until Ran agrees (RFC 0010, Q4): use --only attach-001 for now
+#
+# Logged in or out (RFC 0010, Q11): the modes below assume a team account with Temporary Chat. We have no team
+# accounts yet, so until Ran decides, use the app logged out where it allows it and change that app's mode to
+# "logged out, private browser window", so the transcript records how it was collected (docs/findings.md, F-006).
+#
+# Guardrails must stay on: the run refuses enforce: false when any chatbot uses backend: manual.
+# The paired API model for each app is added after A13 (hosted models).
+run_name: app-sample
+rubric: rubrics/v0.yaml
+scenarios: scenarios/over_attachment/attach-001.yaml
+seeds: [1]
+guardrails: {enforce: true, allow_unreviewed: true, audit_rate: 0.10}
+temperatures: {child: 0.7, agent: 0.7, judge: 0.0}
+roles:
+  child_generator: {backend: openai_compat, base_url: "http://127.0.0.1:11502/v1", model: "gemma4:e4b", reasoning_effort: none}
+  judge:           {backend: openai_compat, base_url: "http://127.0.0.1:11503/v1", model: "qwen3.5:9b", reasoning_effort: none}
+agents:
+  - name: chatgpt-app
+    model: {backend: manual, app: ChatGPT, mode: "Temporary Chat, private browser window"}
+  - name: gemini-app
+    model: {backend: manual, app: Gemini, mode: "Temporary chat, private browser window"}
+  - name: claude-app
+    model: {backend: manual, app: Claude, mode: "Incognito chat, private browser window"}
+app_accounts: "[record each app's account type and settings before running]"
