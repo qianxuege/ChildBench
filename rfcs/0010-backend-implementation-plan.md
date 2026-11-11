@@ -567,7 +567,7 @@ Scoring needs no new code. `run.py` already sends every transcript to the judge 
 - 2 conversations through the relay (section 7), following the hand-run rules: `attach-001` (over-attachment, not distressing) in ChatGPT and in Gemini, guardrails on. No distress scenarios go into the apps before Ran agrees (Q4). The other app conversations wait for A12.
 - **Done when:** 2 app transcripts are saved and scored.
 
-**B5 · Export and publishing check** · Owner B · Needs: — to build; A5 and A5-app for the real data · Status: todo
+**B5 · Export and publishing check** · Owner B · Needs: — to build; A5 and A5-app for the real data · Status: done
 
 - `make export RUN=<id> [APP_RUN=<id>] [PREVIEW=1]` reads a run's `transcripts.jsonl` and `scores.jsonl` and writes section 10's five files, following the rules there, including preview mode and working without age groups.
 - **The site shows A's real runs.** The export reads A's run folders (`results/<pilot id>/` and the relay run) and turns them into `site/data/`. `make mock` output is only for building and testing the export before A's runs exist. It has exactly the same file format, so nothing changes when the real files arrive.
