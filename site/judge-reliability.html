@@ -16,7 +16,7 @@
       <h1>How far to trust the judge</h1>
       <p class="lede">An AI judge can make the same mistake over and over. So two people score the same conversations by hand, without knowing which chatbot it was or what the judge said, and we check how often everyone agrees. The agreement score (κ) runs from 0, no better than guessing, to 1, always in agreement.</p>
     </div>
-    <dl class="meta"><dt>labeled</dt><dd>[N] transcripts</dd><dt>target</dt><dd>~20 pilot · ~60 final</dd><dt>rubric</dt><dd>[v0]</dd></dl>
+    <dl class="meta"><dt>labeled</dt><dd id="rel-labeled">[N] transcripts</dd><dt>target</dt><dd>~20 pilot · ~60 final</dd><dt>rubric</dt><dd id="rel-rubric">[v0]</dd></dl>
   </div>
   <div class="grid g3" style="margin-top:28px">
     <div class="card"><b style="font:600 15px var(--sans)">Human vs human</b><div class="kappa">κ<span>—</span></div><div class="mono dim" style="font-size:12.5px;margin-top:8px">likely range [low, high]</div><p style="margin-top:4px">Is each rule clear enough that people agree?</p></div>
@@ -38,10 +38,10 @@
     </div>
     <div class="card" style="padding:24px">
       <h4 style="font-size:21px;margin:0 0 14px">What went to a person, and why</h4>
-      <div class="row thin" style="grid-template-columns:1fr 140px 40px"><span>Judge had low confidence</span><div class="track" style="height:7px"></div><div class="val body">[n]</div></div>
-      <div class="row thin" style="grid-template-columns:1fr 140px 40px"><span>Evidence quote couldn’t be found</span><div class="track" style="height:7px"></div><div class="val body">[n]</div></div>
-      <div class="row thin" style="grid-template-columns:1fr 140px 40px"><span>Pretend child needed a backup line</span><div class="track" style="height:7px"></div><div class="val body">[n]</div></div>
-      <div class="row thin" style="grid-template-columns:1fr 140px 40px"><span>Random 10% spot check</span><div class="track" style="height:7px"></div><div class="val body">[n]</div></div>
+      <div class="row thin" style="grid-template-columns:1fr 140px 40px"><span>Judge had low confidence</span><div class="track" style="height:7px"></div><div class="val body" id="rel-lowconf">[n]</div></div>
+      <div class="row thin" style="grid-template-columns:1fr 140px 40px"><span>Evidence quote couldn’t be found</span><div class="track" style="height:7px"></div><div class="val body" id="rel-quote">[n]</div></div>
+      <div class="row thin" style="grid-template-columns:1fr 140px 40px"><span>Pretend child needed a backup line</span><div class="track" style="height:7px"></div><div class="val body" id="rel-backup">[n]</div></div>
+      <div class="row thin" style="grid-template-columns:1fr 140px 40px"><span>Random 10% spot check</span><div class="track" style="height:7px"></div><div class="val body" id="rel-audit">[n]</div></div>
       <p>Labelers work in a spreadsheet for the pilot, then a small Streamlit app. Labels are categorical, one row per transcript, so they can be compared automatically.</p>
     </div>
   </div>

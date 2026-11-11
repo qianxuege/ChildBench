@@ -16,9 +16,9 @@
       <h1>Leaderboard</h1>
       <p class="lede">Each conversation is rated pass, borderline or fail against the checklist. We report rates per situation, not a single score, and show next to them how far to trust the judge.</p>
     </div>
-    <dl class="meta"><dt>run</dt><dd>[run_id]</dd><dt>rubric</dt><dd>[v0]</dd><dt>date</dt><dd>[DATE]</dd></dl>
+    <dl class="meta"><dt>run</dt><dd id="lb-run">[run_id]</dd><dt>rubric</dt><dd id="lb-rubric">[v0]</dd><dt>date</dt><dd id="lb-date">[DATE]</dd></dl>
   </div>
-  <div class="notice"><span><b>Results pending.</b> Rates fill in after the pilot run (Nov 12). Rows below are the planned chatbots.</span></div>
+  <div class="notice" id="lb-notice"><span><b>Results pending.</b> Rates fill in after the pilot run (Nov 12). Rows below are the planned chatbots.</span></div>
 
   <div class="panel">
     <div class="panel-head">
@@ -35,7 +35,7 @@
     <div class="divide"></div>
     <div style="display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;margin-bottom:14px"><h4>False referrals on control scenarios</h4><span class="body small">sends the child to an adult when nothing called for it · lower is better</span></div>
     <div id="false-bars"></div>
-    <div class="axis" aria-hidden="true"><span style="left:0">0</span><span style="left:50%">25</span><span style="left:100%">50%</span></div>
+    <div class="axis" id="false-axis" aria-hidden="true"><span style="left:0">0</span><span style="left:50%">25</span><span style="left:100%">50%</span></div>
   </div>
 
   <div class="panel">
@@ -93,13 +93,25 @@
       <div class="card" style="padding:26px 24px">
         <h4 style="font-size:21px;margin:0">What was run</h4>
         <dl class="facts">
-          <div><dt>Scenarios</dt><dd>[N] + [N] controls</dd></div><div><dt>Age groups</dt><dd>[bands]</dd></div>
-          <div><dt>Seeds per scenario</dt><dd>[N]</dd></div><div><dt>Max turns</dt><dd>6</dd></div>
-          <div><dt>Pretend-child model</dt><dd>[MODEL]</dd></div><div><dt>Judge models</dt><dd>[MODEL], [MODEL]</dd></div>
-          <div><dt>Free-app spot check</dt><dd>[N] by hand</dd></div><div><dt>Full record</dt><dd><a href="#">manifest.json</a></dd></div>
+          <div><dt>Scenarios</dt><dd id="run-scenarios">[N] + [N] controls</dd></div><div><dt>Age groups</dt><dd id="run-ages">[bands]</dd></div>
+          <div><dt>Seeds per scenario</dt><dd id="run-seeds">[N]</dd></div><div><dt>Max turns</dt><dd id="run-turns">6</dd></div>
+          <div><dt>Pretend-child model</dt><dd id="run-child">[MODEL]</dd></div><div><dt>Judge models</dt><dd id="run-judges">[MODEL], [MODEL]</dd></div>
+          <div><dt>Free-app spot check</dt><dd id="run-apps">[N] by hand</dd></div><div><dt>Full record</dt><dd id="run-record"><a href="#">manifest.json</a></dd></div>
         </dl>
       </div>
     </div>
+  </section>
+
+  <section id="app-sample" hidden style="padding-top:40px">
+    <div class="section-head"><h3>Free-app spot check</h3><span class="mono small dim" id="app-meta"></span></div>
+    <p class="body small" id="app-note" style="margin:0 0 14px;max-width:780px"></p>
+    <div class="table-box">
+      <table id="app-table">
+        <thead><tr><th>app · private mode</th><th>model the app showed</th><th>scenario</th><th>date</th><th>overall</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="body small" style="margin:14px 0 0">Run by hand through the relay and scored like every other conversation. Kept apart from the rates above, which come from the developer APIs.</p>
   </section>
 </main>
 <script src="assets/site.js"></script>

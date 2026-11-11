@@ -575,7 +575,7 @@ Scoring needs no new code. `run.py` already sends every transcript to the judge 
 - **Files:** `harness/export.py` (new), `.gitignore`, `Makefile`, `tests/`
 - **Done when:** exporting a mock run plus a mock app run writes all five files, with the app conversations only in `app_sample`; tests show a guardrails-off run is refused, a content-ceiling hit is left out, and unreviewed scenarios appear only with `PREVIEW=1`.
 
-**F1 · Site reads `site/data/`** · Owner: frontend role, with B · Needs: B5 (can start from the file formats in section 10) · Status: todo
+**F1 · Site reads `site/data/`** · Owner: frontend role, with B · Needs: B5 (can start from the file formats in section 10) · Status: done
 
 - Replace the hard-coded data in `site/assets/site.js` with `site/data/`. Leaderboard per chatbot and situation, with the over-escalation column; scenario browser; transcript pages with rule labels and quotes; the "Free-app spot check" slot from `app_sample`; the preview banner when `meta.preview` is true.
 - With no `site/data/`, the leaderboard stays in its pending state, as today.

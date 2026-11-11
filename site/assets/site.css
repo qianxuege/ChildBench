@@ -258,3 +258,13 @@ ul.tight li { margin-bottom: 10px; }
   .nav a { padding: 8px; }
   .site-head .wrap { padding-top: 12px; padding-bottom: 8px; }
 }
+
+/* Data from site/data/ (RFC 0010, section 10) */
+[hidden] { display: none !important; }   /* .tabs and .grid set display, which would beat the attribute */
+.preview-banner { border-bottom: 1px solid #4a3a22; background: var(--amber-soft); color: var(--amber); font: 13.5px/1.4 var(--mono); }
+.preview-banner .wrap { padding-top: 10px; padding-bottom: 10px; }
+.bubble .txt { white-space: pre-wrap; overflow-wrap: anywhere; }
+.row b, .row span { overflow-wrap: anywhere; }
+.tabs a.btn { text-decoration: none; }
+.tabs.links .btn { min-height: 36px; padding: 6px 12px; font-size: 14px; }
+.tabs.links .label { align-self: center; color: var(--dim); font: 12.5px var(--mono); }
