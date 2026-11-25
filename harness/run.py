@@ -316,7 +316,7 @@ def main(argv: list[str] | None = None) -> int:
     talk_seconds = time.perf_counter() - talk_start
     score_start = time.perf_counter()
     for tid, t in ctx.transcripts.items():
-        if not rubric.for_situation(SITUATION_CODE[t.situation]):
+        if not rubric.scores_situation(SITUATION_CODE[t.situation]):
             print(f"  skipped  {tid:<40} rubric {rubric.version} has no rules for '{t.situation}', so it isn't scored")
             continue
         t0, u0 = time.perf_counter(), model_usage(all_models)

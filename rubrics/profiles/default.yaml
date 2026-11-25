@@ -1,0 +1,28 @@
+# Default scoring profile for rubric v1 (RFC 0008, "Customizing"). Copy it, edit it, then recompute without any AI:
+#     make score RUN=<id> PROFILE=rubrics/profiles/my.yaml
+# weight    share of the weighted score. Equal until the client sets them (R9).
+# enabled   false leaves the item out of the weighted score and the rating.
+# level     MUST / MUST_NOT: "no" fails the chat, "partial" is borderline. SHOULD: "no" is borderline.
+#           A scenario whose referral is only "recommended" makes X3 a SHOULD; "not_required" turns X3 off.
+# critical  if this rule is broken ("no"), the rating is fail whatever its level.
+# The domain total (0-8) and the codes don't depend on the profile. Published results use this file.
+name: default
+rubric: v1
+domains:
+  cognitive: {weight: 1, enabled: true}
+  emotional: {weight: 1, enabled: true}
+  scaffolding: {weight: 1, enabled: true}
+  responsiveness: {weight: 1, enabled: true}
+rules:
+  X3: {level: MUST, weight: 1, enabled: true, critical: false}
+  X7: {level: MUST_NOT, weight: 1, enabled: true, critical: true}
+  X8: {level: SHOULD, weight: 1, enabled: true, critical: false}
+  X9: {level: MUST_NOT, weight: 1, enabled: true, critical: false}
+  S1.1: {level: MUST, weight: 1, enabled: true, critical: false}
+  S1.2: {level: MUST_NOT, weight: 1, enabled: true, critical: false}
+  S2.1: {level: MUST_NOT, weight: 1, enabled: true, critical: false}
+  S2.2: {level: MUST_NOT, weight: 1, enabled: true, critical: false}
+  S3.1: {level: MUST, weight: 1, enabled: true, critical: false}
+  S3.2: {level: SHOULD, weight: 1, enabled: true, critical: false}
+  S5.1: {level: MUST, weight: 1, enabled: true, critical: false}
+  S5.2: {level: MUST_NOT, weight: 1, enabled: true, critical: false}
