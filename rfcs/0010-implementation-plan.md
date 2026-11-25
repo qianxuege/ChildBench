@@ -509,7 +509,7 @@ Replaces A2 and A14.
 
 <a id="wp-b1"></a>
 
-**B1 · Standalone scoring** · Owner A · Needs: — · Status: todo
+**B1 · Standalone scoring** · Owner A · Needs: — · Status: done
 
 - `make score RUN=<id>` runs the judge on saved transcripts and writes `rescore_<label>/scores.jsonl`. `JUDGE_GUARDRAILS=off` skips the quote retry; `RUBRIC=` picks the rubric. In-run scoring stays.
 - **Files:** `harness/score.py` (new), `harness/schemas.py` (B's models), `harness/tools/scores.py` (guardrail switch only), `Makefile` (`score` target), `tests/`
@@ -629,6 +629,7 @@ The flow and folders are in [RFC 0003](0003-judge-and-evaluation.md#human-labels
 **B6 · Evaluate** · Owner A · Needs: B1, B11, B14, B15, A8 (T2's tool labels, A9, A6-run and B4 for the real data) · Status: todo
 
 - `make evaluate` writes section 9's `evaluation.json`, which the export puts in `reliability.json`, and three files for the guardrail comparison in `results/guardrails/`: `guardrails.csv` (one row per chat), `guardrails.json` and `guardrails.md` (basic statistics: on, off, difference and sample size for each RFC 0006 measure, and paired score changes per scenario). It also fills `human_scores` in the export from the imported CSVs.
+- For the on/off comparison of chats, use the off run's `rescore_judge-on/` scores, not its own, and stop with a message if they're missing. `ScoreRecord.judge_guardrails` says how each score was made.
 - **Files:** `harness/evaluate.py` (new), `harness/export.py` (`reliability.json` and `human_scores` only), `tests/fixtures/tool_labels/` (new), `Makefile` (`evaluate` target), `tests/`
 - **Done when:** every section is written for mock runs, with missing inputs named; `guardrails.md` shows on, off and the difference for each measure, and `guardrails.csv` has one row per chat.
 
@@ -738,6 +739,7 @@ Lets a researcher run chats from the site instead of the terminal. The public si
 **A6-run · Guardrails-off run and comparison** · Owner A · *Operation* · Needs: A6, A9, B6 · Status: todo
 
 - Run it with the same chatbot, seed, child model and scenario files as A9 (the "on" side).
+- Re-score the guardrails-off run with the judge's guardrails on (`make score RUN=<off id> LABEL=judge-on`), so both runs are scored the same way. A guardrails-off run skips the judge's quote retry when it scores itself.
 - Re-score the 15 "on" transcripts and the gold set's tuning half with `JUDGE_GUARDRAILS=off`, for the judge comparison.
 - Write `examples.md`: 2–3 checked side-by-side examples for the child, one for the judge. Internal until checked for the poster.
 - Run `make evaluate` for the statistics. Upload both run folders, `results/guardrails/` and `examples.md` to the team Drive, and copy the numbers only into `docs/guardrail-comparison.md` (public), with run ids, models, commit and limits. No guardrails-off text in the repo.
@@ -830,6 +832,7 @@ One line per change, newest first. Findings are in [docs/findings.md](../docs/fi
 
 | Date | Change | Why |
 |---|---|---|
+| Nov 25 | A6-run re-scores the guardrails-off run with the judge's guardrails on; B6 uses those scores | Found in B1: otherwise the two runs are judged differently |
 | Nov 25 | A3: stricter key-fact retry message; B10: two judge fixtures | F-011 |
 | Nov 25 | A15 also saves `heuristic_referral_agrees` (kept by B12 and B10, filter in F3) and keeps scoring after a judge model error | Cici's request; found while building A15 |
 | Nov 25 | Adam reviews the scenarios against the cards, in T1 | Someone other than the author |
