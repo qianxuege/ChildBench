@@ -533,6 +533,7 @@ Replaces B7.
 - `rubrics/v1.yaml`: four domains with age length guides, judge codes, over-escalation, and RFC 0008's referral checks, each with when it applies and a source tag. Quoted preprint text is credited in the file, with the licence and what we changed (R2).
 - `rubrics/profiles/default.yaml`: weights, levels, critical flags. `rating.py` applies it: totals, caps, weighted total, referral rating.
 - v0 stays loadable, so pilot runs still score.
+- Keep `automatic_checks.heuristic_referral_agrees` in `scores.py` (added in A15).
 - **Files:** `rubrics/v1.yaml` (new), `rubrics/profiles/` (new), `harness/rating.py`, `harness/schemas.py` (B's models), `harness/tools/rubric.py`, `harness/tools/scores.py`, `harness/score.py` (`PROFILE` option), `tests/`
 - **Done when:** tests cover each cap, each `expectation`, a custom weight, a critical rule and the checks set by code (S2.1, X7, X8); a v0 run gives the same ratings as before.
 
@@ -548,6 +549,7 @@ From the pilot ([F-004](../docs/findings.md), [F-007](../docs/findings.md)): 4 o
 - Code sets `na`: pushback when the child never resisted; promise when secrecy was never asked for. Code flags contradictions.
 - Absence needs no quote. Give the age's length guide instead of one fixed sentence length.
 - `flag_for_human_review` accepts only known reason codes from the judge.
+- Keep `automatic_checks.heuristic_referral_agrees` in `scores.py` (added in A15).
 - **Files:** `harness/agents/judge.py`, `harness/agents/toolloop.py`, `harness/tools/scores.py`, `harness/tools/review.py`, `harness/tools/secret.py` (new helper, not an agent tool), `harness/llm/mock.py`, `tests/fixtures/judge/` (new), `tests/`
 - **Done when:** fixtures for `dist-003` (good and bad chatbot) and the F-004 and F-007 errors pass; every chat in the tuning half gets scored; `make gold SPLIT=tune` beats the baseline in each domain, or the weak ones are listed.
 
@@ -658,6 +660,7 @@ Replaces F2.
 - Scenario badges: "Apps and Ollama" or "Ollama only". Every card credits the preprint (R10), links CC BY 4.0 and says "adapted", and distress cards carry a content note. Transcript pages show domains, codes, age, any caregiver message, and human and judge scores together.
 - Judge reliability page: human vs human, judge vs human, judge vs gold, and the guardrails on/off table with checked examples. Guardrails-off chats are never shown as a batch.
 - Scoring controls: weights, levels, on/off; recompute in the browser for the open tab; "custom scoring" banner; download the profile. No key input; the method page points to `.env`.
+- Filter transcripts by `automatic_checks.heuristic_referral_agrees`, to see where the referral heuristic and the judge disagree. It shows agreement, not accuracy.
 - **Files:** `site/`
 - **Done when:** `make site` shows a mock export with both batches, kept apart; changing a weight gives the same total as `rating.py` on a shared test case.
 
@@ -825,6 +828,7 @@ One line per change, newest first. Findings are in [docs/findings.md](../docs/fi
 
 | Date | Change | Why |
 |---|---|---|
+| Nov 25 | A15 also saves `heuristic_referral_agrees` (kept by B12 and B10, filter in F3) and keeps scoring after a judge model error | Cici's request; found while building A15 |
 | Nov 25 | Adam reviews the scenarios against the cards, in T1 | Someone other than the author |
 | Nov 25 | A9 and A6-run use `llama3.1:8b`; client's name removed from current files, `ran_approved` becomes `client_approved` in A16 | Third model family; report rule |
 | Nov 25 | Docs scanned; README rewritten as the project report without the client's name; `architecture.md`, `CLAUDE.md`, `harness/README.md` updated | Report requirements |

@@ -33,6 +33,7 @@ from .llm.manual import ManualModel, ManualStop
 from .schemas import SITUATION_CODE, Persona, Rubric, Transcript, Turn
 from .summary import print_table, summarize
 from .tools.referral import detect_referral
+from .tools.review import flag_for_human_review
 
 
 def load_rubric(path: Path) -> Rubric:
@@ -307,7 +308,14 @@ def main(argv: list[str] | None = None) -> int:
     score_start = time.perf_counter()
     for tid, t in ctx.transcripts.items():
         t0, u0 = time.perf_counter(), model_usage(all_models)
-        rec = judge.score(t, seed=t.seed)
+        try:
+            rec = judge.score(t, seed=t.seed)
+        except ModelError as e:
+            # One failed judge call must not stop the run. The message can hold the server address: save only its type.
+            print(f"  judge model error in {tid}: {e}", file=sys.stderr)
+            rec = ctx.scored.get(tid)   # the judge may have submitted before its last call failed
+            if rec is None:
+                flag_for_human_review(ctx, tid, "JUDGE_FAILED", f"judge model error: {type(e.__cause__ or e).__name__}")
         secs = time.perf_counter() - t0
         per_conv[tid].update({"score_seconds": round(secs, 2), "score_tokens": usage_delta(model_usage(all_models), u0)})
         status = rec.overall + (" (provisional)" if rec.provisional else "") if rec else "JUDGE FAILED"
