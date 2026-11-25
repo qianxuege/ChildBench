@@ -26,42 +26,42 @@ Two things matter most:
 
 **Person A (Cici) builds everything**, frontend and backend, tests it, tunes the judge, and runs one app chat as a check. `Owner A` in a package means Cici. Split agreed Nov 25.
 
-**To find the next package:** take the first row that isn't done (status is on its block in section 11) and whose "Waits for" are all done. Rows with the same step number can run at the same time. Rows with nothing left to wait for can start early.
+**To find the next package:** take the first row that isn't done (see the Status column; it must match the block in section 11) and whose "Waits for" are all done. Rows with the same step number can run at the same time. Rows with nothing left to wait for can start early.
 
-| Step | Package | What | Who | Due | Waits for |
-|---|---|---|---|---|---|
-| 1 | [**A15**](#wp-a15) | Fix referral detection; mark crashed chats incomplete | Cici | Nov 25 night | — |
-| 1 | [**B1**](#wp-b1) | Re-score saved chats (`make score`) | Cici | Nov 25 night | — |
-| 1 | [**B11**](#wp-b11) | Load the 48 human-scored gold chats | Cici | Nov 25 night | — |
-| 2 | [**A16**](#wp-a16) | New scenario format and key-fact check | Cici | Nov 25 night | A15 |
-| 2 | [**B12**](#wp-b12) | New rubric and scoring profiles | Cici | Nov 25 night | B1 |
-| 3 | [**A17**](#wp-a17) | Write the 15 scenario files | Cici | Nov 25 night | A16 |
-| 3 | [**A3**](#wp-a3) | Child as a tool-calling agent | Cici | Nov 25 night | A16 |
-| 3 | [**B15**](#wp-b15) | Scoring packet and CSV import | Cici | Nov 25 night | B12 |
-| 3 | [**B14**](#wp-b14) | Summary and export for the new rubric | Cici | Nov 25 night | B12, A16 |
-| 3 | [**A8**](#wp-a8) | Realism and script-fidelity report | Cici | Nov 25 night | A16 |
-| 4 | [**B10**](#wp-b10) | Judge fixes and tuning | Cici | Nov 25 night | B1, B11, B12 |
-| 4 | [**A6**](#wp-a6) | Guardrails-off config | Cici | Nov 25 night | A17 |
-| 4 | [**F3**](#wp-f3) | Site: new results and scoring controls | Cici | Nov 25 night | B14 |
-| 4 | [**B6**](#wp-b6) | Evaluation and guardrail statistics | Cici | Nov 25 night | B1, B11, B14, B15, A8 |
-| 5 | [**F4**](#wp-f4) | Scoring page | Cici | Nov 25 night | B15, F3 |
-| 5 | [**A13**](#wp-a13) | OpenRouter key (optional) | Cici | Nov 25 night | — |
-| 5 | [**A7**](#wp-a7) | `add-scenario` skill (optional) | Cici | Nov 25 night | A16 |
-| 6 | [**T2**](#wp-t2) | Check gold set and tool labels; ask the client | Cici | Nov 26 morning | A17, B11 |
-| 6 | [**A3-app**](#wp-a3-app) | One app chat as a check | Cici | Nov 26 morning | A3, A16, A17 |
-| 6 | [**T4**](#wp-t4) | Claude and Codex review all the code | Cici | Nov 26 morning | A3, A6, A8, A17, B6, B10, B14, B15, F3, F4 |
-| 7 | [**T1**](#wp-t1) | Check scenarios against the cards; try the whole system from a fresh clone | Adam | Nov 26 | A3, A6, A17, B6, B10, B14, B15, F3, F4 |
-| 7 | [**F5**](#wp-f5) | Run page (`make app`); merge by Nov 26 evening or after Nov 28 | Cici | Nov 26 evening | A3, A16, B1, A6, F3, F4 |
-| 8 | [**B13**](#wp-b13) | Choose the judge, one held-out test, freeze | Cici | Nov 26 evening | B10, T2, T4 |
-| 9 | [**A9**](#wp-a9) | 15 Ollama chats, guardrails on | Cici | Nov 27 | A3, A15, A17, B13, T1, T2 |
-| 9 | [**A12**](#wp-a12) | 24 app chats: 8 ChatGPT, 8 Claude, 8 Gemini | Adam | Nov 28 | A3-app, A15, A17, B13, T1, T2 |
-| 10 | [**A6-run**](#wp-a6-run) | 15 Ollama chats, guardrails off; statistics Nov 29 | Cici | Nov 28–29 | A6, A9, B6 |
-| 10 | [**B4-send**](#wp-b4-send) | Send `score.html` to the scorers | Cici | Nov 28 evening | A12, B15 |
-| 11 | [**B4-score**](#wp-b4-score) | Score all 24 app chats: Collin (A), Tina (B) | Collin, Tina | Nov 29 | B4-send |
-| 12 | [**B4**](#wp-b4) | Import labels, settle disagreements | Cici | Nov 30 | B4-score |
-| 13 | [**B8**](#wp-b8) | Final evaluation and export; **code and data freeze** | Cici | Nov 30 | A9, A12, A6-run, B4, B6, B14, F3 |
-| 14 | [**D2**](#wp-d2) | Poster, with on/off analysis | Tianyou | Dec 1 | B8, A6-run |
-| 14 | [**M1**](#wp-m1) | Meeting with the client | Adam | Dec 1 or 2 | B8 |
+| Step | Package | Status | What | Who | Due | Waits for |
+|---|---|---|---|---|---|---|
+| 1 | [**A15**](#wp-a15) | done | Fix referral detection; mark crashed chats incomplete | Cici | Nov 25 night | — |
+| 1 | [**B1**](#wp-b1) | done | Re-score saved chats (`make score`) | Cici | Nov 25 night | — |
+| 1 | [**B11**](#wp-b11) | done | Load the 48 human-scored gold chats | Cici | Nov 25 night | — |
+| 2 | [**A16**](#wp-a16) | done | New scenario format and key-fact check | Cici | Nov 25 night | A15 |
+| 2 | [**B12**](#wp-b12) | done | New rubric and scoring profiles | Cici | Nov 25 night | B1 |
+| 3 | [**A17**](#wp-a17) | todo | Write the 15 scenario files | Cici | Nov 25 night | A16 |
+| 3 | [**A3**](#wp-a3) | todo | Child as a tool-calling agent | Cici | Nov 25 night | A16 |
+| 3 | [**B15**](#wp-b15) | todo | Scoring packet and CSV import | Cici | Nov 25 night | B12 |
+| 3 | [**B14**](#wp-b14) | todo | Summary and export for the new rubric | Cici | Nov 25 night | B12, A16 |
+| 3 | [**A8**](#wp-a8) | todo | Realism and script-fidelity report | Cici | Nov 25 night | A16 |
+| 4 | [**B10**](#wp-b10) | todo | Judge fixes and tuning | Cici | Nov 25 night | B1, B11, B12 |
+| 4 | [**A6**](#wp-a6) | todo | Guardrails-off config | Cici | Nov 25 night | A17 |
+| 4 | [**F3**](#wp-f3) | todo | Site: new results and scoring controls | Cici | Nov 25 night | B14 |
+| 4 | [**B6**](#wp-b6) | todo | Evaluation and guardrail statistics | Cici | Nov 25 night | B1, B11, B14, B15, A8 |
+| 5 | [**F4**](#wp-f4) | todo | Scoring page | Cici | Nov 25 night | B15, F3 |
+| 5 | [**A13**](#wp-a13) | todo | OpenRouter key (optional) | Cici | Nov 25 night | — |
+| 5 | [**A7**](#wp-a7) | todo | `add-scenario` skill (optional) | Cici | Nov 25 night | A16 |
+| 6 | [**T2**](#wp-t2) | todo | Check gold set and tool labels; ask the client | Cici | Nov 26 morning | A17, B11 |
+| 6 | [**A3-app**](#wp-a3-app) | todo | One app chat as a check | Cici | Nov 26 morning | A3, A16, A17 |
+| 6 | [**T4**](#wp-t4) | todo | Claude and Codex review all the code | Cici | Nov 26 morning | A3, A6, A8, A17, B6, B10, B14, B15, F3, F4 |
+| 7 | [**T1**](#wp-t1) | todo | Check scenarios against the cards; try the whole system from a fresh clone | Adam | Nov 26 | A3, A6, A17, B6, B10, B14, B15, F3, F4 |
+| 7 | [**F5**](#wp-f5) | todo | Run page (`make app`); merge by Nov 26 evening or after Nov 28 | Cici | Nov 26 evening | A3, A16, B1, A6, F3, F4 |
+| 8 | [**B13**](#wp-b13) | todo | Choose the judge, one held-out test, freeze | Cici | Nov 26 evening | B10, T2, T4 |
+| 9 | [**A9**](#wp-a9) | todo | 15 Ollama chats, guardrails on | Cici | Nov 27 | A3, A15, A17, B13, T1, T2 |
+| 9 | [**A12**](#wp-a12) | todo | 24 app chats: 8 ChatGPT, 8 Claude, 8 Gemini | Adam | Nov 28 | A3-app, A15, A17, B13, T1, T2 |
+| 10 | [**A6-run**](#wp-a6-run) | todo | 15 Ollama chats, guardrails off; statistics Nov 29 | Cici | Nov 28–29 | A6, A9, B6 |
+| 10 | [**B4-send**](#wp-b4-send) | todo | Send `score.html` to the scorers | Cici | Nov 28 evening | A12, B15 |
+| 11 | [**B4-score**](#wp-b4-score) | todo | Score all 24 app chats: Collin (A), Tina (B) | Collin, Tina | Nov 29 | B4-send |
+| 12 | [**B4**](#wp-b4) | todo | Import labels, settle disagreements | Cici | Nov 30 | B4-score |
+| 13 | [**B8**](#wp-b8) | todo | Final evaluation and export; **code and data freeze** | Cici | Nov 30 | A9, A12, A6-run, B4, B6, B14, F3 |
+| 14 | [**D2**](#wp-d2) | todo | Poster, with on/off analysis | Tianyou | Dec 1 | B8, A6-run |
+| 14 | [**M1**](#wp-m1) | todo | Meeting with the client | Adam | Dec 1 or 2 | B8 |
 
 Steps 1–5 are the build. Packages in the same build step share no files except where each has its own part: a `Makefile` target, tests, or A16's and B12's separate models in `schemas.py`. B10's tuning may run into the morning of Nov 26, which delays B13; B13's model comparison can start before T1 finishes, but its held-out test can't. F5 isn't needed by the runs. D2's layout and method can start Nov 26.
 
@@ -400,7 +400,7 @@ Every package branches from `main` and merges back into `main`.
 3. Branches from `main` as `wp/<id>-<short-name>`, e.g. `wp/a11-manual-relay`.
 4. Changes only the package's **Files**, and stops to ask before touching anything else.
 5. Runs `make test`, `make mock` where relevant, and the **Done when** check. Manual steps are listed for you, not claimed.
-6. Sets the package's status to `done` in this RFC, writes a handoff note, and after you approve, opens a PR into `main` with the note as its description. Merge it before anyone starts a package that needs it.
+6. Sets the package's status to `done` in its block and in the table at the top, writes a handoff note, and after you approve, opens a PR into `main` with the note as its description. Merge it before anyone starts a package that needs it.
 
 *Operation* packages are runs, not code. The owner runs them by hand; the skill refuses them and only helps read results.
 
@@ -833,6 +833,7 @@ One line per change, newest first. Findings are in [docs/findings.md](../docs/fi
 
 | Date | Change | Why |
 |---|---|---|
+| Nov 25 | Status column in the "Who does what, in order" table | Easier to see what's next |
 | Nov 25 | A17, A6 and B14 set `rubric: rubrics/v1.yaml` in their configs | Found in B12: a config without it silently uses v0 |
 | Nov 25 | A18 (PR checks and AI review) removed; T4 added: Claude and Codex review all the code once the build is finished | Not enough Copilot tokens; no paid key; Cici is the only one testing |
 | Nov 25 | A6-run re-scores the guardrails-off run with the judge's guardrails on; B6 uses those scores | Found in B1: otherwise the two runs are judged differently |
