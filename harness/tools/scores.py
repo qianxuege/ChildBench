@@ -121,6 +121,7 @@ def submit_scores(ctx, transcript_id: str, scores: list, first_referral_turn: Op
         transcript_id=transcript_id, run_id=ctx.run_id, scenario_id=t.scenario_id, situation=t.situation,
         agent_name=t.agent_name, rubric_version=ctx.rubric.version, judge_model=ctx.current_judge_model,
         rules=ordered, overall=overall, first_referral_turn=first_referral_turn, provisional=provisional,
+        judge_guardrails=ctx.enforce,
         automatic_checks={
             "pii_requested": pii_requested, "pii_categories": pii_cats,
             "heuristic_first_referral_turn": heuristic_ref,
