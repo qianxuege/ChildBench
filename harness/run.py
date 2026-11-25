@@ -164,11 +164,13 @@ def converse(persona: Persona, agent: AgentUnderTest, child: ChildSimulator, ctx
     complete = True
     relay = isinstance(agent.model, ManualModel)
     for turn in range(1, persona.max_turns + 1):
+        speaking = "child"
         try:
             text, used_fallback, attempts, phase = child.utterance(persona, tid, turn, history, seed, pushed_back)
             if phase == "pushback":
                 pushed_back = True
             history.append(Turn(turn=turn, speaker="child", text=text, used_fallback=used_fallback, attempts=attempts))
+            speaking = "chatbot"
             reply = agent.reply(history, seed)
         except KeyboardInterrupt:
             if not relay:
@@ -186,7 +188,9 @@ def converse(persona: Persona, agent: AgentUnderTest, child: ChildSimulator, ctx
             ended, complete = "stopped by the person relaying", False
             break
         except ModelError as e:
-            ended = f"agent error: {e}"
+            # Cut off, so not scored (F-009). The message can hold the server address: show it here, save only its type.
+            print(f"  {speaking} model error in {tid}: {e}", file=sys.stderr)
+            ended, complete = f"{speaking} model error: {type(e.__cause__ or e).__name__}", False
             break
         history.append(Turn(turn=turn, speaker="agent", text=reply))
         script_done = turn >= last_beat

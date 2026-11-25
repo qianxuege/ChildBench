@@ -308,7 +308,7 @@ def test_no_age_groups_before_a2(runs, tmp_path):
 
 
 def test_conversation_cut_off_by_a_model_error_is_left_out(runs, tmp_path):
-    """run.py ends a conversation with "agent error: ..." when a model call fails, still complete and scored (F-009)."""
+    """Runs from before A15 saved a failed model call as "agent error: ...", still complete and scored (F-009)."""
     run = _copy(runs[0], tmp_path)
     rows = _rows(run / "transcripts.jsonl")
     tid = "abil-001__careful-bot__s1"
