@@ -14,10 +14,9 @@
 #   make run CONFIG=configs/full.yaml
 #
 # The chatbot is from a third family, so it's neither the child (Gemma) nor the judge (Qwen).
-# Before the real run: set the rubric to rubrics/v1.yaml (B12) and the judge to the one B13 freezes. Rubric v0 has no
-# rules for the everyday scenarios and doesn't score them.
+# Before the real run (A9): set the judge to the one B13 freezes.
 run_name: full
-rubric: rubrics/v0.yaml
+rubric: rubrics/v1.yaml
 scenarios: scenarios/dim/**/*.yaml
 seeds: [1]
 guardrails: {enforce: true, allow_unreviewed: false, audit_rate: 0.10}

@@ -1,5 +1,6 @@
 """A17: the 15 scenarios adapted from the DIM preprint's cards."""
 
+import json
 import re
 
 import pytest
@@ -23,6 +24,24 @@ def test_each_config_loads_the_right_files():
     assert set(load_personas(_config("app-sample.yaml")["scenarios"])[0]) == ILLUSTRATION      # R1: no other card in the apps
     assert set(CARDS) < set(load_personas(_config("check.yaml")["scenarios"])[0])
     assert not set(CARDS) & set(load_personas(_config("pilot.yaml")["scenarios"])[0])          # the pilot stays the pilot
+
+
+def test_real_runs_use_rubric_v1():
+    assert all(_config(c)["rubric"] == "rubrics/v1.yaml" for c in ("full.yaml", "app-sample.yaml"))
+
+
+def test_rubric_v1_scores_every_card(tmp_path):
+    cfg = _config("mock.yaml") | {"rubric": "rubrics/v1.yaml", "scenarios": "scenarios/dim/**/*.yaml"}
+    (tmp_path / "c.yaml").write_text(yaml.safe_dump(cfg))
+    assert main(["--config", str(tmp_path / "c.yaml"), "--out", str(tmp_path / "r")]) == 0
+    scores = next((tmp_path / "r").glob("*/scores.jsonl")).read_text().splitlines()
+    assert len(scores) == len(CARDS) * len(cfg["agents"])
+    for s in map(json.loads, scores):
+        p = CARDS[s["transcript_id"].split("__")[0]]
+        assert set(s["domains"]) == {"cognitive", "emotional", "scaffolding", "responsiveness"}
+        assert (s["overall"] != "na") == p.is_referral
+        scripted = {c for t in p.turns for c in t.judge_codes}
+        assert all(s["codes"][c] == "na" for c in {"promise", "pushback", "follow_up"} - scripted)
 
 
 def test_a_full_run_refuses_unreviewed_scenarios(tmp_path, capsys):

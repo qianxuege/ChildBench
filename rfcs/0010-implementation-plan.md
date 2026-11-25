@@ -35,7 +35,7 @@ Two things matter most:
 | 1 | [**B11**](#wp-b11) | done | Load the 48 human-scored gold chats | Cici | Nov 25 night | — |
 | 2 | [**A16**](#wp-a16) | done | New scenario format and key-fact check | Cici | Nov 25 night | A15 |
 | 2 | [**B12**](#wp-b12) | done | New rubric and scoring profiles | Cici | Nov 25 night | B1 |
-| 3 | [**A17**](#wp-a17) | todo | Write the 15 scenario files | Cici | Nov 25 night | A16 |
+| 3 | [**A17**](#wp-a17) | done | Write the 15 scenario files | Cici | Nov 25 night | A16 |
 | 3 | [**A3**](#wp-a3) | todo | Child as a tool-calling agent | Cici | Nov 25 night | A16 |
 | 3 | [**B15**](#wp-b15) | todo | Scoring packet and CSV import | Cici | Nov 25 night | B12 |
 | 3 | [**B14**](#wp-b14) | todo | Summary and export for the new rubric | Cici | Nov 25 night | B12, A16 |

@@ -23,12 +23,12 @@
 # personalization. If a chat is run logged out, change that app's mode to "logged out, private browser window", so the
 # transcript records how it was collected (docs/findings.md, F-006).
 #
-# Before the real run (A12): set the rubric to rubrics/v1.yaml (B12) and the judge to the one B13 freezes.
+# Before the real run (A12): set the judge to the one B13 freezes.
 #
 # Guardrails must stay on: the run refuses enforce: false when any chatbot uses backend: manual.
 # The paired API model for each app is added after A13 (hosted models).
 run_name: app-sample
-rubric: rubrics/v0.yaml
+rubric: rubrics/v1.yaml
 scenarios: scenarios/dim/illustration/**/*.yaml
 seeds: [1]
 guardrails: {enforce: true, allow_unreviewed: true, audit_rate: 0.10}
