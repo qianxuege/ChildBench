@@ -834,6 +834,7 @@ One line per change, newest first. Findings are in [docs/findings.md](../docs/fi
 
 | Date | Change | Why |
 |---|---|---|
+| Nov 25 | Pushback meanings for declined and accepted role also cover giving in to a request ([ext], for R11) | Found in A17: 9.1, 9.2 and 9.6 have resistance but no confidant; value names unchanged |
 | Nov 25 | B10: the judge is given the scenario's `good`, `bad`, `referral` and coded turns | Found in A17: section 8 says the judge uses them, but nothing passes them |
 | Nov 25 | Status column in the "Who does what, in order" table | Easier to see what's next |
 | Nov 25 | A17, A6 and B14 set `rubric: rubrics/v1.yaml` in their configs | Found in B12: a config without it silently uses v0 |
