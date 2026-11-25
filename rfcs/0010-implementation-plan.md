@@ -33,7 +33,6 @@ Two things matter most:
 | 1 | [**A15**](#wp-a15) | Fix referral detection; mark crashed chats incomplete | Cici | Nov 25 night | — |
 | 1 | [**B1**](#wp-b1) | Re-score saved chats (`make score`) | Cici | Nov 25 night | — |
 | 1 | [**B11**](#wp-b11) | Load the 48 human-scored gold chats | Cici | Nov 25 night | — |
-| 1 | [**A18**](#wp-a18) | PR checks and AI review | Cici | Nov 25 night | — |
 | 2 | [**A16**](#wp-a16) | New scenario format and key-fact check | Cici | Nov 25 night | A15 |
 | 2 | [**B12**](#wp-b12) | New rubric and scoring profiles | Cici | Nov 25 night | B1 |
 | 3 | [**A17**](#wp-a17) | Write the 15 scenario files | Cici | Nov 25 night | A16 |
@@ -50,9 +49,10 @@ Two things matter most:
 | 5 | [**A7**](#wp-a7) | `add-scenario` skill (optional) | Cici | Nov 25 night | A16 |
 | 6 | [**T2**](#wp-t2) | Check gold set and tool labels; ask the client | Cici | Nov 26 morning | A17, B11 |
 | 6 | [**A3-app**](#wp-a3-app) | One app chat as a check | Cici | Nov 26 morning | A3, A16, A17 |
-| 7 | [**T1**](#wp-t1) | Check scenarios against the cards; try the whole system from a fresh clone | Adam | Nov 26 | A3, A6, A17, A18, B6, B10, B14, B15, F3, F4 |
+| 6 | [**T4**](#wp-t4) | Claude and Codex review all the code | Cici | Nov 26 morning | A3, A6, A8, A17, B6, B10, B14, B15, F3, F4 |
+| 7 | [**T1**](#wp-t1) | Check scenarios against the cards; try the whole system from a fresh clone | Adam | Nov 26 | A3, A6, A17, B6, B10, B14, B15, F3, F4 |
 | 7 | [**F5**](#wp-f5) | Run page (`make app`); merge by Nov 26 evening or after Nov 28 | Cici | Nov 26 evening | A3, A16, B1, A6, F3, F4 |
-| 8 | [**B13**](#wp-b13) | Choose the judge, one held-out test, freeze | Cici | Nov 26 evening | B10, T2 |
+| 8 | [**B13**](#wp-b13) | Choose the judge, one held-out test, freeze | Cici | Nov 26 evening | B10, T2, T4 |
 | 9 | [**A9**](#wp-a9) | 15 Ollama chats, guardrails on | Cici | Nov 27 | A3, A15, A17, B13, T1, T2 |
 | 9 | [**A12**](#wp-a12) | 24 app chats: 8 ChatGPT, 8 Claude, 8 Gemini | Adam | Nov 28 | A3-app, A15, A17, B13, T1, T2 |
 | 10 | [**A6-run**](#wp-a6-run) | 15 Ollama chats, guardrails off; statistics Nov 29 | Cici | Nov 28–29 | A6, A9, B6 |
@@ -632,16 +632,6 @@ The flow and folders are in [RFC 0003](0003-judge-and-evaluation.md#human-labels
 - **Files:** `harness/evaluate.py` (new), `harness/export.py` (`reliability.json` and `human_scores` only), `tests/fixtures/tool_labels/` (new), `Makefile` (`evaluate` target), `tests/`
 - **Done when:** every section is written for mock runs, with missing inputs named; `guardrails.md` shows on, off and the difference for each measure, and `guardrails.csv` has one row per chat.
 
-<a id="wp-a18"></a>
-
-**A18 · PR checks** · Owner A · Needs: — · Status: todo
-
-- On every PR into `main`, GitHub runs `make test`, `make check` and `make mock`. No keys needed.
-- An AI reviewer then comments on the diff, checking it against `CLAUDE.md`. Comments only: it can't merge or push, and it doesn't run on PRs from forks. Authors fix their own mistakes.
-- If the reviewer needs a key, it's a GitHub secret. That is the one exception to "keys only in `.env`". It can't confirm that a run or a score is right.
-- **Files:** `.github/workflows/checks.yml` (new), `.github/workflows/ai-review.yml` (new), `CLAUDE.md` (key rule only)
-- **Done when:** a test PR with a failing test shows a red check; a test PR gets a review comment; no key appears in the logs.
-
 <a id="wp-f4"></a>
 
 **F4 · Scoring page** · Owner A · Needs: B15, F3 · Status: todo
@@ -694,12 +684,20 @@ Lets a researcher run chats from the site instead of the terminal. The public si
 
 <a id="wp-t1"></a>
 
-**T1 · Try the whole system** · Owner: Adam · *Operation* · Needs: A3, A6, A17, A18, B6, B10, B14, B15, F3, F4 · Status: todo
+**T1 · Try the whole system** · Owner: Adam · *Operation* · Needs: A3, A6, A17, B6, B10, B14, B15, F3, F4 · Status: todo
 
 - Compare each of the 15 scenario files with its card in the preprint's Appendix A: lines and order, key facts, good and bad replies, suitable adults, and our additions (age cue, content level, pushback line). Fix differences with Cici, then add your name to `reviewers`.
 - From a fresh clone: tests, mock run, one Ollama run, `make score`, `make labels`, score two chats, `make import-labels`, `make evaluate`, export, click through the site.
 - If F5 is ready, run one chat from the Run page. If A7 is built, add a scenario with `/add-scenario`. File bugs as issues.
 - **Done when:** every scenario has a reviewer; each step works, or has an issue; bugs that block a run are fixed.
+
+<a id="wp-t4"></a>
+
+**T4 · Review the code** · Owner A · *Operation* · Needs: A3, A6, A8, A17, B6, B10, B14, B15, F3, F4 · Status: todo
+
+- Once the build is finished, Claude and Codex each review all the code on `main` separately, against `CLAUDE.md` and this plan. This replaces reviewing each PR. Until then, `make test` is run on each package before merging.
+- Check each comment before acting on it, fix the real bugs, and rerun `make test`, `make check` and `make mock`. If A13, A7 or F5 is built later, review it when it's finished.
+- **Done when:** both reviews have run; every bug that affects a run or a score is fixed; the rest are fixed or have an issue; the three commands pass.
 
 <a id="wp-t2"></a>
 
@@ -712,7 +710,7 @@ Lets a researcher run chats from the site instead of the terminal. The public si
 
 <a id="wp-b13"></a>
 
-**B13 · Choose and freeze the judge** · Owner A · *Operation* · Needs: B10, T2 (T1 before the held-out test; A13 for a hosted judge) · Status: todo
+**B13 · Choose and freeze the judge** · Owner A · *Operation* · Needs: B10, T2, T4 (T1 before the held-out test; A13 for a hosted judge) · Status: todo
 
 - Compare `qwen3.5:9b` with at least one stronger model on the tuning half. Pick one, run the held-out half once, then freeze them on Nov 26: no lock, just record the commit, model and rubric hash, and don't change the judge, rubric or profile after that.
 - **Done when:** held-out agreement per domain is saved and shared; weak items are marked human-only.
@@ -830,6 +828,7 @@ One line per change, newest first. Findings are in [docs/findings.md](../docs/fi
 
 | Date | Change | Why |
 |---|---|---|
+| Nov 25 | A18 (PR checks and AI review) removed; T4 added: Claude and Codex review all the code once the build is finished | Not enough Copilot tokens; no paid key; Cici is the only one testing |
 | Nov 25 | A3: stricter key-fact retry message; B10: two judge fixtures | F-011 |
 | Nov 25 | A15 also saves `heuristic_referral_agrees` (kept by B12 and B10, filter in F3) and keeps scoring after a judge model error | Cici's request; found while building A15 |
 | Nov 25 | Adam reviews the scenarios against the cards, in T1 | Someone other than the author |
