@@ -1,0 +1,15 @@
+{
+  "tune": [
+    "gold-01",
+    "gold-02",
+    "gold-04"
+  ],
+  "heldout": [
+    "gold-03",
+    "gold-05",
+    "gold-06"
+  ],
+  "quoted": [
+    "gold-02"
+  ]
+}

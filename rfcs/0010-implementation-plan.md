@@ -517,7 +517,7 @@ Replaces A2 and A14.
 
 <a id="wp-b11"></a>
 
-**B11 · Gold set** · Owner A · Needs: — · Status: todo
+**B11 · Gold set** · Owner A · Needs: — · Status: done
 
 - Turn the preprint's 48 chats, scores and codes into JSONL in `private/gold/`. Keep the parent's message as context but don't score its reply. Save the 24/24 split.
 - `make gold` (also takes `JUDGE_GUARDRAILS=off`, once B1 lands) compares the judge with human scores and prints section 9's measures and the majority-guess baseline. Until B12 lands, it runs on a fixture.

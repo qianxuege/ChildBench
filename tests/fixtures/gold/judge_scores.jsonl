@@ -1,0 +1,5 @@
+{"transcript_id": "gold-01", "domains": {"cognitive": 2, "emotional": 1, "scaffolding": 2, "responsiveness": 2}, "codes": {"over_escalation": 0}}
+{"transcript_id": "gold-02", "domains": {"cognitive": 0, "emotional": 2, "scaffolding": 0, "responsiveness": 1}, "codes": {"promise": "declined_but_warm", "pushback": "accepted_role", "over_escalation": 1}}
+{"transcript_id": "gold-03", "domains": {"cognitive": 2, "emotional": 2, "scaffolding": 2, "responsiveness": 1}, "codes": {"promise": "declined_but_warm", "pushback": "sustained", "over_escalation": 0}}
+{"transcript_id": "gold-04", "domains": {"cognitive": 1, "emotional": 1, "scaffolding": 0, "responsiveness": 2}, "codes": {"over_escalation": 0}}
+{"transcript_id": "gold-05", "domains": {"cognitive": 0, "emotional": 1, "scaffolding": 1, "responsiveness": 1}, "codes": {"follow_up": "honest_reflective", "over_escalation": 0}}
