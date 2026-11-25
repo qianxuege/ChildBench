@@ -65,8 +65,9 @@ def build(run_dir: Path, rubric: Rubric) -> Path:
     for t in ordered:
         lines += [f"## {blind(t['transcript_id'])} · {t['situation']} · child age {t['child_age']}", ""]
         for turn in t["turns"]:
-            who = "CHILD" if turn["speaker"] == "child" else "CHATBOT"
-            lines.append(f"- **[{turn['turn']}] {who}:** {turn['text']}")
+            who = {"child": "CHILD", "caregiver": "CAREGIVER"}.get(turn["speaker"], "CHATBOT")
+            tag = turn["turn"] if turn["turn"] > 0 else "context, not scored"
+            lines.append(f"- **[{tag}] {who}:** {turn['text']}")
         lines.append("")
     (out / "labeling_packet.md").write_text("\n".join(lines))
     return out

@@ -32,6 +32,7 @@ from .llm import ModelError, make_model
 from .llm.manual import ManualModel, ManualStop
 from .schemas import SITUATION_CODE, Persona, Rubric, Transcript, Turn
 from .summary import print_table, summarize
+from .tools.ceiling import scenario_content_problems
 from .tools.referral import detect_referral
 from .tools.review import flag_for_human_review
 
@@ -54,6 +55,9 @@ def load_personas(pattern: str) -> tuple[dict[str, Persona], dict[str, str]]:
         folder = Path(f).parent.name
         if folder != p.situation:
             raise SystemExit(f"{f}: situation '{p.situation}' does not match folder '{folder}'")
+        problems = scenario_content_problems(p)
+        if problems:
+            raise SystemExit(f"{f}: " + "; ".join(problems))
         if p.id in personas:
             raise SystemExit(f"duplicate scenario id {p.id}")
         personas[p.id] = p
@@ -71,12 +75,12 @@ def git_info() -> dict:
 
 
 def coverage(personas: dict[str, Persona]) -> str:
-    groups = sorted({p.age_group or str(p.child_age) for p in personas.values()})
-    lines = [f"{'':<6}" + "".join(f"{g:>8}" for g in groups)]
-    for code in ["S1", "S2", "S3", "S4", "S5", "C"]:
+    ages = sorted({p.child_age for p in personas.values()})
+    lines = [f"{'':<6}" + "".join(f"{a:>8}" for a in ages)]
+    for code in ["S1", "S2", "S3", "S4", "S5", "C", "E"]:
         row = f"{code:<6}"
-        for g in groups:
-            n = sum(1 for p in personas.values() if p.code == code and (p.age_group or str(p.child_age)) == g)
+        for a in ages:
+            n = sum(1 for p in personas.values() if p.code == code and p.child_age == a)
             row += f"{n:>8}"
         lines.append(row)
     return "\n".join(lines)
@@ -160,13 +164,18 @@ def converse(persona: Persona, agent: AgentUnderTest, child: ChildSimulator, ctx
     tid = f"{persona.id}__{agent.name}__s{seed}"
     history: list[Turn] = []
     pushed_back = False
-    last_beat = persona.beats[-1].turn
+    last_scripted = len(persona.turns)
     ended = "turn limit"
     complete = True
     relay = isinstance(agent.model, ManualModel)
-    for turn in range(1, persona.max_turns + 1):
+    for turn in range(0 if persona.caregiver_message else 1, persona.max_turns + 1):
         speaking = "child"
         try:
+            if turn == 0:   # sent word for word, before the child says anything; the reply is kept but not scored
+                history.append(Turn(turn=0, speaker="caregiver", text=persona.caregiver_message))
+                speaking = "chatbot"
+                history.append(Turn(turn=0, speaker="agent", text=agent.reply(history, seed)))
+                continue
             text, used_fallback, attempts, phase = child.utterance(persona, tid, turn, history, seed, pushed_back)
             if phase == "pushback":
                 pushed_back = True
@@ -179,13 +188,13 @@ def converse(persona: Persona, agent: AgentUnderTest, child: ChildSimulator, ctx
             # Relay runs: keep what's finished. Save this conversation as incomplete, skip the rest, still score.
             print("\n  Ctrl+C: this conversation is saved as incomplete, the rest of the run is skipped, and finished "
                   "conversations are scored now. Press Ctrl+C again to quit at once.")
-            if history and history[-1].speaker == "child" and history[-1].turn == turn:
+            if history and history[-1].speaker != "agent" and history[-1].turn == turn:
                 history.pop()   # the app never answered this line
             ended, complete = "stopped with Ctrl+C", False
             agent.model.quit_requested = True
             break
         except ManualStop:
-            history.pop()   # the person never sent this child line to the app
+            history.pop()   # the person never sent this message to the app
             ended, complete = "stopped by the person relaying", False
             break
         except ModelError as e:
@@ -194,16 +203,16 @@ def converse(persona: Persona, agent: AgentUnderTest, child: ChildSimulator, ctx
             ended, complete = f"{speaking} model error: {type(e.__cause__ or e).__name__}", False
             break
         history.append(Turn(turn=turn, speaker="agent", text=reply))
-        script_done = turn >= last_beat
-        if persona.situation == "control":
+        script_done = turn >= last_scripted
+        if not persona.is_referral:
             if script_done:
                 ended = "script complete"
                 break
             continue
-        # The stop condition is only checked once every scripted beat has been delivered,
+        # The stop condition is only checked once every scripted turn has been delivered,
         # so each scenario always reaches its key moment.
         if script_done and detect_referral(reply):
-            if persona.pushback_once and not pushed_back:
+            if persona.pushback_line and not pushed_back:
                 continue  # the child resists once on the next turn
             ended = "referred again after push-back" if pushed_back else "referred"
             break
@@ -301,12 +310,15 @@ def main(argv: list[str] | None = None) -> int:
             ctx.transcripts[t.transcript_id] = t   # only complete conversations are scored
         else:
             incomplete.append(t.transcript_id)
-        print(f"  talked   {t.transcript_id:<40} {len(t.turns) // 2} turns · {t.ended_because} · {secs:.0f} s")
+        print(f"  talked   {t.transcript_id:<40} {len(t.agent_turns())} turns · {t.ended_because} · {secs:.0f} s")
         if getattr(a.model, "quit_requested", False):
             break   # Ctrl+C in a relay run: skip the remaining conversations, still score
     talk_seconds = time.perf_counter() - talk_start
     score_start = time.perf_counter()
     for tid, t in ctx.transcripts.items():
+        if not rubric.for_situation(SITUATION_CODE[t.situation]):
+            print(f"  skipped  {tid:<40} rubric {rubric.version} has no rules for '{t.situation}', so it isn't scored")
+            continue
         t0, u0 = time.perf_counter(), model_usage(all_models)
         try:
             rec = judge.score(t, seed=t.seed)

@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import re
 
+from .pii import scan_realistic_pii
+
 RANK = {"mild": 0, "moderate": 1, "severe": 2}
 
 SEVERE = [
@@ -50,3 +52,25 @@ def check_content_ceiling(ctx, text: str, level: str = "mild") -> dict:
     mod = [m.group(0) for p in _MOD for m in [p.search(text)] if m]
     found = "severe" if sev else "moderate" if mod else "mild"
     return {"ok": True, "within": RANK[found] <= RANK[level], "found_level": found, "hits": sev + mod}
+
+
+def scenario_content_problems(p) -> list[str]:
+    """Check everything a scenario can send to a chatbot word for word (internal helper, not an agent tool).
+
+    The caregiver message is sent as is, and the scripted lines are the fallback, so none of them passes
+    through the pretend child's own checks first."""
+    texts = [("caregiver_message", p.caregiver_message), ("age_cue", p.age_cue), ("pushback_line", p.pushback_line)]
+    texts += [(f"turn {t.turn}", t.line) for t in p.turns]
+    problems = []
+    for name, text in texts:
+        if not text:
+            continue
+        c = check_content_ceiling(None, text, p.content_level)
+        if not c["ok"]:
+            problems.append(f"{name}: {c['error']}")
+        elif not c["within"]:
+            problems.append(f"{name}: {c['found_level']} content, above '{p.content_level}': {', '.join(c['hits'])}")
+        pii = scan_realistic_pii(text)
+        if pii:
+            problems.append(f"{name}: realistic personal data: {', '.join(pii)}")
+    return problems

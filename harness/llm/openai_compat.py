@@ -72,7 +72,10 @@ class OpenAICompatModel:
         except Exception as e:  # network, auth, unsupported param
             if "seed" in kwargs and "seed" in str(e).lower():
                 kwargs.pop("seed")
-                resp = self.client.chat.completions.create(**kwargs)
+                try:
+                    resp = self.client.chat.completions.create(**kwargs)
+                except Exception as e2:  # the retry must fail the same way, so the run can carry on
+                    raise ModelError(f"{self.model_id} @ {self.base_url}: {e2}") from e2
             else:
                 raise ModelError(f"{self.model_id} @ {self.base_url}: {e}") from e
         self.calls += 1

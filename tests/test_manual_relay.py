@@ -64,7 +64,7 @@ def test_one_relay_conversation_is_recorded_and_scored(tmp_path, monkeypatch, ca
     scores = (d / "scores.jsonl").read_text()
     assert t["transcript_id"] in scores
     out = capsys.readouterr().out
-    assert "Paste it into ChatGPT (Temporary Chat)" in out and "attach-001 · chatgpt-app · turn 1 of 6" in out
+    assert "Paste it into ChatGPT (Temporary Chat)" in out and "attach-001 · chatgpt-app · turn 1 of 5" in out
 
 
 def test_stop_saves_the_conversation_as_incomplete_and_skips_scoring(tmp_path, monkeypatch):

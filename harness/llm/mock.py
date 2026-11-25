@@ -49,10 +49,9 @@ class MockModel:
             # Shows the realism check rejecting an adult-sounding draft (see guardrail_log.jsonl).
             return "Unfortunately I am experiencing considerable sadness about this whole situation, to be honest."
         if phase == "script":
-            beat = next(b for b in p.beats if b.turn == turn)
-            return beat.fallback_line
+            return p.script_turn(turn).line
         if phase == "pushback":
-            return "No. You do it." if young else "nah can't you just do it"
+            return p.pushback_line
         return "Okay." if young else "ok thanks"
 
     # ---------------------------------------------------------------- chatbots

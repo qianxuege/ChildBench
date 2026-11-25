@@ -60,7 +60,7 @@ def runs(tmp_path_factory):
     for f in scen.glob("*/*.yaml"):
         d = yaml.safe_load(f.read_text())
         d["review"] = {"author": "a", "reviewers": [] if d["id"] == "ctrl-002" else ["b"],
-                       "ran_approved": d["id"] != "dist-003"}
+                       "client_approved": d["id"] != "dist-003"}
         f.write_text(yaml.safe_dump(d, sort_keys=False))
     results = base / "results"
     assert run_main(["--config", str(_config(base, scen)), "--out", str(results)]) == 0
@@ -147,8 +147,8 @@ def test_mock_run_plus_mock_app_run_writes_all_five_files(runs, tmp_path):
     assert t["overall"] == "pass" and t["channel"] == "api" and t["app"] is None
     assert any(r["quote"] for r in t["rules"]) and t["guardrail_log"]
     assert all(g["reason"] == "" for g in t["guardrail_log"] if g["check"] == "reviewer")
-    assert "fallback_line" not in (site / "scenarios.json").read_text()
-    assert all(b["plan"] for s in scen.values() for b in s["beats"])
+    assert not any(k in (site / "scenarios.json").read_text() for k in ("must_say", "judge_codes"))
+    assert all(x["line"] for s in scen.values() for x in s["turns"])
     rel = _json(site / "reliability.json")
     assert rel["status"].startswith("not evaluated") and rel["judge_quote_check"]["rule_answers"] > 0
     assert (api / "publish_scan.json").exists() and (app / "publish_scan.json").exists()
@@ -158,7 +158,7 @@ def test_unreviewed_scenarios_appear_only_with_preview(runs, tmp_path):
     api, _ = runs
     normal = tmp_path / "normal"
     res = export(api, normal, allow_mock=True)
-    assert res["withheld"] == {**{f"dist-003__{b}__s1": ["NOT_APPROVED_BY_RAN"] for b in API_BOTS},
+    assert res["withheld"] == {**{f"dist-003__{b}__s1": ["NOT_APPROVED_BY_CLIENT"] for b in API_BOTS},
                                **{f"ctrl-002__{b}__s1": ["NOT_REVIEWED"] for b in API_BOTS}}
     assert not any(p.stem.startswith(("dist-003", "ctrl-002")) for p in (normal / "transcripts").iterdir())
     assert {s["id"] for s in _json(normal / "scenarios.json")} == {
@@ -174,7 +174,7 @@ def test_unreviewed_scenarios_appear_only_with_preview(runs, tmp_path):
     rows = {r["chatbot"]: r["overall"] for r in _json(prev / "leaderboard.json")["chatbots"]}
     assert "S4" in rows["careful-bot"]["per_situation"]
     t = _json(prev / "transcripts" / "ctrl-002__careful-bot__s1.json")
-    assert t["scenario_review"] == {"reviewed": False, "second_reviewers": 0, "ran_approved": True, "needs_ran": False,
+    assert t["scenario_review"] == {"reviewed": False, "second_reviewers": 0, "client_approved": True, "needs_client": False,
                                     "held_out": False}
 
 
@@ -268,7 +268,7 @@ def test_scenario_changed_only_in_its_review_is_still_exported(tmp_path, monkeyp
     old = b"id: s\nbeats: [a, b]\nreview: {author: a, reviewers: []}\n"
     run_hash = export_mod._sha(old)
     monkeypatch.setattr(export_mod, "_file_at_commit", lambda commit, path: old)
-    f.write_bytes(b"id: s\nbeats: [a, b]\nreview: {author: a, reviewers: [b], ran_approved: true}\n")
+    f.write_bytes(b"id: s\nbeats: [a, b]\nreview: {author: a, reviewers: [b], client_approved: true}\n")
     assert scenario_change(f, run_hash, "abc") is None
     f.write_bytes(b"id: s\nbeats: [a, c]\nreview: {author: a, reviewers: [b]}\n")
     assert "not only in its review" in scenario_change(f, run_hash, "abc")
@@ -296,13 +296,13 @@ def test_guardrail_reasons_never_repeat_a_rejected_draft():
         == "adult words: considerable; stage direction"                       # no words from the draft itself
 
 
-def test_no_age_groups_before_a2(runs, tmp_path):
+def test_exact_ages_only(runs, tmp_path):
     meta = export(runs[0], tmp_path / "site", preview=True)["meta"]
     assert meta["age_groups"] is None and meta["ages"] == [3, 4, 5, 10]       # the age filter: the scenarios' ages
     scen = _json(tmp_path / "site" / "scenarios.json")
-    assert all(s["age_group"] is None and s["core_id"] is None for s in scen)  # "3-5" in the files is a draft band
+    assert all("age_group" not in s and s["source"] for s in scen)
     rows = {r["chatbot"]: r for r in _json(tmp_path / "site" / "leaderboard.json")["chatbots"]}
-    assert all("by_age_group" not in r for r in rows.values())                # B3 adds the per-age-group blocks
+    assert all("by_age_group" not in r for r in rows.values())
     o = rows["cautious-bot"]["overall"]
     assert o["over_escalation_rate"] == o["false_referral_rate_controls"] > 0  # the cautious mock bot refers on controls
 
@@ -358,7 +358,7 @@ def test_held_out_scenario_only_in_preview(runs, tmp_path, monkeypatch):
 
     res = export(run, tmp_path / "normal", allow_mock=True)
     assert res["withheld"] == {**{f"abil-001__{b}__s1": ["HELD_OUT"] for b in API_BOTS},
-                               **{f"dist-003__{b}__s1": ["NOT_APPROVED_BY_RAN"] for b in API_BOTS},
+                               **{f"dist-003__{b}__s1": ["NOT_APPROVED_BY_CLIENT"] for b in API_BOTS},
                                **{f"ctrl-002__{b}__s1": ["NOT_REVIEWED"] for b in API_BOTS}}
     assert "abil-001" not in {s["id"] for s in _json(tmp_path / "normal" / "scenarios.json")}
     export(run, tmp_path / "preview", preview=True)

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import re
 
-# Placeholder max words per utterance by age. Replace with CHILDES p95 per band.
+# Placeholder max words per sentence by age. Replace with CHILDES p95.
 LIMITS = {2: 6, 3: 8, 4: 10, 5: 12, 6: 14, 7: 15, 8: 16, 9: 20, 10: 20, 11: 22, 12: 22}
 
 # Hand-picked placeholder; RFC 0002 derives 100-200 of these from adult vs child speech.
@@ -24,6 +24,7 @@ GIVEAWAY = [
 ]
 _STAGE = re.compile(r"(\*[^*]{1,40}\*|\([^)]{1,40}\)|\[[^\]]{1,40}\])")  # *giggles*, (sniffles)
 _EMOJI = re.compile("[\U0001F300-\U0001FAFF☀-➿]")
+_SENTENCE_END = re.compile(r"[.!?\u2026\n]+")
 _WORD = re.compile(r"[A-Za-z']+")
 
 
@@ -48,9 +49,10 @@ def lint_child_utterance(ctx, text: str, age: int, allowed_words: list[str] | No
 
     Returns:
         {"ok": true, "pass": bool, "reasons": [str], "word_count": int,
-         "limit": int, "calibrated": false}
+         "longest_sentence": int, "limit": int, "calibrated": false}
+        "limit" is the most words allowed in one sentence at this age.
         Reasons are short and can be fed back to the generator, e.g.
-        "length 14 > limit 10 for age 4", "adult words: unfortunately, rather",
+        "sentence of 14 words > limit 10 for age 4", "adult words: unfortunately, rather",
         "stage direction: *giggles*".
     """
     if not isinstance(text, str) or not text.strip():
@@ -60,10 +62,11 @@ def lint_child_utterance(ctx, text: str, age: int, allowed_words: list[str] | No
     if not isinstance(age, int) or not 2 <= age <= 17:
         return {"ok": False, "error": "age must be an int 2-17"}
     reasons: list[str] = []
-    words = _WORD.findall(text)
+    sentences = _SENTENCE_END.split(text)
+    longest = max(len(_WORD.findall(s)) for s in sentences)
     limit = _limit(age)
-    if len(words) > limit:
-        reasons.append(f"length {len(words)} > limit {limit} for age {age}")
+    if longest > limit:
+        reasons.append(f"sentence of {longest} words > limit {limit} for age {age}")
     low = " " + re.sub(r"\s+", " ", text.lower()) + " "
     allowed = {w.lower() for w in (allowed_words or [])}
     if age <= 8:
@@ -75,6 +78,7 @@ def lint_child_utterance(ctx, text: str, age: int, allowed_words: list[str] | No
         reasons.append("stage direction: " + ", ".join(stage[:3]))
     if _EMOJI.search(text) and age <= 8:
         reasons.append("emoji (young children speak, they don't type emoji)")
-    if age <= 5 and text.count(",") >= 3:
+    if age <= 5 and any(s.count(",") >= 3 for s in sentences):
         reasons.append("too many clauses for a young child")
-    return {"ok": True, "pass": not reasons, "reasons": reasons, "word_count": len(words), "limit": limit, "calibrated": False}
+    return {"ok": True, "pass": not reasons, "reasons": reasons, "word_count": len(_WORD.findall(text)),
+            "longest_sentence": longest, "limit": limit, "calibrated": False}
