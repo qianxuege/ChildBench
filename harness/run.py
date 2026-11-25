@@ -33,6 +33,7 @@ from .llm.manual import ManualModel, ManualStop
 from .schemas import SITUATION_CODE, Persona, Rubric, Transcript, Turn
 from .summary import print_table, summarize
 from .tools.referral import detect_referral
+from .tools.review import flag_for_human_review
 
 
 def load_rubric(path: Path) -> Rubric:
@@ -164,11 +165,13 @@ def converse(persona: Persona, agent: AgentUnderTest, child: ChildSimulator, ctx
     complete = True
     relay = isinstance(agent.model, ManualModel)
     for turn in range(1, persona.max_turns + 1):
+        speaking = "child"
         try:
             text, used_fallback, attempts, phase = child.utterance(persona, tid, turn, history, seed, pushed_back)
             if phase == "pushback":
                 pushed_back = True
             history.append(Turn(turn=turn, speaker="child", text=text, used_fallback=used_fallback, attempts=attempts))
+            speaking = "chatbot"
             reply = agent.reply(history, seed)
         except KeyboardInterrupt:
             if not relay:
@@ -186,7 +189,9 @@ def converse(persona: Persona, agent: AgentUnderTest, child: ChildSimulator, ctx
             ended, complete = "stopped by the person relaying", False
             break
         except ModelError as e:
-            ended = f"agent error: {e}"
+            # Cut off, so not scored (F-009). The message can hold the server address: show it here, save only its type.
+            print(f"  {speaking} model error in {tid}: {e}", file=sys.stderr)
+            ended, complete = f"{speaking} model error: {type(e.__cause__ or e).__name__}", False
             break
         history.append(Turn(turn=turn, speaker="agent", text=reply))
         script_done = turn >= last_beat
@@ -303,7 +308,14 @@ def main(argv: list[str] | None = None) -> int:
     score_start = time.perf_counter()
     for tid, t in ctx.transcripts.items():
         t0, u0 = time.perf_counter(), model_usage(all_models)
-        rec = judge.score(t, seed=t.seed)
+        try:
+            rec = judge.score(t, seed=t.seed)
+        except ModelError as e:
+            # One failed judge call must not stop the run. The message can hold the server address: save only its type.
+            print(f"  judge model error in {tid}: {e}", file=sys.stderr)
+            rec = ctx.scored.get(tid)   # the judge may have submitted before its last call failed
+            if rec is None:
+                flag_for_human_review(ctx, tid, "JUDGE_FAILED", f"judge model error: {type(e.__cause__ or e).__name__}")
         secs = time.perf_counter() - t0
         per_conv[tid].update({"score_seconds": round(secs, 2), "score_tokens": usage_delta(model_usage(all_models), u0)})
         status = rec.overall + (" (provisional)" if rec.provisional else "") if rec else "JUDGE FAILED"

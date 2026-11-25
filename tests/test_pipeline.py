@@ -1,7 +1,11 @@
 import json
 
+import pytest
+
 from harness.agents.toolloop import extract_json
 from harness.labels import build
+from harness.llm import ModelError
+from harness.llm.mock import MockModel
 from harness.run import load_personas, load_rubric, main
 from harness import REPO_ROOT
 
@@ -51,3 +55,61 @@ def test_shadow_mode_does_not_block(tmp_path):
     run_id = (tmp_path / "r" / "LATEST").read_text().strip()
     log = (tmp_path / "r" / run_id / "guardrail_log.jsonl").read_text()
     assert "SHADOW_FAIL" in log
+
+
+@pytest.mark.parametrize("role, turns_saved", [("child", 2), ("chatbot", 3)])
+def test_model_timeout_is_incomplete_and_not_scored(tmp_path, monkeypatch, capsys, role, turns_saved):
+    """F-009: a timeout on turn 2 must not become a score, and the server address must not be saved."""
+    address = "http://127.0.0.1:11502/v1"
+    real = MockModel.complete
+
+    def flaky(self, messages, **kw):
+        c = kw.get("context") or {}
+        child_turn_2 = c.get("role") == "child_generator" and c["turn"] == 2
+        bot_turn_2 = c.get("role") == "chatbot" and c["history"][-1].turn == 2
+        if (role == "child" and child_turn_2) or (role == "chatbot" and bot_turn_2):
+            raise ModelError(f"gemma4:e4b @ {address}: Request timed out.") from TimeoutError("timed out")
+        return real(self, messages, **kw)
+
+    monkeypatch.setattr(MockModel, "complete", flaky)
+    assert main(["--config", "configs/mock.yaml", "--out", str(tmp_path), "--only", "dist-003", "--seeds", "1"]) == 0
+    d = tmp_path / (tmp_path / "LATEST").read_text().strip()
+    rows = [json.loads(line) for line in (d / "transcripts.jsonl").read_text().splitlines()]
+    assert len(rows) == 3
+    for t in rows:
+        assert t["complete"] is False and t["ended_because"] == f"{role} model error: TimeoutError"
+        assert len(t["turns"]) == turns_saved
+    m = json.loads((d / "manifest.json").read_text())
+    assert m["counts"]["scored"] == 0 and len(m["counts"]["incomplete"]) == 3
+    assert not (d / "scores.jsonl").exists()
+    assert not any(address in f.read_text() for f in d.rglob("*") if f.is_file())
+    assert address in capsys.readouterr().err     # still shown to the person running it
+
+
+@pytest.mark.parametrize("after_submit", [False, True])
+def test_judge_timeout_does_not_stop_the_run(tmp_path, monkeypatch, capsys, after_submit):
+    """One failed judge call flags that conversation and the rest are scored. A score already submitted is kept."""
+    address = "http://127.0.0.1:11503/v1"
+    bad = "dist-003__careful-bot__s1"
+    real = MockModel.complete
+
+    def flaky(self, messages, **kw):
+        c = kw.get("context") or {}
+        if c.get("role") == "judge" and c["transcript"].transcript_id == bad:
+            submitted = messages[-1]["content"].startswith("TOOL_RESULT submit_scores") and '"ok": true' in messages[-1]["content"]
+            if submitted or not after_submit:
+                raise ModelError(f"qwen @ {address}: Request timed out.") from TimeoutError("timed out")
+        return real(self, messages, **kw)
+
+    monkeypatch.setattr(MockModel, "complete", flaky)
+    assert main(["--config", "configs/mock.yaml", "--out", str(tmp_path), "--only", "dist-003", "--seeds", "1"]) == 0
+    d = tmp_path / (tmp_path / "LATEST").read_text().strip()
+    scored = {json.loads(line)["transcript_id"] for line in (d / "scores.jsonl").read_text().splitlines()}
+    assert (bad in scored) is after_submit and len(scored) == (3 if after_submit else 2)
+    assert json.loads((d / "manifest.json").read_text())["counts"]["scored"] == len(scored)
+    assert (d / "summary.json").exists()
+    saved = [f.read_text() for f in d.rglob("*") if f.is_file()]
+    assert any("JUDGE_FAILED" in x for x in saved) is not after_submit
+    assert not any(address in x for x in saved)
+    err = capsys.readouterr().err
+    assert address in err
