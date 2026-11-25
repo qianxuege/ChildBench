@@ -1,4 +1,4 @@
-.PHONY: install test mock gemma local check labels site run estimate export score
+.PHONY: install test mock gemma local check labels site run estimate export score gold
 
 install:
 	pip install -e ".[dev]"
@@ -49,3 +49,8 @@ export:
 # [JUDGE_GUARDRAILS=off] [JUDGE_CONFIG=configs/x.yaml] [LABEL=name] [ONLY="transcript ids"]. No chatbot is called.
 score:
 	python -m harness.score --run $(or $(RUN),latest) $(if $(RUBRIC),--rubric $(RUBRIC)) $(if $(JUDGE_CONFIG),--judge-config $(JUDGE_CONFIG)) $(if $(JUDGE_GUARDRAILS),--judge-guardrails $(JUDGE_GUARDRAILS)) $(if $(LABEL),--label $(LABEL)) $(if $(ONLY),--only $(ONLY))
+
+# Judge vs the human-scored gold set: make gold [SPLIT=tune|heldout] [JUDGE_GUARDRAILS=off] [JUDGE_CONFIG=configs/x.yaml]
+# [RUBRIC=...] [LABEL=name] [SCORES=<scores.jsonl>]. On an invented fixture until rubrics/v1.yaml exists. ARGS=--check validates the set.
+gold:
+	python -m harness.gold --split $(or $(SPLIT),tune) $(if $(RUBRIC),--rubric $(RUBRIC)) $(if $(JUDGE_CONFIG),--judge-config $(JUDGE_CONFIG)) $(if $(JUDGE_GUARDRAILS),--judge-guardrails $(JUDGE_GUARDRAILS)) $(if $(LABEL),--label $(LABEL)) $(if $(SCORES),--scores $(SCORES)) $(ARGS)

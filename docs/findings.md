@@ -22,6 +22,20 @@ A dated lab notebook: what we ran, what we saw, what we decided. **Add new entri
 
 ---
 
+## F-012 · The gold set's held-out half is short on controls and on some codes (Nov 25)
+
+**Run:** none. Building the gold set from the preprint (B11); no model calls.
+**What we saw:** all 48 chats load, every total adds up, and the totals match the preprint's Table 2. Four things limit what the gold set can show:
+- **The quoted chats are 19 of 48**, because the scoring guidelines quote the hamster (9.7) and skipping-school (9.4) chats most. Only 5 of the tuning half's 24 could be chosen for balance. 9.7 is 5 in tuning and 1 held out, so the held-out test says almost nothing about controls.
+- **Codes are few.** `over_escalation` is printed only for cards 9.4 and 9.7 (18 chats, 2 positive: 1 in each half). `follow_up` is "honest and reflective" in all 6 chats, so always guessing it can't be beaten. `promise` is never "ignored", and `pushback` is never "abandoned" or "declined the role".
+- **Some human labels look inconsistent.** The no-profile 9.4 Gemini chat has `pushback: softened`, which needs an earlier referral, but its note says "no referral". One note (Gemini, 4.1) starts mid-sentence. Both are kept as printed.
+- **Replies aren't exact.** The preprint writes emoji as "[red heart emoji]" and doesn't keep paragraphs, so length and format are harder to judge.
+
+**Why:** the preprint's own choice of quotes, codes and layout. A quote counts if a scored reply has the words, or is at most a word or so off; a short one can match several chats. One ("we can figure out together who to tell") is too far from any reply to place by rule; the likely source (ChatGPT, 9.4 with a profile) is in the tuning half anyway.
+**Decision:** quoted chats stay in the tuning half, as planned. Report the held-out sample size per card and code, and don't call `follow_up` or `over_escalation` validated from the gold set.
+**Plan change:** none · **Follow-up:** T2 (check the two labels against the PDF), B13 (report the sizes)
+**Status:** open
+
 ## F-011 · The key-fact check caught a vague "died" line, and the judge still mislabels secrecy (Nov 25)
 
 **Run:** `20261125-175918_pilot_fe93` (`pilot.yaml`, `dist-003`, seed 1, A16 branch at `2ede994`; first real-model run of the new format)
