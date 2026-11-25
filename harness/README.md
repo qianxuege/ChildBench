@@ -12,7 +12,8 @@ end to end and every RFC component exists, but several pieces use placeholders (
 pip install -e ".[dev]"     # Python 3.11+
 make test                   # unit tests
 make mock                   # full run offline, no keys: mock child, 3 mock chatbots, mock judge
-make labels                 # blind label sheets for the latest run
+make labels OUT=<name>      # blind scoring packet from the latest run (FROM=<folder> for others)
+make import-labels OUT=<name>  # check the scorers' CSVs and compute agreement
 ```
 
 `make mock` prints a leaderboard and writes `results/<run_id>/`. The mock numbers mean nothing;
@@ -45,7 +46,7 @@ use Gemma 4B+ for the child and a different family for the judge (RFC 0010, sect
 | `harness/tools/` | The ten RFC 0004 tools. Their docstrings are what the agents read |
 | `harness/rating.py` | pass / borderline / fail by fixed logic (RFC 0008) |
 | `harness/llm/` | Backends: `mock`, `openai_compat` (Ollama, llama.cpp, LM Studio, Gemini, OpenAI), `hf_local` |
-| `harness/labels.py`, `validate_judge.py` | Blind label sheets; kappa per rule between two sheets |
+| `harness/labels.py`, `validate_judge.py` | Blind scoring packet; check the scorers' CSVs, then kappa, missed cases and false alarms |
 | `rubrics/v0.yaml` | Rules from RFC 0008 with levels and sources |
 | `scenarios/<situation>/*.yaml` | The 7 draft scenarios (no second reviewer yet) |
 | `configs/` | Run settings: mock, local, pilot, app sample and others |
@@ -55,7 +56,7 @@ use Gemma 4B+ for the child and a different family for the judge (RFC 0010, sect
 `results/<run_id>/`: `transcripts.jsonl`, `scores.jsonl`, `summary.json` (leaderboard numbers),
 `review_queue.jsonl`, `guardrail_log.jsonl` (every check, for the ablation), `judge_traces.jsonl`,
 `tool_calls.jsonl`, `manifest.json` (git commit, model ids, seeds, rubric and scenario hashes).
-`labeling/blind_key.csv` is gitignored: never give it to labelers.
+`results/labeling/<name>/private/` (blind key, judge scores) is gitignored: never give it to scorers. Send only `send/`.
 
 ## Decisions made in this baseline (change freely)
 

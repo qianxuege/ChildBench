@@ -1,4 +1,4 @@
-.PHONY: install test mock gemma local check labels site run estimate export score gold
+.PHONY: install test mock gemma local check labels import-labels site run estimate export score gold
 
 install:
 	pip install -e ".[dev]"
@@ -22,9 +22,16 @@ local:
 check:
 	python -m harness.run --config configs/mock.yaml --check-only
 
-# Blind label sheet for human scoring of the latest run.
+# Blind scoring packet for two people, in results/labeling/<OUT>/: make labels [FROM=<folder of runs>] [OUT=<name>] [OVERLAP=<n>]
+# Send only send/. Default: the latest run, every chat scored by both.
 labels:
-	python -m harness.labels --run latest
+	python -m harness.labels $(if $(FROM),--from "$(FROM)") $(if $(OUT),--out "$(OUT)") $(if $(OVERLAP),--overlap $(OVERLAP))
+
+# Check the CSVs in results/labeling/<OUT>/returned/ and compute agreement: make import-labels OUT=<name>
+# SCORES=<label> takes the judge's scores from each run's rescore_<label>/ instead of the copy made with the packet.
+import-labels:
+	@test -n "$(OUT)" || (echo "usage: make import-labels OUT=<name>" && exit 1)
+	python -m harness.validate_judge "$(OUT)" $(if $(SCORES),--scores "$(SCORES)")
 
 # Public website, static files only: http://127.0.0.1:11510
 site:

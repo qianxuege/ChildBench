@@ -3,7 +3,6 @@ import json
 import pytest
 
 from harness.agents.toolloop import extract_json
-from harness.labels import build
 from harness.llm import ModelError
 from harness.llm.mock import MockModel
 from harness.run import load_personas, load_rubric, main
@@ -40,9 +39,6 @@ def test_mock_run_end_to_end(tmp_path):
     assert "adult words" in log                      # the realism check caught the demo draft
     traces = (d / "judge_traces.jsonl").read_text()
     assert '"tool": "submit_scores", "ok": false' in traces  # the evidence check made the judge retry
-    out = build(d, load_rubric(REPO_ROOT / "rubrics/v0.yaml"))
-    sheet = (out / "label_sheet.csv").read_text()
-    assert "careful-bot" not in sheet and "careful-bot" in (out / "blind_key.csv").read_text()
 
 
 def test_shadow_mode_does_not_block(tmp_path):

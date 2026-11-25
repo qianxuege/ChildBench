@@ -8,7 +8,7 @@ from collections import Counter
 import numpy as np
 from sklearn.metrics import cohen_kappa_score
 
-ORDER = {"no": 0, "partial": 1, "yes": 2}
+ORDER = {"no": 0, "partial": 1, "yes": 2, "0": 0, "1": 1, "2": 2}
 
 
 def _kappa(a: list[str], b: list[str], weights):
@@ -26,10 +26,10 @@ def compute_agreement(labels_a: dict, labels_b: dict, ordinal: bool = False, n_b
     When NOT to use: for free-text notes, or for items labeled by only one side.
 
     Args:
-        labels_a: {item_id: label}. Labels such as "yes" | "partial" | "no".
+        labels_a: {item_id: label}. Labels such as "yes" | "partial" | "no", or "0" | "1" | "2".
         labels_b: same item ids; items missing from either side, or "na" on
             either side, are dropped and counted in "n_dropped".
-        ordinal: True for weighted kappa when labels are ordered (no < partial < yes).
+        ordinal: True for weighted kappa when labels are ordered (no < partial < yes, or 0 < 1 < 2).
         n_boot: bootstrap resamples for the 95% interval.
 
     Returns:

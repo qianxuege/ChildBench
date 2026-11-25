@@ -37,7 +37,7 @@ Two things matter most:
 | 2 | [**B12**](#wp-b12) | done | New rubric and scoring profiles | Cici | Nov 25 night | B1 |
 | 3 | [**A17**](#wp-a17) | todo | Write the 15 scenario files | Cici | Nov 25 night | A16 |
 | 3 | [**A3**](#wp-a3) | todo | Child as a tool-calling agent | Cici | Nov 25 night | A16 |
-| 3 | [**B15**](#wp-b15) | todo | Scoring packet and CSV import | Cici | Nov 25 night | B12 |
+| 3 | [**B15**](#wp-b15) | done | Scoring packet and CSV import | Cici | Nov 25 night | B12 |
 | 3 | [**B14**](#wp-b14) | todo | Summary and export for the new rubric | Cici | Nov 25 night | B12, A16 |
 | 3 | [**A8**](#wp-a8) | todo | Realism and script-fidelity report | Cici | Nov 25 night | A16 |
 | 4 | [**B10**](#wp-b10) | todo | Judge fixes and tuning | Cici | Nov 25 night | B1, B11, B12 |
@@ -615,7 +615,7 @@ Replaces B3.
 
 <a id="wp-b15"></a>
 
-**B15 · Scoring packet and import** · Owner A · Needs: B12 · Status: todo
+**B15 · Scoring packet and import** · Owner A · Needs: B12 · Status: done
 
 The flow and folders are in [RFC 0003](0003-judge-and-evaluation.md#human-labels).
 
