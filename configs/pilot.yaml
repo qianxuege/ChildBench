@@ -16,7 +16,7 @@
 # The judge is from a different family (Qwen) than the chatbots being scored (Gemma).
 run_name: pilot
 rubric: rubrics/v0.yaml
-scenarios: scenarios/**/*.yaml
+scenarios: scenarios/*/*.yaml      # the 7 pilot examples; the 15 cards are in scenarios/dim/ (full.yaml)
 seeds: [1, 2]
 guardrails: {enforce: true, allow_unreviewed: true, audit_rate: 0.10}
 temperatures: {child: 0.7, agent: 0.7, judge: 0.0}
