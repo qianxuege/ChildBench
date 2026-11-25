@@ -68,7 +68,7 @@ Then mark the issue as started (see "GitHub issue and board" below): comment `St
 1. Run `make test`. Every test must pass.
 2. Run `make mock` if the package touches the run pipeline (`harness/run.py`, `harness/agents/`, `harness/llm/`, `harness/tools/`, `configs/`).
 3. Run the package's **Done when** check. If it's a command, run it. If it needs a person (e.g. "one real conversation through one app works by hand"), list it as a manual step for the developer and don't claim it passed.
-4. **Scope check:** compare `git diff --name-only origin/main...HEAD` plus uncommitted changes with the Files list. `docs/findings.md`, this package's Status line and the RFC's Changelog table are always allowed. Explain any other file outside the list and get the developer's OK, or revert it.
+4. **Scope check:** compare `git diff --name-only origin/main...HEAD` plus uncommitted changes with the Files list. `docs/findings.md`, this package's Status (block and table row) and the RFC's Changelog table are always allowed. Explain any other file outside the list and get the developer's OK, or revert it.
 5. If anything fails, fix it and run the checks again. Don't move on with failing checks.
 6. **Record findings.** If a check or a run showed something worth knowing beyond "it works" — a model behaving unexpectedly, a wrong assumption in the RFC, a problem in another package's area, a number that matters later — add an entry at the top of `docs/findings.md` using its template (next free `F-NNN`, the run ids, what you saw, why, decision, status). Don't edit old entries.
    - If the finding changes the plan, don't edit other packages' blocks yourself. Add a line to the RFC's **Changelog** table only after the developer agrees to the change, and propose the block edits to them.
@@ -76,7 +76,7 @@ Then mark the issue as started (see "GitHub issue and board" below): comment `St
 
 ## 6. Hand off
 
-1. In RFC 0010, change only this package's `Status: todo` (or `in progress`) to `Status: done`. Don't touch other blocks.
+1. In RFC 0010, change only this package's status to `done`, in two places: `Status:` in its block, and the Status column of its row in "Who does what, in order" (if it has one). Don't touch other blocks or rows.
 2. Write the handoff note:
 
    ```markdown
