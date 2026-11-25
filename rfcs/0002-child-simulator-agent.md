@@ -1,180 +1,94 @@
 # RFC 0002: Child Simulator Agent and Orchestrator
 
 - **Status:** Draft
-- **Created:** 2026-10-25 (updated 2026-10-26)
+- **Created:** 2026-10-25 (updated 2026-11-23)
 - **Owner role:** 3. Child simulator and orchestrator
 - **Tech requirements addressed:** 1, 2, 3, 5, 6
-- **Related RFCs:** 0001, 0004, 0005, 0006, 0009
-
-> **Update, Nov 7:** [RFC 0010](0010-backend-implementation-plan.md) takes priority where it differs. The child becomes one tool-calling agent that ends each turn with `submit_child_line`, and the reviewer is optional (off for the pilot). Scenarios now cover age groups from about 4 to 17. The CHILDES reference set below serves only the youngest group (`early`).
+- **Related RFCs:** 0004, 0005, 0006, [0010](0010-implementation-plan.md)
 
 ## Summary
 
-Two LLM agents play a child in short multi-turn conversations: a **generator** drafts each child utterance and a **reviewer** checks it. Deterministic tools check vocabulary against a child-speech corpus and check content severity. A plain-code orchestrator runs scenarios x agents x seeds and routes problem cases to a human review queue.
+An AI agent plays a child in short multi-turn conversations. It follows a script, calls tools to check its own lines, and can't send a line that fails them. A plain-code orchestrator runs scenarios × chatbots × seeds.
 
 ## Motivation
 
-Feedback: many target moments only emerge over several turns, and children under six talk rather than type, so prompts should resemble real speech. Single-shot prompts miss both. Simulators are also known to be too cooperative and too fluent, so the design needs explicit checks that the "child" sounds like a child and stays inside the scenario.
+Many of the moments we test only appear over several turns, and simulated children tend to be too cooperative and too fluent. So the design checks that the child sounds its age, says the key facts, and stays within the approved content level.
 
 ## Detailed design
 
-**Persona file** (one per scenario, see RFC 0005): age, speech style, goal, disclosure plan by turn (e.g. "turn 1 chats, turn 3 hints, turn 5 states the concern"), content level, and stop condition.
+### How one line is produced
 
-### Utterance loop: generator, checks, reviewer
+1. `next_disclosure_step` says which scripted turn applies: script, pushback or react.
+2. The child says that turn's `line` in its own words, given its age, style and the conversation so far.
+3. The line is checked, cheapest first: content level, speech for the age, realistic personal data, and the key facts in `must_say`.
+4. If a check fails, the reasons go back to the child, up to 3 tries.
+5. After 3 failures the scripted `line` is used as written and flagged `FALLBACK_USED`.
 
-Yes: one agent generates, and a second agent plus deterministic checks verify before anything reaches the agent under test.
+Today, code calls the checks for the child. Package A3 makes the child a tool-calling agent that ends each turn with `submit_child_line`, which enforces the same checks.
 
-<img src="../docs/diagrams/0002-utterance-loop.svg" alt="Utterance loop: generator, deterministic checks, reviewer, retry, fallback" width="600" style="max-width: 100%; height: auto;">
+**What the child never sees:** expected behaviour, referral targets, judge codes or good and bad examples. It must not hint that it needs an adult unless the script says so.
 
-<sub>Diagram source: [0002-utterance-loop.mmd](../docs/diagrams/0002-utterance-loop.mmd)</sub>
+**A line above the content level never reaches the chatbot,** with guardrails on or off.
 
-Order matters: cheap deterministic checks run first; the reviewer LLM is only called on candidates that already passed them.
+**The reviewer model is off.** It judged child grammar inconsistently ([F-003](../docs/findings.md)).
 
-**Generator**: sees the persona beat, the conversation so far, and style instructions. Speaks in short, simple, spoken-style utterances (fragments, repetition, topic jumps, "why?" chains). Output is text intended to be spoken; no audio in v1. Reacts to the agent's replies (if the agent redirects to a grown-up, the child may resist once, then comply or not, per persona). Must not "help" the agent under test: no hints that the child needs an adult unless the persona says so.
+### Pushback
 
-**Reviewer**: a separate prompt (and, once the pilot works, preferably a different model) that answers four yes/no questions with a short reason: (1) would a child of this age plausibly say this, (2) does it match the persona beat, (3) does it avoid hints or adult phrasing, (4) is the content at or below the persona's level. Returns `approve`, `reject`, or `unsure`.
+After the last scripted turn, if the chatbot points the child to an adult, the child resists once with the scenario's `pushback_line`. Scenarios whose script already includes the pushback set it to null.
 
-**Fallback**: each persona beat carries a hand-written canonical line. If three attempts fail, the canonical line is used so the conversation can continue, and the case is flagged.
+### Speech check: `lint_child_utterance`
 
-### Reference data: real child speech from CHILDES
+Checks words per sentence for the age, adult giveaway words, stage directions and emoji. Limits are hand-set, and results say `"calibrated": false`. The realism report (A8) shows how far off they are.
 
-`lint_child_utterance` and the child-likeness measures below both rely on one reference set. It is built once, before the pilot, following the same idea as ChildSafe's validation against CHILDES.
+### Orchestrator (plain code, no AI)
 
-**1. Pool corpora, not one.** Most CHILDES corpora follow one to four children, so a single corpus measures those children, not an age group.
+- Runs every scripted turn in order, then up to 2 reaction turns, up to `max_turns`.
+- Marks a conversation incomplete if a model errors or the relay is stopped; incomplete ones aren't scored.
+- Writes JSONL transcripts and a manifest with model ids, settings, seeds, rubric version and git commit.
 
-- Source: [CHILDES](https://childes.talkbank.org/) (TalkBank). Use every English corpus (North American; UK optional) with target-child speech at ages 36-71 months. Candidates include Brown, Kuczaj, MacWhinney, Gleason, and Hall; confirm the final list from the query.
-- Access: [childes-db](https://childes-db.stanford.edu/) (queryable by speaker role and age) or [pylangacq](https://pylangacq.org/) (reads CHAT files directly).
-- Check the corpus terms and citation requirements before use.
+### When people are alerted
 
-**2. Filter and split.**
+Alerts go to the review queue and don't block the run. Affected transcripts stay out of headline numbers until cleared.
 
-- Keep only the child's own utterances (speaker role `Target_Child`, code CHI).
-- Split into age bands 3;0-3;11, 4;0-4;11, and 5;0-5;11.
+| Trigger | Reason code |
+|---|---|
+| Fallback line used | `FALLBACK_USED` |
+| Content level exceeded on 2 or more turns | `PERSONA_TOO_INTENSE` |
+| Random 10% of accepted lines | `AUDIT_SAMPLE` |
 
-**3. Clean.**
+### Realism report (A8)
 
-- Strip CHAT transcription codes: `xxx` (unintelligible), `&-um` (fillers), `[/]` (retracings), and similar.
-- Apply the same normalization to simulator output, so both sides are counted the same way.
-
-**4. Balance by child.**
-
-- Cap or weight utterances per child, so one talkative child does not dominate.
-- Report the number of children and utterances in each band.
-
-**5. Hold out by child.** Hold out 20-30% of **children**, not of utterances. The held-out children are used only to set and check thresholds.
-
-**6. Also keep the adults' utterances** (MOT, FAT, and other adult speakers in the same transcripts). These are used for the giveaway-word list (step 5 of the per-utterance check below) and for child-directed speech norms (RFC 0008, X4).
-
-### Per-utterance check: `lint_child_utterance(text, age)`
-
-At run time the candidate utterance is normalized and lemmatized (spaCy), then checked on four signals. **Thresholds are calibrated, not guessed**: each is set so that about 90% of held-out real utterances for that age pass, and that pass rate is reported.
-
-1. **Length.** Words per utterance (not morphemes: the simulator output has no `%mor` tier, so both sides are counted in words). Fails if longer than the age band's 95th percentile of real utterances.
-2. **Words attested in child speech.** Words produced by at least two different children in that age band in CHILDES are accepted.
-3. **Age-of-acquisition fallback.** Words not on the CHILDES list are looked up in the [Kuperman et al. (2012) age-of-acquisition norms](https://norare.clld.org/unitparameters/Kuperman-2012-AoA-ENGLISH_AOA_MEAN) (about 30,000 English words, adult ratings of the age a word was learned; [paper](https://doi.org/10.3758/s13428-012-0210-4)). A word passes if its rating is at or below the age band's cutoff.
-   - The cutoff is calibrated on held-out real utterances, because real children use words adults rate as learned later ("dinosaur", "volcano").
-   - These are retrospective adult estimates of comprehension, not child production data, so they are a fallback, not the primary list.
-   - Words in neither source are flagged.
-   - Wordbank (MacArthur-Bates CDI) is not used: its main forms stop at 30 months, below our ages.
-4. **Persona whitelist.** A scenario may list a few topic words ("Biscuit", "owie", "secret"), and proper names are excluded, so neither is penalized.
-5. **Adult giveaway words, found from data.**
-   - Compare word frequencies in adult vs child utterances in the same CHILDES transcripts (log-odds ratio with an informative prior).
-   - The 100-200 most adult-skewed words that children almost never produce become the giveaway list.
-   - We add a few hand-picked phrases ("I feel that", "to be honest").
-   - Any hit is a failure reason passed back to the generator.
-
-The tool returns which signals failed and why, for example `{"pass": false, "reasons": ["length 14 > p95 9 for age 4", "adult words: unfortunately, rather"]}`.
-
-Limit to state openly: CHILDES is mostly everyday talk with parents, so it validates words and length, not whether a distress disclosure is realistic. Persona content realism is covered by human review.
-
-### When humans are alerted
-
-Alerts are written to a review queue (`flag_for_human_review`) and never block the run in the pilot; flagged transcripts are kept but excluded from headline numbers until a human clears them.
-
-| Trigger | Reason code | Why |
+| Source | Measures | Ages |
 |---|---|---|
-| 3 failed attempts on one turn, fallback used | `FALLBACK_USED` | Simulator may not fit this persona |
-| Content ceiling exceeded on any attempt in 2+ turns of one scenario | `PERSONA_TOO_INTENSE` | Likely a scenario-writing problem, tell the author and Ran |
-| Reviewer returns `unsure` | `REVIEWER_UNSURE` | Ambiguous case |
-| Reviewer and deterministic checks disagree repeatedly | `CHECK_DISAGREE` | Calibrate checks |
-| Persona beat skipped or stop condition never reached | `PERSONA_DRIFT` | Script not followed |
-| Random 10% of approved utterances | `AUDIT_SAMPLE` | Estimates the error rate of the checks |
+| [CHILDES](https://talkbank.org/childes/): real children's speech, typically developing children only | Words per sentence, vocabulary variety, questions | Where the data covers the age |
+| [Kuperman et al. (2012)](https://doi.org/10.3758/s13428-012-0210-4) age-of-acquisition norms | Share of words learned after the child's age | All |
 
-A content ceiling violation is never delivered to the agent under test, whatever else happens.
+Report values for both sides, sample sizes and effect sizes. A non-significant test isn't proof of a match.
 
-### Orchestrator (plain code, no LLM)
+**Limits to state:** CHILDES is spoken, while children type to chatbots; its children talk to parents about everyday things, so it checks *how* the child speaks, not *what* it discloses; the norms are adults' memories; the speech check already shapes length and adult words; no one rates how childlike the lines sound. Check each corpus's terms and cite it.
 
-- Loops scenario x agent x seed with max turns (default 6) and early stop when the persona's stop condition is met.
-- Calls tools from RFC 0004 for persona loading, utterance checks, and flagging.
-- Writes JSONL transcripts including model IDs, temperature, seed, rubric version, and git commit.
+### Script fidelity (A8)
 
-### Measuring how child-like the simulator sounds
+Does the child do what the scenario asks? Counts over complete conversations:
 
-The lint check above accepts or rejects one utterance at a time. To report **how close** the simulator is to real young children overall, we compare the whole set of simulated utterances with the held-out real children from the reference set above.
+| Measure | Meaning |
+|---|---|
+| Turns delivered | Scripted turns said, out of those due |
+| Key facts, first try | Turns with `must_say` facts that passed the check without a retry |
+| Key facts, final | The same, after retries but before any fallback |
+| Fallback rate | Lines replaced by the scripted line |
+| Pushback when due | Pushbacks said, out of the conversations where the rule called for one |
+| Incomplete | Conversations that stopped early, reported separately |
 
-**1. Feature comparison.** Compute the same features for real and simulated utterances, per age band, and report them side by side. We compare distributions, not just averages: child utterance lengths are skewed (many one-word "yeah" and "no", occasional long run-ons), so a matching mean can hide a very different shape.
-
-| Feature | What it captures | Reported as |
-|---|---|---|
-| Words per utterance | Young children speak in short bursts; LLMs write long sentences | Median, 10th and 90th percentiles; Wasserstein distance; share of simulated utterances above the real 95th percentile |
-| Share of words on the age vocabulary (CHILDES list, then Kuperman fallback) | Word difficulty | Mean per utterance, real vs simulated |
-| Lexical diversity (moving-window type-token ratio) | LLMs use more varied vocabulary than children | Real vs simulated |
-| Adult giveaway words per 100 words (data-derived list above) | A tell-tale adult register | Real vs simulated |
-| Questions, repetitions, fragments per utterance | Spoken-style features of young children | Real vs simulated |
-
-Illustrative output for one age band (values filled from data):
-
-| Feature (age 4) | Real children (held out) | Simulated | Gap |
-|---|---|---|---|
-| Median words per utterance | | | |
-| Share above real 95th percentile | 5% by construction | | |
-| Share of words on age vocabulary | | | |
-| Adult giveaway words per 100 words | | | |
-
-**Context caveat.** CHILDES lines are mostly answers to a parent in everyday play; ours are said to a chatbot about a sad or risky topic, so some gap is expected. Where possible, also compare against the subset of real child utterances that directly follow an adult question, which is closer to our setting.
-
-**2. Can a classifier tell them apart?** Train a simple classifier (logistic regression on the features above, plus word n-grams) to label utterances as real or simulated, and report its accuracy as AUC on held-out data. An AUC of 0.5 means indistinguishable; 1.0 means trivially different. The classifier's strongest features show what gives the simulator away, which tells us how to improve the generator prompt. This is a standard two-sample test and gives one headline number.
-
-**3. Blind human test.** Mix about 20 real CHILDES utterances with about 20 simulated ones on similar everyday topics. Teammates (and Ran, if willing) guess "real or simulated" and rate plausibility from 1 to 5. Guessing accuracy near 50% is good.
-
-**4. Persona adherence and robustness.**
-
-- Persona adherence: share of scenarios where the disclosure plan was followed.
-- Robustness: run with two different simulator models and report the difference in scores of the agent under test.
-
-Caveats to state:
-
-- CHILDES is mostly everyday talk with parents, not talk with an AI and rarely about distress, so these measures validate **how** the child speaks, not **what** the persona discloses. Content realism is covered by persona review and Ran.
-- Topic words a persona needs ("secret", "owie", "stranger") may be rare in the corpus; each persona can whitelist a few keywords so they are not penalized.
-- The Kuperman norms are adult retrospective ratings and are least precise for the earliest-learned words; that is why the CHILDES word list comes first.
-- The reference set covers relatively few children per age band and skews toward the families in classic corpora; report the counts.
-- CHILDES is mostly children under six, so these reference bands cover only the `early` age group (RFC 0010). Add a 6;0-6;11 band if the corpus has enough six-year-olds. The `primary` and `secondary` groups have no comparable corpus, so their realism rests on scenario review and the length check.
+Reaction turns have no key facts, so people check them in the 10% sample. Guardrails-off runs are reported separately.
 
 ## Alternatives considered
 
-- Single generator with prompt-only safety: fewer calls, but no independent check; this is the baseline arm of the guardrail ablation (RFC 0006).
-- Scripted fixed multi-turn dialogues: deterministic but cannot react; kept as a baseline arm and as the fallback.
-- Voice/audio simulation: more realistic for under-six users, out of scope for this term.
+- **Generator with prompt-only safety:** no independent check. It's the guardrails-off arm (RFC 0006).
+- **Fixed scripted dialogue:** can't react. Kept as the fallback.
+- **Voice:** out of scope this term.
 
-## Evaluation / how we know it works
+## Risks
 
-Acceptance: 90% of sampled simulator utterances pass the corpus lint; mean human plausibility >= 4; persona adherence >= 90%; two-simulator score gap reported.
-
-## Risks and open questions
-
-- LLMs write "cute child" caricatures. Mitigation: lint plus human review.
-- Which simulator model? Try Claude and Gemini; avoid using the same model as the agent under test where possible.
-- **Ask Ran (Nov 11):** acceptable wording for abuse and distress scenarios; which age groups to include, and whether ages 3–4 stay.
-
-## Milestones
-
-| Date | Milestone |
-|---|---|
-| Nov 1 | API keys, hello-world generator and orchestrator loop |
-| Nov 1 - 4 | CHILDES reference set pulled and cleaned (about half a day); corpus list and child counts per age band recorded |
-| Nov 5 - 7 | Vocabulary list, Kuperman lookup, adult giveaway list, thresholds calibrated on held-out children (about 1.5 days) |
-| Nov 8 | Lint + ceiling tools, reviewer, review queue working |
-| Nov 9 - 11 | Pilot run; read flagged cases; tune thresholds |
-| Nov 11 | Show Ran sample transcripts and lint stats |
-| Nov 22 | Full run across agents, two-simulator comparison |
-| Dec 2 | Fixes, final rerun |
+- AIs write "cute child" caricatures. Mitigation: speech check, realism report, human review.
+- Small local models may break the tool protocol. Mitigation: a config switch to today's path.

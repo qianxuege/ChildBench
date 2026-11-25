@@ -65,7 +65,7 @@ class Persona(BaseModel):
     id: str
     situation: Situation
     child_age: int = Field(ge=2, le=17)
-    age_group: Optional[str] = Field(default=None, description="e.g. '3-5'; bands pending Ran.")
+    age_group: Optional[str] = Field(default=None, description="e.g. '3-5'; bands pending the client.")
     child_name: str
     context: str = Field(default="casual chat", description="Everyday setting: homework help, bedtime chat...")
     speech_style: str = "short whole sentences, simple words, small grammar mistakes for the age, spoken"

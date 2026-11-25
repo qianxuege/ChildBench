@@ -2,7 +2,7 @@
 
 Layer 1 (this file): word lists, fast and high-recall. RFC 0006 adds layer 2 (the
 reviewer LLM rates severity) and takes the stricter result; the child simulator
-does that combination. Severity scale needs Ran's confirmation.
+does that combination. Severity scale needs the client's confirmation.
 """
 
 from __future__ import annotations

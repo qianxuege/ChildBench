@@ -1,12 +1,12 @@
 ---
 name: dev-work-package
-description: For ChildBench developers only. Implements one backend work package from RFC 0010 (e.g. A1, A11, B5) end to end — checks its dependencies, branches from main, keeps the package's GitHub issue and project-board card up to date, edits only the package's listed files, runs the checks, records findings in docs/findings.md, writes the handoff note, marks the package done and opens the PR. Use when a developer says "implement A11", "do work package B5", or runs /dev-work-package <id>. Not for benchmark users; for running the benchmark or adding scenarios use the user-facing skills in skills/.
+description: For ChildBench developers only. Implements one work package from RFC 0010 (e.g. A1, A11, B5) end to end — checks its dependencies, branches from main, keeps the package's GitHub issue and project-board card up to date, edits only the package's listed files, runs the checks, records findings in docs/findings.md, writes the handoff note, marks the package done and opens the PR. Use when a developer says "implement A11", "do work package B5", or runs /dev-work-package <id>. Not for benchmark users; to run the benchmark, see README.md.
 argument-hint: <package id, e.g. A11>
 ---
 
 # Implement a ChildBench work package (developers only)
 
-The plan lives in `rfcs/0010-backend-implementation-plan.md`, section 11. Each package is a block like this, and this skill depends on that format:
+The plan lives in `rfcs/0010-implementation-plan.md`, section 11. Each package is a block like this, and this skill depends on that format:
 
 ```
 **A11 · Manual relay** · Owner A · Needs: — (A1 only for the `make run` shortcut) · Status: todo
@@ -35,9 +35,9 @@ The argument is the package id (`A11`, `B5`, `A5-app`, ...). If none was given, 
 ## 2. Check dependencies
 
 1. `git fetch origin` and check that the working tree is clean (`git status --porcelain`). If it isn't, stop and ask: don't stash or discard anyone's work.
-2. For each package under **Needs**, look up its block **in `origin/main`'s copy of the RFC** (`git show origin/main:rfcs/0010-backend-implementation-plan.md`). Each must be `Status: done` there.
+2. For each package under **Needs**, look up its block **in `origin/main`'s copy of the RFC** (`git show origin/main:rfcs/0010-implementation-plan.md`). Each must be `Status: done` there.
    - Needs written as "— (X only for ...)" or "X for the real data" are soft. Note them, but don't block.
-   - Needs that aren't packages (e.g. "Ran's provider decision", "An API key") can't be checked from git. Ask the developer to confirm them.
+   - Needs that aren't packages (e.g. "the client's provider decision", "An API key") can't be checked from git. Ask the developer to confirm them.
 3. If a hard dependency isn't done on `main`, stop. Say which one is missing and who owns it.
 
 ## 3. Branch

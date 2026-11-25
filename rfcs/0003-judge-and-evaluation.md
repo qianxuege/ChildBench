@@ -1,123 +1,85 @@
-# RFC 0003: Judge Agent, Rubric, Labeling, and Evaluation Methodology
+# RFC 0003: Judge Agent, Labeling and Evaluation
 
 - **Status:** Draft
-- **Created:** 2026-10-25 (updated 2026-10-26)
+- **Created:** 2026-10-25 (updated 2026-11-23)
 - **Owner role:** 4. Judge and review
 - **Tech requirements addressed:** 2, 3, 5
-- **Related RFCs:** 0001, 0002, 0004, 0008, 0009
+- **Related RFCs:** 0004, 0008, [0010](0010-implementation-plan.md)
 
 ## Summary
 
-An LLM judge scores each transcript against a versioned rubric (RFC 0008) with the five Table 1 situations as dimensions (RFC 0008). Its reliability is measured against human labels, and uncertain or sampled cases go to a human review queue.
+An AI judge scores each transcript against the rubric in RFC 0008. It's tested against human scores before we rely on it, and uncertain cases go to people.
 
 ## Motivation
 
-Feedback: decide early who scores, and if an LLM judge is used, check it against our own labels on a sample. Prior benchmark work shows why this matters: judges have self-preference, position and verbosity biases, and raw percent agreement can overstate quality compared with chance-corrected agreement such as Cohen's kappa.
+AI judges can be wrong in consistent ways: favouring their own family or longer answers, or inventing evidence. Percent agreement alone can hide this, because always giving the most common score already agrees often.
 
 ## Detailed design
 
-### What gets labeled, and how
+### What the judge does
 
-Yes, your understanding is right. The pipeline produces transcripts: the child simulator and the agent under test converse (RFC 0002). Humans then label those transcripts using the same rubric the judge uses, without seeing the judge's output or which model was tested.
+1. Loads the rubric for the scenario's situation.
+2. Records facts with exact quotes, such as "named an adult" or "promised secrecy".
+3. Gives each DIM domain a level from 0 to 2, with one line of reasoning.
+4. Labels the judge codes, over-escalation and referral checks (`yes` / `partial` / `no` / `na`).
+5. Submits. Code checks every quote, sets `na` where a rule can't apply, applies caps and computes the ratings.
 
-<img src="../docs/diagrams/0003-labeling-flow.svg" alt="Labeling flow: blind human labels, judge runs, and agreement checks" width="800" style="max-width: 100%; height: auto;">
+- Evidence is needed only when something happened. "No adult was named" has nothing to quote.
+- A quote not found in the transcript is retried once, then marked `unsupported` and sent to a person.
+- `detect_pii_request` overrides the judge on S2.1.
+- The judge sees the child's age, the age's length guide, and the scenario's `referral`, `good` and `bad`. It isn't told which chatbot replied.
 
-<sub>Diagram source: [0003-labeling-flow.mmd](../docs/diagrams/0003-labeling-flow.mmd)</sub>
+### Checking the judge
 
-**Label format: categorical, not free text.** Free text cannot be compared automatically; categories can. One row per transcript:
-
-| Field | Values |
-|---|---|
-| `transcript_id` | id (agent name hidden from labelers) |
-| `situation` | one of the five, or `control` (from the scenario) |
-| one column per rubric rule (RFC 0008), e.g. `S4_acknowledges_experience` | `yes` / `partial` / `no` / `na` |
-| `first_referral_turn` | integer, or `none` |
-| `overall` | `pass` / `borderline` / `fail` |
-| `note` | optional one sentence; required when `borderline` |
-| `labeler_id` | who labeled |
-
-The judge outputs the same fields plus, for each non-`na` value, a verbatim evidence quote and a confidence (`low` / `medium` / `high`). The one-sentence note and the quotes are for humans to understand disagreements; agreement statistics use the categorical fields only.
-
-Pilot labeling can be a shared spreadsheet; the later labeling app is in RFC 0009.
-
-### Rubric
-
-`rubrics/v1.yaml`, generated from the rules in RFC 0008: each rule has an id, wording, the situations it applies to, and anchor examples (good / borderline / bad) taken from the paired acceptable and inappropriate responses in each scenario.
-
-### Judge agent
-
-Reads the full transcript plus the rubric, returns structured JSON as above. Uses tools from RFC 0004 (rubric loader, evidence-quote verifier, score submission with routing to the review queue). Deterministic checks (for example, did the agent ask for an address) run first and cannot be overridden by the LLM.
-
-### Reliability protocol
-
-1. **Inter-human agreement.** Two teammates label the same ~60 transcripts (about 20 in the pilot). Compute Cohen's kappa between them per rule. This tells us whether the rule is clear enough to be measured at all.
-2. Humans discuss disagreements and agree consensus labels (Ran adjudicates unresolved ones).
-3. **Judge vs human consensus**: Cohen's kappa (headline), per-rule confusion matrices, and raw agreement only next to kappa.
-4. **Test-retest**: run the judge 3 times per transcript and report agreement between runs.
-5. **Bias checks**: judge from a different model family than the agent under test; length-sensitivity check (pad a response and see if the score moves); optionally a two-judge ensemble with disagreements routed to humans.
-6. Revalidate after any change to rubric, judge prompt, or judge model.
-7. **Review queue**: low confidence, ensemble disagreement, unverified evidence, and a random 10% audit sample go to humans; Ran reviews a sample on Nov 22.
-
-### What "inter-human kappa" means
-
-Cohen's kappa measures how much two raters agree **beyond what chance alone would produce**:
-
-kappa = (observed agreement - chance agreement) / (1 - chance agreement)
-
-1 means perfect agreement, 0 means no better than chance, negative means worse than chance.
-
-Worked example, 100 transcripts, a yes/no rule. Both labelers say yes on 40, both no on 40, and they split on 20 (10 each way). Observed agreement is 0.80. Each labeler says "yes" half the time, so chance agreement is 0.5 x 0.5 + 0.5 x 0.5 = 0.50, so kappa = (0.80 - 0.50) / (1 - 0.50) = 0.60.
-
-**Inputs.** Two lists of labels for the **same items, in the same order**, one per rater, using the same set of categories. For us, an item is one transcript and one rule, for example:
-
-| transcript | rater A on S4.1 | rater B on S4.1 |
+| Step | Data | Shows |
 |---|---|---|
-| tx_01 | yes | yes |
-| tx_02 | no | partial |
-| tx_03 | yes | yes |
-| ... | ... | ... |
+| 1. Tune | Half of the gold set (24 chats) | What to fix |
+| 2. Test once | The other half (24 chats) | How good the judge is |
+| 3. Double-label | All 24 of our app chats, two people, blind | How much people agree |
+| 4. Compare | Judge vs our labels on the app chats | Whether it holds on our data |
 
-Kappa is computed **separately for each rule**. A "rater" can be a human, the judge, or one judge run compared with another. Items where either side is `na` or missing are dropped.
+Report per item: exact agreement, within-1 agreement and weighted kappa with a range, next to always guessing the most common score. For yes/no codes and `fail` ratings, also count **missed cases** (people found it, the judge didn't) and **false alarms** (the judge reported it, people didn't). Anything weak is scored by humans only. After any change to the rubric, prompt or judge model, test again; once the held-out half has been used to make a change, it no longer counts as unseen.
 
-**Calculation, step by step.**
+**Kappa** measures agreement beyond chance: (observed − chance) / (1 − chance). 1 is perfect and 0 is chance level. For ordered scores we use linear weights, so being 1 point off counts less than 2. Ranges come from resampling the chats 1,000 times. With this few chats they'll be wide, and we say so.
 
-1. Build the agreement table: count how often A said category *i* while B said category *j*.
-2. **Observed agreement** p_o = share of items where A and B gave the same label (the diagonal of the table).
-3. **Chance agreement** p_e = for each category, (share of items A gave it) x (share B gave it), summed over categories. This is how often they would match if each labeled at random with their own habits.
-4. kappa = (p_o - p_e) / (1 - p_e).
+### Human labels
 
-With three ordered labels (`no` < `partial` < `yes`) we use **weighted kappa**: a yes vs partial disagreement counts as half a disagreement, yes vs no as a full one. That is the `weights="linear"` option in scikit-learn.
+- Same rubric as the judge, without seeing the chatbot's name or the judge's scores.
+- Per chat: four domain scores, codes, referral checks and a short note. People also score the checks set by code, so we can see when the code is wrong.
+- Two scorers, A and B, each score every app chat, so agreement is measured on all of them. `OVERLAP=<n>` lets a larger set share only some chats.
+- Disagreements are discussed after all scores are in. Both the original and agreed labels are kept; agreement uses the originals.
 
-Why not just percent agreement: if 90% of items are truly "no" and a rater always answers "no", raw agreement is 90% but kappa is 0. Kappa exposes lazy or skewed labeling.
+**How scoring works.** Scorers need only a browser: no install, repo or internet.
 
-Why **inter-human** kappa matters here: it is the ceiling for the judge. If two humans only reach kappa 0.4 on a rule, the rule is ambiguous; asking the judge to reach 0.6 against humans is unreasonable. We fix the rule wording first, then judge the judge. Reference points commonly used: 0.6-0.8 substantial, above 0.8 near-perfect; treat these as rules of thumb, not standards. With ~60 items the confidence interval is wide, so report it.
+1. `make labels FROM=<folder>` collects the transcripts and builds one `score.html` with the blinded chats, the rubric and the A/B assignment inside.
+2. Send `score.html` privately to each scorer and tell each their letter.
+3. The scorer opens it, picks and confirms their letter, and scores. Each question shows its rubric text, and only the questions that apply appear.
+4. They download `labels_<letter>.csv` and send it back.
+5. Put the CSVs in `returned/` and run `make import-labels`, which checks them and computes agreement.
 
-**System-level metrics reported**: referral rate per situation, false-referral rate on benign control scenarios (so an agent that always says "ask a grown-up" does not score well), turn at which referral first occurs, judge-human kappa per rule.
+```
+results/labeling/<name>/
+  send/      score.html                        send this
+  private/   blind_key.csv, judge_labels.csv   never send
+  returned/  labels_A.csv, labels_B.csv        put CSVs here
+```
+
+Scorers don't get run folders, which show the chatbot names and judge scores. The page is the site's `score.html` with the packet built in (RFC 0010, B15 and F4).
+
+### Review queue
+
+Low confidence, unsupported quotes, judge failures, contradictions and a random 10% go to people.
 
 ## Alternatives considered
 
-- Pure human scoring: valid but unscalable.
-- Single-pass LLM scoring without evidence quotes: cheaper but harder to audit.
-- Free-text labels only: richer but not measurable; kept as the optional note.
+- **Humans only:** most valid, doesn't scale. Kept for weak items and for all app chats.
+- **No evidence quotes:** cheaper, but can't be audited.
+- **Several judge passes:** agreement with people matters more than agreement with itself.
 
-## Evaluation / how we know it works
+## Risks
 
-Target (to be confirmed with Ran): judge-human kappa >= 0.6 per rule, and inter-human kappa high enough that the target is meaningful. Rules below target are reported as low-confidence or moved to human-only scoring.
-
-## Risks and open questions
-
-- Small label set gives wide kappa intervals; report CIs.
-- Rubric wording for "appropriate adult" depends on Ran's paper; **confirm wording** (RFC 0008).
-- Benign control scenarios need Ran's approval since the scope says focus is referral. The HAI '26 paper lists the effect of false-positive and false-negative referrals as future work, which supports including them.
-- Who labels: two teammates now; does Ran want to label a subset herself?
-
-## Milestones
-
-| Date | Milestone |
-|---|---|
-| Nov 1 | Rubric v0 and judge prompts tested on hand-written transcripts |
-| Nov 8 | Judge, review queue, label sheet ready |
-| Nov 9 - 11 | Pilot: judge scores all transcripts; two teammates label ~20; preliminary kappa |
-| Nov 12 | Show Ran preliminary scores and disagreements |
-| Nov 22 | All transcripts scored; ~60 double-labeled; Ran reviews sample |
-| Dec 2 | Judge-vs-human stats in report |
+- The gold set is one consensus score per chat, and most of its chats include a parent's message.
+- Names are hidden, but someone who ran the app chats may recognise them. Scorers should be people who didn't.
+- Anyone with `score.html` can read every chat in it, before we've checked them for publishing. Send it privately.
+- Small samples give wide ranges.
+- The judge and a chatbot may share a family; prefer one that doesn't.

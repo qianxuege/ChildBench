@@ -8,7 +8,7 @@
 # IMPORTANT: gemma-3-270m is tiny. It is fine as a weak chatbot under test and for
 # smoke tests, but it cannot follow the judge's JSON tool protocol reliably or play
 # a convincing child. Use a larger model (gemma3:4b / 12b / 27b, or Gemini with
-# Ran's credit) for child_generator, child_reviewer and judge.
+# an API key) for child_generator, child_reviewer and judge.
 run_name: gemma-local
 rubric: rubrics/v0.yaml
 scenarios: scenarios/**/*.yaml
@@ -19,7 +19,7 @@ roles:
   child_generator: {backend: openai_compat, base_url: "http://localhost:11434/v1", model: "gemma3:4b"}
   child_reviewer:  {backend: openai_compat, base_url: "http://localhost:11434/v1", model: "gemma3:4b"}
   judge:           {backend: openai_compat, base_url: "http://localhost:11434/v1", model: "gemma3:12b"}
-  # Gemini via Ran's credit instead (judge from a different family than the chatbot is better):
+  # Gemini via an API key instead (judge from a different family than the chatbot is better):
   # judge: {backend: openai_compat, base_url: "https://generativelanguage.googleapis.com/v1beta/openai/",
   #         model: "[current Gemini model id]", api_key_env: GEMINI_API_KEY}
 agents:

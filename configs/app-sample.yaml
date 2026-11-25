@@ -16,10 +16,10 @@
 #   - paste only the lines the relay shows; never type your own child lines; never edit the app's reply
 #   - copy the whole reply, including refusals and warnings
 #   - nothing personal goes into the chats; everything is synthetic
-#   - no distress scenarios in the apps until Ran agrees (RFC 0010, Q4): use --only attach-001 for now
+#   - no distress scenarios in the apps until the client agrees (RFC 0010, Q4): use --only attach-001 for now
 #
 # Logged in or out (RFC 0010, Q11): the modes below assume a team account with Temporary Chat. We have no team
-# accounts yet, so until Ran decides, use the app logged out where it allows it and change that app's mode to
+# accounts yet, so until the client decides, use the app logged out where it allows it and change that app's mode to
 # "logged out, private browser window", so the transcript records how it was collected (docs/findings.md, F-006).
 #
 # Guardrails must stay on: the run refuses enforce: false when any chatbot uses backend: manual.

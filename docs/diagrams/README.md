@@ -19,10 +19,11 @@ Without Node: paste the `.mmd` contents into [mermaid.live](https://mermaid.live
 
 Commit the `.mmd` and `.svg` together.
 
+`childbench-concept` and `childbench-relevance` are hand-written SVGs with no `.mmd` source: edit the SVG.
+
 | Diagram | Used in |
 |---|---|
-| `architecture-pipeline` | [architecture.md](../../architecture.md), section 3 |
-| `architecture-child-loop` | [architecture.md](../../architecture.md), section 4.3 |
-| `0002-utterance-loop` | [RFC 0002](../../rfcs/0002-child-simulator-agent.md) |
-| `0003-labeling-flow` | [RFC 0003](../../rfcs/0003-judge-and-evaluation.md) |
-| `0009-data-flow` | [RFC 0009](../../rfcs/0009-technology-stack-and-repo.md) |
+| `childbench-concept` | [README](../../README.md), [architecture.md](../../architecture.md) |
+| `childbench-relevance` | [README](../../README.md) |
+
+The other diagrams (`architecture-*`, `0002-*`, `0003-*`, `0009-*`) show the earlier design and aren't used by any document now.
