@@ -503,6 +503,7 @@ Replaces A2 and A14.
 **A17 · Adapt the preprint's cards** · Owner A · Needs: A16 · Status: todo
 
 - Write the 15 files in section 8 in `scenarios/`, each with `source`, `must_say`, `referral`, `good` and `bad`. Placeholders in 9.2.
+- Set `rubric: rubrics/v1.yaml` in `full.yaml` and `app-sample.yaml`; a config without it uses v0.
 - 9.4 and 9.5: `approval_basis: "released in the DIM preprint, Appendix A"`; `client_approved` stays false. Each file's `source` credits the preprint and says "adapted".
 - **Files:** `scenarios/`, `configs/full.yaml` (new), `configs/app-sample.yaml`
 - **Done when:** `make check` passes on all 15; Adam adds the review in T1; the 4.1 caregiver message matches the preprint's text.
@@ -526,7 +527,7 @@ Replaces A2 and A14.
 
 <a id="wp-b12"></a>
 
-**B12 · Rubric v1 and scoring profiles** · Owner A · Needs: B1 · Status: todo
+**B12 · Rubric v1 and scoring profiles** · Owner A · Needs: B1 · Status: done
 
 Replaces B7.
 
@@ -578,6 +579,7 @@ From the pilot ([F-004](../docs/findings.md), [F-007](../docs/findings.md)): 4 o
 **A6 · Guardrails-off config** · Owner A · Needs: A17 · Status: todo
 
 - `configs/guardrails-off.yaml`: 15 scenarios, `llama3.1:8b`, 1 seed, `enforce: false`. The run name gets `-guardrails-off` automatically.
+- Set `rubric: rubrics/v1.yaml` in `guardrails-off.yaml`; a config without it uses v0.
 - **Files:** `harness/run.py` (run name only), `configs/guardrails-off.yaml` (new), `tests/`
 - **Done when:** a test shows the suffix.
 
@@ -607,7 +609,8 @@ From the pilot ([F-004](../docs/findings.md), [F-007](../docs/findings.md)): 4 o
 Replaces B3.
 
 - Summary and export use DIM domains, codes, over-escalation and the referral rating, as a case grid. Writes `rubric.json`. A distress scenario is exported if `client_approved` is true or `approval_basis` is set, and the basis is shown. Each chat gets a `batch` (`app` or `ollama`), and app chats have a `human_scores` field, empty until B6 fills it.
-- **Files:** `harness/summary.py`, `harness/export.py`, `tests/`
+- Set `rubric: rubrics/v1.yaml` in `configs/mock.yaml`, and update tests that expect v0 from it. `pilot.yaml` stays on v0.
+- **Files:** `harness/summary.py`, `harness/export.py`, `configs/mock.yaml` (rubric only), `tests/`
 - **Done when:** a mock run exports every file in section 10; tests show uncleared material is left out, including a distress scenario with neither approval, and batches are never averaged together.
 
 <a id="wp-b15"></a>
@@ -830,6 +833,7 @@ One line per change, newest first. Findings are in [docs/findings.md](../docs/fi
 
 | Date | Change | Why |
 |---|---|---|
+| Nov 25 | A17, A6 and B14 set `rubric: rubrics/v1.yaml` in their configs | Found in B12: a config without it silently uses v0 |
 | Nov 25 | A18 (PR checks and AI review) removed; T4 added: Claude and Codex review all the code once the build is finished | Not enough Copilot tokens; no paid key; Cici is the only one testing |
 | Nov 25 | A6-run re-scores the guardrails-off run with the judge's guardrails on; B6 uses those scores | Found in B1: otherwise the two runs are judged differently |
 | Nov 25 | A3: stricter key-fact retry message; B10: two judge fixtures | F-011 |
