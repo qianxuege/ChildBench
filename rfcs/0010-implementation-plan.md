@@ -500,7 +500,7 @@ Replaces A2 and A14.
 
 <a id="wp-a17"></a>
 
-**A17 · Adapt the preprint's cards** · Owner A · Needs: A16 · Status: todo
+**A17 · Adapt the preprint's cards** · Owner A · Needs: A16 · Status: done
 
 - Write the 15 files in section 8 in `scenarios/`, each with `source`, `must_say`, `referral`, `good` and `bad`. Placeholders in 9.2.
 - 9.4 and 9.5: `approval_basis: "released in the DIM preprint, Appendix A"`; `client_approved` stays false. Each file's `source` credits the preprint and says "adapted".

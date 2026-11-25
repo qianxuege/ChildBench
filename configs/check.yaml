@@ -1,0 +1,4 @@
+# For `make check` only: validates every scenario file, the 15 preprint cards and the 7 pilot examples. Not a run config.
+rubric: rubrics/v0.yaml
+scenarios: scenarios/**/*.yaml
+guardrails: {allow_unreviewed: true}

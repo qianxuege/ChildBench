@@ -20,7 +20,7 @@ local:
 
 # Validate every scenario file (format, content level, limits) and the rubric without running anything.
 check:
-	python -m harness.run --config configs/mock.yaml --check-only
+	python -m harness.run --config configs/check.yaml --check-only
 
 # Blind label sheet for human scoring of the latest run.
 labels:

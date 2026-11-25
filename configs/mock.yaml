@@ -2,7 +2,7 @@
 # the results files and the site data. The numbers it prints mean nothing.
 run_name: mock
 rubric: rubrics/v0.yaml
-scenarios: scenarios/**/*.yaml
+scenarios: scenarios/*/*.yaml      # the 7 pilot examples; the 15 cards are in scenarios/dim/ (full.yaml)
 seeds: [1]
 guardrails:
   enforce: true            # false = shadow mode (RFC 0006 ablation arm A)

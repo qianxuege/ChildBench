@@ -42,7 +42,7 @@ class Relay:
 
 def _config(base, scenarios, **changes):
     cfg = yaml.safe_load((REPO_ROOT / "configs/mock.yaml").read_text())
-    cfg["scenarios"] = str(scenarios / "**" / "*.yaml")
+    cfg["scenarios"] = str(scenarios / "*" / "*.yaml")
     cfg.update(changes)
     path = base / f"{cfg['run_name']}.yaml"
     path.write_text(yaml.safe_dump(cfg))
@@ -347,7 +347,7 @@ def test_held_out_scenario_only_in_preview(runs, tmp_path, monkeypatch):
     run = _copy(runs[0], tmp_path)
     m = _json(run / "manifest.json")
     scen = tmp_path / "scenarios"
-    shutil.copytree(Path(m["config"]["scenarios"].split("**")[0]), scen)
+    shutil.copytree(Path(m["config"]["scenarios"].split("*")[0]), scen)
     f = next(scen.glob("*/abil-001.yaml"))
     d = yaml.safe_load(f.read_text())
     d["held_out"] = True
