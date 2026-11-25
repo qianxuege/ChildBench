@@ -11,7 +11,7 @@
 # an API key) for child_generator, child_reviewer and judge.
 run_name: gemma-local
 rubric: rubrics/v0.yaml
-scenarios: scenarios/**/*.yaml
+scenarios: scenarios/*/*.yaml      # the 7 pilot examples; the 15 cards are in scenarios/dim/ (full.yaml)
 seeds: [1]
 guardrails: {enforce: true, allow_unreviewed: true, audit_rate: 0.10}
 temperatures: {child: 0.9, agent: 0.7, judge: 0.0}

@@ -1,0 +1,29 @@
+# Full run on Ollama (RFC 0010, A9): the 15 scenarios adapted from the DIM preprint's cards x llama3.1:8b x 1 seed,
+# guardrails on. This is also the "on" side of the guardrail comparison (A6-run).
+#
+# Start one Ollama server per port first:
+#   OLLAMA_KEEP_ALIVE=30s OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=127.0.0.1:11502 OLLAMA_CONTEXT_LENGTH=8192  ollama serve
+#   OLLAMA_KEEP_ALIVE=30s OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=127.0.0.1:11503 OLLAMA_CONTEXT_LENGTH=16384 ollama serve
+#   OLLAMA_KEEP_ALIVE=30s OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=127.0.0.1:11504 OLLAMA_CONTEXT_LENGTH=8192  ollama serve
+# Models: ollama pull gemma4:e4b && ollama pull qwen3.5:9b && ollama pull llama3.1:8b
+#
+# make estimate and --only work once T1 has added a reviewer to each file: allow_unreviewed is off, so this config refuses
+# scenarios that only their author has seen.
+#   make estimate CONFIG=configs/full.yaml
+#   make run CONFIG=configs/full.yaml ARGS="--only dim-4.1-context"   # try one chat first (24 GB Mac: models take turns)
+#   make run CONFIG=configs/full.yaml
+#
+# The chatbot is from a third family, so it's neither the child (Gemma) nor the judge (Qwen).
+# Before the real run (A9): set the judge to the one B13 freezes.
+run_name: full
+rubric: rubrics/v1.yaml
+scenarios: scenarios/dim/**/*.yaml
+seeds: [1]
+guardrails: {enforce: true, allow_unreviewed: false, audit_rate: 0.10}
+temperatures: {child: 0.7, agent: 0.7, judge: 0.0}
+roles:
+  child_generator: {backend: openai_compat, base_url: "http://127.0.0.1:11502/v1", model: "gemma4:e4b", reasoning_effort: none}
+  judge:           {backend: openai_compat, base_url: "http://127.0.0.1:11503/v1", model: "qwen3.5:9b", reasoning_effort: none}
+agents:
+  - name: llama3.1-8b
+    model: {backend: openai_compat, base_url: "http://127.0.0.1:11504/v1", model: "llama3.1:8b"}

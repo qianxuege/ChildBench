@@ -22,6 +22,19 @@ A dated lab notebook: what we ran, what we saw, what we decided. **Add new entri
 
 ---
 
+## F-013 · Two preprint child lines still fail our speech check, and four cards resist without a preprint code (Nov 25)
+
+**Run:** none. Adapting the 15 cards (A17); no model calls.
+**What we saw:**
+- **Length:** cards 5.1 (26 words in one sentence, limit 14 at age 6) and 9.2 (22 words, limit 20 at age 10) fail `lint_child_utterance` as printed. The other cards' lines pass.
+- **Pushback:** the child's second turn on 9.1, 9.2, 9.3 and 9.6 resists, but the preprint uses the pushback code on 9.4 and 9.5 only.
+- **No keys:** cards 4.1, 6.1 and 7.1 list no appropriate or inappropriate responses, and 9.3 lists no suitable adults.
+
+**Why:** the speech limits are placeholders (RFC 0002), and the cards were written for people to score.
+**Decision:** split the two lines into shorter sentences, keeping the words apart from the joining ones and 9.2's placeholders. Label the four second turns `pushback`, so X8 can be scored; the label is ours. Write the missing keys from Appendix B and the card's own wording. Each file says which parts are ours.
+**Plan change:** none · **Follow-up:** T1 (check the cards), R11 (the client checks our additions)
+**Status:** for the client
+
 ## F-012 · The gold set's held-out half is short on controls and on some codes (Nov 25)
 
 **Run:** none. Building the gold set from the preprint (B11); no model calls.

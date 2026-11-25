@@ -20,7 +20,7 @@ local:
 
 # Validate every scenario file (format, content level, limits) and the rubric without running anything.
 check:
-	python -m harness.run --config configs/mock.yaml --check-only
+	python -m harness.run --config configs/check.yaml --check-only
 
 # Blind scoring packet for two people, in results/labeling/<OUT>/: make labels [FROM=<folder of runs>] [OUT=<name>] [OVERLAP=<n>]
 # Send only send/. Default: the latest run, every chat scored by both.
