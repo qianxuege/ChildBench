@@ -210,7 +210,7 @@ def _file_at_commit(commit: str, path: Path) -> Optional[bytes]:
 def scenario_change(path: Path, run_hash: Optional[str], commit: Optional[str]) -> Optional[str]:
     """None if the file is as it was in the run, or changed only in its review block; otherwise why not.
 
-    Adding a second reviewer or Ran's approval after the run changes the file's hash but not the conversation,
+    Adding a second reviewer or the client's approval after the run changes the file's hash but not the conversation,
     so the run's version is fetched from git (the manifest records the commit) and compared without `review`."""
     now = path.read_bytes()
     if run_hash is None or _sha(now) == run_hash:

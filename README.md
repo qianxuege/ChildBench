@@ -1,18 +1,92 @@
 # ChildBench
 
-A benchmark of how chatbots respond to children: does the chatbot bring in a trusted adult at the right moments, and not otherwise?
+**Does a chatbot bring in a trusted adult when a child needs one, and simply help when they don't?**
 
-Team 20, CMU Intro to AI, with client Ran An. Built on An, Chung & Libertus, *When Should Agents Call for a Grown-Up?* (HAI '26). Pilot run Nov 9, pilot meeting with Ran Nov 11, final presentation Dec 3.
+ChildBench is an open benchmark that plays short conversations between a simulated child and a chatbot, scores the chatbot's replies, and reports how far those scores can be trusted.
 
-**Status: pre-pilot.** The pipeline runs from start to finish, but there are no results worth citing yet. See [Known problems](#known-problems).
+Team 20, Carnegie Mellon University, Introduction to AI, Fall 2026.
 
-| Read this | For |
+> **Status, Nov 25, 2026: in development.** The pipeline runs end to end and a pilot is done. The final scenarios, rubric and judge checks are being built, and the full run is due Nov 27–30. **There are no results worth citing yet.** Parts marked *planned* aren't built. [RFC 0010](rfcs/0010-implementation-plan.md#who-does-what-in-order) has the order, owners and dates.
+
+**Contents:** [Concept](#core-concept) · [Why it matters](#why-it-matters) · [Scope](#project-scope) · [How it works](#how-it-works) · [Technical requirements](#technical-requirements) · [Pilot findings](#what-we-know-so-far) · [Run it](#run-it) · [Responsible AI](#responsible-ai) · [What's next](#whats-next) · [Authors](#authors) · [References](#references)
+
+## Core concept
+
+<img src="docs/diagrams/childbench-concept.svg" alt="ChildBench pipeline: scenarios go to a pretend child, which talks with the chatbot under test; the transcript goes to the judge and to human scorers, and then to results" width="820" style="max-width: 100%; height: auto;">
+
+Two AI agents do the work. The **pretend child** plays a scripted child and reacts to the chatbot. The **judge** scores the finished conversation and must quote evidence. Plain code runs the steps, enforces the checks and computes the scores, and people check the judge.
+
+## Why it matters
+
+<img src="docs/diagrams/childbench-relevance.svg" alt="A chatbot can fail a child in two ways: too little referral and too much escalation. ChildBench measures both, for developers, researchers and child-safety reviewers" width="820" style="max-width: 100%; height: auto;">
+
+Children use general chatbots for homework, games and secrets. Most child-safety tests ask whether a chatbot blocks harmful text. That misses two failures: **keeping a child's problem to itself**, and **sending the child to a hotline over a bad day**.
+
+| Who | What ChildBench lets them do |
 |---|---|
-| [architecture.md](architecture.md) | Plain-language overview of the whole system |
-| [rfcs/](rfcs/) | The design decisions, one RFC per area |
-| [rfcs/0010](rfcs/0010-backend-implementation-plan.md) | The backend plan: what to build next, the two-person split, and work packages to run with Claude Code. Takes priority over the other RFCs where they differ |
-| [harness/README.md](harness/README.md) | Harness detail: results files, decisions so far, to-do list |
-| [docs/related-benchmarks.md](docs/related-benchmarks.md) | What other child-safety benchmarks do, with sources |
+| **AI product teams** | Find these failures before release, and see whether a change helped |
+| **Researchers** | Repeat a run, change the scoring, and add scenarios |
+| **Schools, parents and policy reviewers** | Read evidence about behaviour instead of a marketing claim |
+
+Regulators are asking too: the U.S. FTC has ordered seven companies that offer AI companions to explain how they test and monitor effects on children (An et al., 2026a).
+
+## Project scope
+
+**In scope:** English text chats of a few turns between one simulated child (ages 6–12 in the final scenarios) and one chatbot, scored for developmental fit and for referral to a trusted adult.
+
+| | Included |
+|---|---|
+| **Scenarios** | 15 adapted from the preprint's released cards (An et al., 2026a): five referral situations, two controls and everyday moments *(planned)* |
+| **Chatbots** | Free ChatGPT, Claude and Gemini apps on 8 scenarios, 24 chats; one local model on all 15 |
+| **Scoring** | A four-domain sheet (0–2 each) on every chat; 12 referral checks on the five referral situations *(planned)* |
+| **Evidence** | Judge vs 48 human-scored chats, two human scorers on all 24 app chats, guardrails on vs off |
+
+**Out of scope:** voice, images, real children or their data, severe content, real children's products, fine-tuning any model, a single overall score or ranking, and proof of any product's safety.
+
+The five referral situations come from An et al. (2026b): a request beyond the chatbot's ability, personal data, isolation or over-attachment, a distressing disclosure, and an unsafe or consequential request.
+
+## How it works
+
+1. **Scenario.** A file lists the child's age, lines, key facts, and what a good and a bad reply look like. The child and the chatbot never see the good and bad parts.
+2. **Pretend child.** It says each line in its own words. Each line is checked for content level, age-appropriate speech and realistic personal data, and *(planned)* for the key facts. After 3 failed tries the scripted line is used and flagged.
+3. **Conversation.** Apps are reached by a person copying and pasting each checked line and reply (the relay). Local models are called directly.
+4. **Judge.** It records facts with exact quotes. Code rejects invented quotes, applies fixed rules and computes the rating.
+5. **People.** Two scorers rate the app chats without seeing the chatbot's name or the judge's scores *(planned)*. We report weighted kappa (agreement beyond chance), missed cases and false alarms.
+6. **Results.** Scores and transcripts are exported to a static site after a publishing check. App and local results stay separate.
+
+Full explanation: [architecture.md](architecture.md). Design decisions: [rfcs/](rfcs/).
+
+| Path | What |
+|---|---|
+| [`harness/`](harness/README.md) | Orchestrator, agents, tools, scoring |
+| `scenarios/`, `rubrics/`, `configs/` | Scripts, checklists, run settings |
+| `site/` | Website |
+| [`docs/findings.md`](docs/findings.md) | What we ran and learned, dated |
+| [`docs/related-benchmarks.md`](docs/related-benchmarks.md) | How other benchmarks compare |
+
+## Technical requirements
+
+| # | Requirement | How we meet it | Status |
+|---|---|---|---|
+| 1 | Agentic workflow | Judge runs a tool loop; the child becomes a tool-calling agent ([A3](rfcs/0010-implementation-plan.md#wp-a3)) | Judge done; child *planned* |
+| 2 | Pretrained models | Gemma and Qwen through Ollama; nothing is trained | Done |
+| 3 | At least 5 custom tools, documented for agents | 10 deterministic tools with agent-facing docstrings ([RFC 0004](rfcs/0004-agentic-tools.md)); an 11th *planned* | Done |
+| 4 | Skill folder used by the team or made for the client | [`dev-work-package`](.claude/skills/dev-work-package/SKILL.md), which takes a work package from plan to pull request | Done |
+| 5 | Evaluation | Judge vs gold set, human vs human, tool accuracy, child realism and script fidelity | *Planned* |
+| 6 | Data protection and simulated-data quality | Synthetic data only, fake-data and content checks; key-fact checks and scenario reviews | Partly done |
+| 7 | Safety guardrails | Content, speech, fake-data, quote and publishing checks ([RFC 0006](rfcs/0006-safety-guardrails.md)) | Done; key-fact check *planned* |
+| 7.1 | With vs without guardrails | The same 15 scenarios, guardrails on and off: counts and side-by-side examples | *Planned* (Nov 28–29) |
+
+**About 7.1.** Guardrails apply to our agents, never to the chatbot's replies. "Off" means failed checks are logged but not blocked, so both runs are measured the same way. The content limit stays on in both. With 15 pairs we report counts, not significance.
+
+## What we know so far
+
+From the pilot: 7 scenarios × 2 small local models × 2 seeds, 28 conversations, plus one complete free-app chat. These are **leads, not results**, because the judge wasn't checked against people.
+
+- **Secrecy:** in one scenario, once the child asked for secrecy, neither local model pointed the child to an adult ([F-005](docs/findings.md)).
+- **Over-attachment:** one ChatGPT chat stayed warm as a "bestie", never said it was an AI, and gave no concrete step to an adult ([F-007](docs/findings.md)).
+- **Our judge made mistakes:** 4 of 28 chats went unscored, and it scored rules that didn't apply ([F-004](docs/findings.md)). That is why judge accuracy is our main focus.
+- **Our own checks had bugs:** "I won't tell Mommy" counted as a referral ([F-008](docs/findings.md)), and a timeout was scored as a chatbot failure ([F-009](docs/findings.md)). Both fixes are *planned*.
 
 ## Run it
 
@@ -24,16 +98,13 @@ pip install -e ".[dev]"
 
 make test    # unit tests
 make check   # validate scenarios and rubric
-make mock    # full run offline, no keys: its numbers mean nothing, it only proves the wiring
+make mock    # full run offline, no keys; its numbers mean nothing
 make site    # the website, at http://127.0.0.1:11510
 ```
 
-### With free models on your own machine
-
-This uses [Ollama](https://ollama.com), with one server per port so each model is easy to look at. It was tested on a Mac with 24 GB of memory.
+**With local models:** install [Ollama](https://ollama.com). Tested on a Mac with 24 GB of memory.
 
 ```bash
-brew install ollama
 ollama serve &      # any one server, just for the downloads; stop it afterwards
 ollama pull gemma3:270m && ollama pull gemma4:e4b && ollama pull qwen3.5:9b
 
@@ -42,152 +113,67 @@ OLLAMA_HOST=127.0.0.1:11501 OLLAMA_CONTEXT_LENGTH=4096  ollama serve &
 OLLAMA_HOST=127.0.0.1:11502 OLLAMA_CONTEXT_LENGTH=8192  ollama serve &
 OLLAMA_HOST=127.0.0.1:11503 OLLAMA_CONTEXT_LENGTH=16384 ollama serve &
 
-make local   # uses configs/local.yaml
+make local
 ```
 
-| Port | Model | Size | Role in `configs/local.yaml` |
-|---|---|---|---|
-| 11501 | `gemma3:270m` | 0.3 GB | Weak chatbot under test |
-| 11502 | `gemma4:e4b` | 9.5 GB | Pretend child, reviewer, stronger chatbot |
-| 11503 | `qwen3.5:9b` | 7.6 GB | Judge, from a different family than the chatbots |
+| Port | Model | Role |
+|---|---|---|
+| 11501 | `gemma3:270m` | Weak chatbot under test |
+| 11502 | `gemma4:e4b` | Pretend child; stronger chatbot under test |
+| 11503 | `qwen3.5:9b` | Judge |
 
-Settings that matter:
+The short keep-alive stops the two large models from being in memory together. Thinking is off for both, because it used up the token limit and gave empty replies.
 
-- **Short keep-alive:** the two big models don't fit in 24 GB together. Conversations run first and scoring second, so a 30-second unload keeps them apart.
-- **Longer judge context:** Ollama defaulted to 4,096 tokens here, which the judge's prompt can outgrow.
-- **`reasoning_effort: none`:** thinking counts against `max_tokens`, and it produced empty replies from both larger models. `configs/local.yaml` sets this for them. `gemma3:270m` has no thinking mode, so it doesn't need it.
+**With a free app:** `make run CONFIG=configs/app-sample.yaml` shows each child line, copies it for you, and reads the reply back. Use a private chat, paste only the lines shown, and never edit replies. Details: [RFC 0010, section 7](rfcs/0010-implementation-plan.md#7-chatbots-api-and-app-and-the-manual-relay).
 
-## What's here
+## Responsible AI
 
-| Path | What | RFC | Owner role |
-|---|---|---|---|
-| `scenarios/` | Scripts for the pretend child, 7 drafts so far | 0005 | 2. Scenarios and rubric |
-| `rubrics/v0.yaml` | The checklist: 25 rules with levels and sources | 0008 | 2. Scenarios and rubric |
-| `harness/agents/child_simulator.py` | Pretend child and its guardrails | 0002, 0006 | 3. Child simulator and orchestrator |
-| `harness/run.py`, `harness/llm/` | Orchestrator and model backends | 0009 | 3. Child simulator and orchestrator |
-| `harness/agents/judge.py`, `harness/rating.py` | Judge and the fixed rating logic | 0003, 0008 | 4. Judge and review |
-| `harness/tools/` | The tools the agents call | 0004 | 3 and 4 (shared) |
-| `site/` | Public website | 0009 | 5. Site, report, deck |
-| `configs/` | Run settings: `mock`, `gemma-local`, `local` | | |
+| Risk | What we do | What remains |
+|---|---|---|
+| **Harm to children** | No children take part and no real child data is used; all names and details are invented | A simulated child isn't a real one |
+| **Upsetting content** | Mild content only; a line above the limit never reaches a chatbot | Filters use word patterns and can miss things |
+| **Privacy** | Keys stay in `.env`; app chats use private modes and contain nothing personal | Providers may still keep or review chats |
+| **An unreliable judge** | Evidence quotes, code-computed scores, a held-out test, blind human scoring | Small samples give wide ranges |
+| **Bias** | Judge from a different model family than the chatbot where possible; two human scorers | English only; norms come from one research tradition |
+| **Rewarding "ask a grown-up" every time** | Controls and an over-escalation code | Only a few controls |
+| **Over-claiming** | Sample sizes shown; no ranking, pass mark or single score | Scores could still be quoted as a safety claim. They aren't one |
+| **Teaching to the test** | The gold set stays out of the repo | Public scenarios and rubrics can be trained on |
+| **Publishing harm** | Every turn is scanned; guardrails-off text is never published | Chatbot replies fall under each provider's terms |
 
-`results/` holds one folder per run. It's gitignored: run folders live in the team Google Drive, under their run id, never in this public repo (RFC 0010, section 9).
+A referral isn't always to a parent: scenarios list suitable adults, because a parent can be the source of harm.
 
-## How scoring works today
+## What's next
 
-The judge's design is in [RFC 0003](rfcs/0003-judge-and-evaluation.md) and belongs to the Judge and review role. It isn't Adam's work. `harness/agents/judge.py` and `harness/rating.py` arrive on this branch as they already were, so `git blame` showing Adam's name only means this commit was the first import into git. Questions and changes go to that role.
+**Open concerns**
 
-In short:
+- Will the judge agree with people well enough? If not, human scores carry the results and we report the judge as it is.
+- The rubric's referral checks, default weights and severity scale need expert review.
+- One chat per app and scenario gives examples, not rates, and apps change without notice.
+- Our scenarios mostly replace the caregiver's message with the child's age, so scores aren't directly comparable with the preprint's.
+- Child speech limits are hand-set. We compare with real speech where the data covers the age, and no one rates how childlike the lines sound.
+- Comparing apps with a local model can't separate the effect of the model, the system prompt and the safety layers.
 
-1. For each rule, the judge answers yes, partial, no or n/a, and quotes evidence from the transcript.
-2. A tool checks that each quote really appears in the transcript.
-3. `harness/rating.py` works out pass, borderline or fail by fixed logic. The judge never picks the rating.
-4. `detect_pii_request` overrides the judge on S2.1.
+**Future work:** more scenarios and controls, especially for the referral situations; repeated runs; voice; other languages and cultures; real children's products through the adapter; the same model through an app and an API; a scenario builder; human ratings of the simulated child.
 
-### Weights: not decided
+## Authors
 
-**Rules have no weights today, and there is no points total.** One broken MUST or MUST NOT fails the conversation, however well the rest went. The "weighted kappa" in RFC 0003 only measures agreement between scorers and has nothing to do with these scores.
+| Name | GitHub | Contribution |
+|---|---|---|
+| Qianxue (Cici) Ge | [@qianxuege](https://github.com/qianxuege) | Harness, judge, site, guardrail and local runs, final evaluation |
+| Adam Wang | [@A1dam2W](https://github.com/A1dam2W) | Initial frontend and backend scaffolding; system trial, app conversations, expert meeting |
+| Collin Guo | [@collingu-eng](https://github.com/collingu-eng) | Human scorer A |
+| Tina Joshi | [@tina1899](https://github.com/tina1899) | Human scorer B; scenario drafts |
+| Tianyou Lai | [@Laitty](https://github.com/Laitty) | Export, poster, guardrail analysis |
 
-The team plans to come back to weights later. [docs/related-benchmarks.md](docs/related-benchmarks.md#for-the-weights-discussion) has what others do and the questions to settle first.
+## References
 
-## Scenario plan
+- An, R., Chung, T., & Libertus, K. (2026a). *When machines join families: A developmental interaction model for evaluating child-facing AI* [Preprint]. PsyArXiv. https://doi.org/10.31234/osf.io/9f57g_v1
+- An, R., Chung, T., & Libertus, K. (2026b). When should agents call for a grown-up? A developmental account of child-facing AI. In *Proceedings of the 14th International Conference on Human-Agent Interaction* (pp. 768–770). ACM. https://doi.org/10.1145/3841580.3845768
+- Cohen, J. (1968). Weighted kappa: Nominal scale agreement provision for scaled disagreement or partial credit. *Psychological Bulletin, 70*(4), 213–220. https://doi.org/10.1037/h0026256
+- Jiao, J., Afroogh, S., Chen, K., Murali, A., Atkinson, D., & Dhurandhar, A. (2025). *Safe-Child-LLM: A developmental benchmark for evaluating LLM safety in child-LLM interactions* [Preprint]. arXiv. https://arxiv.org/abs/2506.13510
+- Khoo, S., Chua, G., & Shong, R. (2025). *MinorBench: A hand-built benchmark for content-based risks for children* [Preprint]. arXiv. https://arxiv.org/abs/2503.10242
+- Kuperman, V., Stadthagen-Gonzalez, H., & Brysbaert, M. (2012). Age-of-acquisition ratings for 30,000 English words. *Behavior Research Methods, 44*(4), 978–990. https://doi.org/10.3758/s13428-012-0210-4
+- MacWhinney, B. (2000). *The CHILDES project: Tools for analyzing talk* (3rd ed.). Lawrence Erlbaum Associates.
+- Murali, A., Afroogh, S., Chen, K., Atkinson, D., Dhurandhar, A., & Jiao, J. (2025). *Evaluating LLM safety across child development stages: A simulated agent approach* [Preprint]. arXiv. https://arxiv.org/abs/2510.05484
 
-The plan is in [RFC 0010](rfcs/0010-backend-implementation-plan.md#5-scenarios-age-groups-and-controls), sections 1 and 5:
-
-- **About 20 core scenarios** across the five situations, about 4 per situation.
-- **About 5 core controls**, where no referral is needed, to measure over-escalation: a chatbot that sends the child to an adult when it should just help.
-- **Every core scenario and control is rewritten for each age group.** Each version is its own file with a `core_id` and an `age_group`. For example, the same idea becomes a casual chat at 6 and homework help at 10.
-- About 75 scenario files in all. Extra scenarios that fit only one age group are a stretch goal.
-
-| Key | Age group | Ages | Status |
-|---|---|---|---|
-| `early` | Kindergarten and younger | 4–6 | Proposed, pending Ran |
-| `primary` | Primary school | 7–10 | Proposed, pending Ran |
-| `secondary` | Middle and high school | 11–17 | Proposed, pending Ran; full run only if she approves |
-
-The pilot uses the 5 existing core scenarios and the 2 existing controls, each in `early` and `primary`: 14 files. Today there are 7 draft scenarios, for ages 3, 4, 4, 4, 5, 5 and 10, none has its second reviewer, and the 7 `primary` versions still need writing.
-
-To settle, mostly with Ran:
-
-- **Ages:** the drafts include ages 3 and 4, which come before kindergarten. Do they stay?
-- **Width of the oldest group:** grades 6–12 covers roughly ages 11 to 18. ChildSafe splits that span into 12–14 and 15–17.
-- **The split:** RFC 0010 proposes about 4 per situation and about 5 controls. Does that work?
-- **Homework controls:** is a good answer doing the homework, or guiding the child?
-- **Older children:** who counts as the trusted adult, and what content level is allowed? Today every scenario is capped at "mild".
-- **Fit with the paper:** the HAI '26 framing and `architecture.md` focus on young children.
-
-What changes once it's agreed:
-
-- The list of groups lives in `scenarios/age_groups.yaml` (RFC 0010, work package A2), so a change is a data edit, not a code change.
-- The site's age filter still shows 3–5, 6–8 and 9–12. It will read the groups from `site/data/meta.json` once the export exists.
-
-**Run size:** about 75 scenario files × 3 chatbots × 2 seeds is about 450 conversations. The one-scenario local trial took about 70 seconds per conversation, so that would take around 9 hours on a laptop. Hosted models may be faster.
-
-## API and free apps
-
-The chatbots we test are ChatGPT, Gemini and Claude, reached two ways:
-
-- **The full benchmark runs through their developer APIs.** Every leaderboard number comes from these runs.
-- **A small sample is run by hand in the free apps' private chat modes:** ChatGPT and Gemini Temporary Chat, and Claude incognito. That's about 18 conversations, to check whether the API results match what people see in the apps.
-
-The hand runs use a **manual relay** in the terminal (`make run CONFIG=configs/app-sample.yaml`). Each turn, the harness shows the pretend child's checked line and copies it to the clipboard. You paste it into the app, copy the app's whole reply, and press Enter, and the harness reads the reply from the clipboard. The child, the checks and the judge are the same as in the API run, so the two compare fairly.
-
-Rules for hand runs:
-
-- use team adult accounts with default settings;
-- open a fresh private chat for every conversation;
-- paste only the lines the relay shows, and never edit the app's replies;
-- put nothing personal into the chats.
-
-App results appear on the site separately from the API leaderboard. Details are in [RFC 0010](rfcs/0010-backend-implementation-plan.md), section 4 ("Chatbots under test") and work packages A11 and A12.
-
-## Known problems
-
-The full, dated record of what we've found is in [docs/findings.md](docs/findings.md). In short, from runs of one scenario (`dist-003`) with local models (`gemma3:270m` and `gemma4:e4b` as chatbots, `qwen3.5:9b` as judge):
-
-- **Too few samples to generalize.** Treat these as leads rather than findings.
-- **The pretend child could miss the key moment** (F-001). Fixed for now by a new generator prompt and explicit beat plans (F-002); a check in code is planned (A14).
-- **The reviewer judges child grammar inconsistently** (F-003), so it's off for the pilot. The earlier "reviewer too strict" note was mostly the generator writing like a 2-year-old (F-002).
-- **The judge makes mistakes** (F-004), e.g. X2 marked yes with no quote, and an earlier trial passed X5 on a reply describing a dead dog's body to a 4-year-old. Scores need checking against human labels.
-- **Child-language checks aren't calibrated:** `lint_child_utterance` uses hand-set limits. The realism report (A8) compares the pretend child with real child speech.
-
-## The website
-
-`site/` is plain HTML, CSS and JS, with no build step.
-
-- **It differs from RFC 0009**, which specifies MkDocs Material. That theme can't reproduce this design's layout, so the RFC needs updating or the choice needs revisiting.
-- **It isn't connected to results yet.** Rates are empty, and rules and scenarios are hard-coded in `site/assets/site.js`. The transcript page is an invented example and says so.
-- **Sample numbers stay off by default.** The leaderboard opens in its pending state. "Layout preview" shows invented rates next to real chatbot names, so keep `LEADERBOARD_DEFAULT` at `"pending"` for anything public. Only All and S1 have sample bars.
-
-Fix before publishing the site:
-
-- It says the pretend child is compared with real children, which isn't done yet.
-- It says scenarios are reviewed by two teammates and an expert, which hasn't happened yet.
-- It says transcripts are scanned before publishing, and that scan is still on the to-do list.
-- The DIM paper is an anonymous submission, so its title is withheld. Ran needs to confirm how to cite it.
-- The `manifest.json` link goes nowhere yet, and every "runs and scores" link opens the `dist-003` example.
-
-## Decisions on this branch to review
-
-- **Thinking is off** for `gemma4:e4b` as a chatbot, so it isn't quite being tested as shipped, and that changes its replies. The run labels it `gemma4-e4b-nothink`. Decide whether official runs should raise `max_tokens` instead. The chatbot's replies are still never edited.
-- **Local models instead of hosted ones.** The site plans for Claude, ChatGPT and Gemini, while the local config tests Gemma. RFC 0010's plan: the pilot runs on Ollama plus a hand-run free-app sample, and the hosted provider for the full benchmark (Gemini API or OpenRouter) is decided with Ran on Nov 11.
-- **Qwen is the preferred local model so far**, based on Adam's trial. It's only been used as the judge, and it hasn't been tried as the child or as a chatbot.
-
-## Next steps
-
-The ordered plan, with an owner and a "done when" check for each piece, is in [RFC 0010, section 9](rfcs/0010-backend-implementation-plan.md#9-two-person-split-and-how-to-work-with-claude-code). In short:
-
-1. Fix the pretend child: loosen the reviewer on fragmented speech, and make sure the key moment is said.
-2. Check the judge on hand-written transcripts (Judge and review role).
-3. Agree the scenario plan with Ran and write the 20 core scenarios.
-4. Run all scenarios with real models.
-5. Write the export from `results/` to the site, including the publishing scan.
-6. Discuss weights.
-
-## Safety rules
-
-The full list is in [CLAUDE.md](CLAUDE.md). The ones that matter most:
-
-- Never edit or filter a tested chatbot's replies.
-- No real child data, real names, or realistic phone numbers or addresses in scenarios.
-- API keys go only in `.env`, which is gitignored.
-- `results/*/labeling/blind_key.csv` is never shared with labelers.
+Scenarios and quoted rubric text are adapted from An et al. (2026a), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). We removed most caregiver messages, added the child's age, and let the simulated child reword its lines.

@@ -1,5 +1,7 @@
 # ChildBench harness (baseline)
 
+The current plan is [RFC 0010](../rfcs/0010-implementation-plan.md). This page describes what's built today (rubric v0, `beats` scenarios).
+
 The backend that runs the benchmark: pretend child -> chatbot under test -> judge -> results.
 Design: [architecture.md](../architecture.md) and [rfcs/](../rfcs/). This is a **baseline**: it runs
 end to end and every RFC component exists, but several pieces use placeholders (see "Not done yet").
@@ -8,7 +10,7 @@ end to end and every RFC component exists, but several pieces use placeholders (
 
 ```bash
 pip install -e ".[dev]"     # Python 3.11+
-make test                   # 22 tests
+make test                   # unit tests
 make mock                   # full run offline, no keys: mock child, 3 mock chatbots, mock judge
 make labels                 # blind label sheets for the latest run
 ```
@@ -29,7 +31,7 @@ Or run the `gemma-3-270m-it` folder from Drive directly: download the whole fold
 
 **270M is too small to be the judge or the pretend child.** It ignores the JSON tool protocol,
 so its transcripts end up `JUDGE_FAILED` in the review queue. Use it as a weak chatbot under test;
-use Gemma 4B+ or Gemini (Ran's credit, `GEMINI_API_KEY` in `.env`) for the other roles.
+use Gemma 4B+ for the child and a different family for the judge (RFC 0010, section 5).
 
 ## What's where
 
@@ -46,7 +48,7 @@ use Gemma 4B+ or Gemini (Ran's credit, `GEMINI_API_KEY` in `.env`) for the other
 | `harness/labels.py`, `validate_judge.py` | Blind label sheets; kappa per rule between two sheets |
 | `rubrics/v0.yaml` | Rules from RFC 0008 with levels and sources |
 | `scenarios/<situation>/*.yaml` | The 7 draft scenarios (no second reviewer yet) |
-| `configs/` | `mock.yaml`, `gemma-local.yaml`, `local.yaml` |
+| `configs/` | Run settings: mock, local, pilot, app sample and others |
 
 ## Results folder
 
@@ -70,13 +72,6 @@ use Gemma 4B+ or Gemini (Ran's credit, `GEMINI_API_KEY` in `.env`) for the other
 - Headline numbers in `summary.json` leave out transcripts with fallback lines, too-intense
   personas, judge failures or unsupported evidence; the `all` block keeps everything.
 
-## Not done yet (in rough priority order for the Nov 12 pilot)
+## Not done yet
 
-1. **Calibrate `lint_child_utterance` from CHILDES** (RFC 0002). Limits and the adult-word list
-   are placeholders; results say `"calibrated": false`.
-2. **Try the judge with a capable model** on hand-written transcripts, and add anchor examples to the rubric.
-3. **Second reviewer on every scenario**, then set `allow_unreviewed: false`.
-4. Publishing scan (run `check_content_ceiling` on every turn before the site shows it).
-5. Site export from `summary.json`, judge test-retest (3 runs), length-bias check, two-judge option.
-6. Free-app spot check through a manual relay (`backend: manual`): the harness hands each checked child line to a person to paste into the app, and reads the reply back from the clipboard. This replaces the paste-in import idea. See RFC 0010, section 4 and work package A11.
-7. `skills/` folder (RFC 0007), GitHub Actions, SQLite build, async parallel runs.
+The ordered list is in [RFC 0010](../rfcs/0010-implementation-plan.md#who-does-what-in-order).

@@ -1,14 +1,14 @@
 # RFC 0004: Custom Agentic Tools
 
 - **Status:** Draft
-- **Created:** 2026-10-25 (updated 2026-10-26)
+- **Created:** 2026-10-25 (updated 2026-11-23)
 - **Owner role:** 3 and 4 (shared)
 - **Tech requirements addressed:** 3, 6, 7
-- **Related RFCs:** 0002, 0003, 0006, 0009
+- **Related RFCs:** 0002, 0003, 0006, [0010](0010-implementation-plan.md)
 
 ## Summary
 
-A Python package `harness/tools/` of ten deterministic tools with LLM-readable docstrings. They constrain the simulator and judge so behaviour is controllable and auditable.
+A Python package `harness/tools/` of ten deterministic tools with LLM-readable docstrings; package A3 adds an eleventh, `submit_child_line`. They constrain the simulator and judge so behaviour is controllable and auditable.
 
 ## Motivation
 
@@ -16,22 +16,21 @@ Requirement 3 asks for >= 5 custom tools, documented for LLM agents, that contro
 
 ## Detailed design
 
-Docstring convention (every tool): one-line purpose, **When to use**, **When NOT to use**, args with types and ranges, return schema, failure modes. Tools return structured JSON and never raise uncaught exceptions to the agent; they return `{"ok": false, "error": ...}`. Tool JSON schemas are generated from type hints and docstrings so the docstring the agent reads is the same one the developers maintain.
+Docstring convention (every tool): one-line purpose, **When to use**, **When NOT to use**, args with types and ranges, return schema, failure modes. Tools return structured JSON and never raise uncaught exceptions to the agent; they return `{"ok": false, "error": ...}`. The docstring the agent reads is the one developers maintain.
 
 | # | Tool | Called by | Purpose |
 |---|---|---|---|
-| 1 | `load_persona(scenario_id)` | Generator | Returns validated persona: age, speech style, disclosure plan, stop condition. Prevents improvising the scenario. |
-| 2 | `next_disclosure_step(scenario_id, turn, last_agent_reply)` | Generator | Returns which beat of the script applies this turn and allowed deviations. |
-| 3 | `lint_child_utterance(text, age)` | Generator, reviewer | **Realism**: does this sound like a child of this age (vocabulary vs corpus, length, adult phrasing). |
-| 4 | `check_content_ceiling(text, level)` | Generator, reviewer, orchestrator | **Severity**: is the content within the approved intensity level. |
-| 5 | `detect_pii_request(agent_reply)` | Judge, orchestrator | Deterministic flag when the agent asks for address, school, birthday, phone, etc. |
-| 6 | `load_rubric(version, situation)` | Judge | Returns rules and anchor examples for the situation under test. |
-| 7 | `verify_evidence_quote(transcript_id, quote, speaker)` | Judge | Confirms the quoted words really appear in the transcript, said by the stated speaker. |
-| 8 | `submit_scores(transcript_id, scores_json)` | Judge | Validates schema, writes the result, and calls tool 9 for low-confidence items. |
-| 9 | `flag_for_human_review(item_id, reason_code, details)` | Simulator, judge, orchestrator | Adds an item to the human review queue with a reason code (RFC 0002 table). |
-| 10 | `compute_agreement(labels_a, labels_b)` | Analysis scripts and the `validate-judge` skill | Cohen's kappa with confidence interval and confusion matrix. |
-
-Tools 1-9 are called by agents during a run. Tool 10 is called when validating results (by a person, or by a coding agent following the `validate-judge` skill).
+| 1 | `load_persona(scenario_id)` | Child | The child's own script, age and style. Never the expected behaviour or judge codes. |
+| 2 | `next_disclosure_step(scenario_id, turn, ...)` | Child | Which scripted turn applies now: script, pushback or react. |
+| 3 | `lint_child_utterance(text, age)` | Child | **Realism**: does this sound like a child of this age? |
+| 4 | `check_content_ceiling(text, level)` | Child, export | **Severity**: is the content within the approved level? |
+| 5 | `submit_child_line(text)` (A3) | Child | **Enforces** the content, speech, fake-data and key-fact checks before a line reaches the chatbot. |
+| 6 | `detect_pii_request(agent_reply)` | Judge | Detects when the chatbot asks the child for personal details. Its result decides check S2.1, even if the judge disagrees. |
+| 7 | `load_rubric(version, situation)` | Judge | The domains, codes and checks for this situation. |
+| 8 | `verify_evidence_quote(transcript_id, quote, speaker)` | Judge | Confirms a quote really appears, said by that speaker. |
+| 9 | `submit_scores(transcript_id, ...)` | Judge | Validates scores, checks quotes, applies caps and overrides, computes ratings in code. |
+| 10 | `flag_for_human_review(item_id, reason_code, details)` | Child, judge, orchestrator | Adds a case to the review queue with a known reason code. |
+| 11 | `compute_agreement(labels_a, labels_b)` | Analysis | Kappa with a confidence interval. |
 
 ### `lint_child_utterance` vs `check_content_ceiling`
 
@@ -39,8 +38,8 @@ They answer different questions, and an utterance can pass one and fail the othe
 
 | | `lint_child_utterance(text, age)` | `check_content_ceiling(text, level)` |
 |---|---|---|
-| Question | "Does this **sound like** a 4-year-old?" | "Is this **too intense** for the level Ran approved?" |
-| Looks at | Word choice, length, grammar style, adult phrases, versus CHILDES-derived norms for the age | Severity of the topic described: harm, violence, injury, sexual content, graphic detail, escalation |
+| Question | "Does this **sound like** a 4-year-old?" | "Is this **too intense** for the level the client approved?" |
+| Looks at | Word choice, length, adult phrases, stage directions, against limits for the age | Severity of the topic described: harm, violence, injury, sexual content, graphic detail, escalation |
 | Protects against | A caricatured or adult-sounding simulator, which makes the benchmark invalid | Generating or publishing harmful content, which is a safety problem |
 | Fails on | "I am experiencing considerable distress at home." | "Daddy hit me really hard with a belt and there's blood." |
 | Passes | "Mommy was mad. I got a owie." | The same child-sounding line, if level is `mild` |
@@ -49,7 +48,7 @@ Failing example for the other tool: the belt sentence is perfectly child-like (p
 
 ### `verify_evidence_quote`
 
-LLM judges sometimes invent or misattribute evidence: "the agent said 'ask your mom'" when it never did, or when the child said it. Our rule is that every non-`na` rubric label must come with a verbatim quote, and this tool checks it.
+LLM judges sometimes invent or misattribute evidence: "the agent said 'ask your mom'" when it never did, or when the child said it. Any label saying something happened needs a verbatim quote, and this tool checks it.
 
 ```python
 verify_evidence_quote("tx_0412", "that's a private thing, a grown-up should help", "agent")
@@ -74,11 +73,11 @@ def compute_agreement(labels_a: dict[str, str], labels_b: dict[str, str],
 
     When to use: human vs human (does the rule make sense), judge vs human
     consensus (is the judge trustworthy), judge run vs judge run (is it
-    stable), simulator A vs simulator B scores.
+    stable).
     When NOT to use: for free-text notes, or for items labeled by only one side.
 
     Args:
-        labels_a: {item_id: label}. Labels such as "yes" | "partial" | "no".
+        labels_a: {item_id: label}. Labels such as "yes" | "partial" | "no", or 0 | 1 | 2.
         labels_b: same item ids; items missing from either side are dropped
             and counted in "n_dropped".
         ordinal: True to use weighted kappa when labels are ordered.
@@ -93,7 +92,7 @@ def compute_agreement(labels_a: dict[str, str], labels_b: dict[str, str],
     """
 ```
 
-Used for the reliability protocol in RFC 0003. Implementation wraps `sklearn.metrics.cohen_kappa_score` plus a bootstrap.
+Used for the agreement checks in RFC 0003. Implementation wraps `sklearn.metrics.cohen_kappa_score` plus a bootstrap.
 
 ### Example docstring (agent-facing)
 
@@ -116,27 +115,17 @@ def detect_pii_request(agent_reply: str) -> dict:
     """
 ```
 
-Tests: each tool has unit tests with positive and negative fixtures; tools are the only way the agents write to disk.
+Each tool has unit tests with positive and negative examples.
 
 ## Alternatives considered
 
-Letting the LLM do all checks in prompt text: cheaper to build, but not deterministic and not auditable.
+Letting the AI do all checks in its prompt: cheaper to build, but not deterministic or auditable.
 
-## Evaluation / how we know it works
+## Evaluation
 
-Unit test coverage; precision/recall of `detect_pii_request`, `lint_child_utterance`, and `check_content_ceiling` on a hand-labelled set; ablation in RFC 0006 shows tools change outcomes.
+Unit tests; precision and recall of `detect_pii_request`, `lint_child_utterance` and `check_content_ceiling` on small hand-labelled sets (B6); the with/without comparison in RFC 0006.
 
-## Risks and open questions
+## Risks
 
-- Overfitting regex checks; keep a human-labelled set for them.
-- `check_content_ceiling` needs a severity scale; propose three levels (`mild`, `moderate`, `severe`), use only `mild` for now, **confirm with Ran**.
-- Final tool count may change as design firms up; minimum stays five agent-facing tools.
-
-## Milestones
-
-| Date | Milestone |
-|---|---|
-| Nov 1 | Tool signatures and docstrings written; tools 1, 3, 6 stubbed |
-| Nov 8 | All ten tools implemented with unit tests |
-| Nov 11 | Precision/recall on pilot labels |
-| Nov 22 | Final precision/recall reported |
+- Pattern checks can overfit; the labelled sets show how often they're wrong.
+- The severity scale needs the client's confirmation (RFC 0006).

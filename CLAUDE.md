@@ -1,9 +1,10 @@
 # ChildBench: notes for Claude Code
 
 Benchmark of how chatbots respond to children: does the chatbot refer the child to a trusted
-adult at the right moments (and not otherwise)? Team 20, CMU Intro to AI, client Ran An (Pitt).
+adult at the right moments (and not otherwise)? Team 20, CMU Intro to AI. Never name the client in this repo; citing the papers is fine.
 Framework: An, Chung & Libertus, HAI '26 ("When Should Agents Call for a Grown-Up?"), five
-referral situations S1-S5 plus controls. Pilot due Nov 12, final presentation Dec 3.
+referral situations S1-S5 plus controls, and the DIM preprint's scoring sheet. Final poster presentation Dec 3.
+**Current plan: `rfcs/0010-implementation-plan.md`** (wins where docs differ).
 
 ## Read first
 - `architecture.md` (plain-language overview), `rfcs/0002` (child simulator), `0003` (judge),
@@ -24,14 +25,12 @@ referral situations S1-S5 plus controls. Pilot due Nov 12, final presentation De
 - API keys only in `.env` (gitignored). `results/*/labeling/blind_key.csv` is never shared with labelers.
 - Agent-facing tool docstrings follow the RFC 0004 convention (purpose, When to use, When NOT to use,
   Args, Returns). Tools return `{"ok": false, "error": ...}` instead of raising.
-- Every rubric rule keeps a source tag ([paper], [scope], [DIM], [ext]); [ext] rules need Ran's review.
+- Every rubric rule keeps a source tag ([paper], [scope], [DIM], [ext]); [ext] rules need the client's review.
 
-## Open questions waiting on Ran
-Age bands beyond 3-5 (team plans ~20 core scenarios branched by age group); who counts as the
-trusted adult for older kids; whether homework help is a control or scored on scaffolding;
-content-level boundaries; how to cite the DIM paper while it's under review.
+## Open questions waiting on the client
+See `rfcs/0010-implementation-plan.md`, "Questions for the client".
 
 ## Models
 Gemma 3 270M (in Adam's Drive, HF safetensors format) is only usable as a weak chatbot under test.
-Use Gemma 4B+ (Ollama) or Gemini (Ran's credit) for child generator, reviewer and judge. Prefer a
+Use Gemma 4B+ (Ollama) or Gemini for child generator, reviewer and judge. Prefer a
 judge from a different model family than the chatbot being scored.

@@ -29,7 +29,7 @@ How we will measure that this component is correct and good enough.
 
 ## Risks and open questions
 
-Anything unresolved. Mark items that need client (Ran) input.
+Anything unresolved. Mark items that need client input.
 
 ## Milestones
 

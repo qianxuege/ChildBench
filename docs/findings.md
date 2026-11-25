@@ -2,9 +2,9 @@
 
 A dated lab notebook: what we ran, what we saw, what we decided. **Add new entries at the top; don't rewrite old ones.** If a finding turns out wrong, add a new entry that says so and link back.
 
-- The **plan** lives in [RFC 0010](../rfcs/0010-backend-implementation-plan.md). When a finding changes the plan, edit the RFC and add a line to its [changelog](../rfcs/0010-backend-implementation-plan.md#changelog) naming the finding.
+- The **plan** lives in [RFC 0010](../rfcs/0010-implementation-plan.md). When a finding changes the plan, edit the RFC and add a line to its [changelog](../rfcs/0010-implementation-plan.md#changelog) naming the finding.
 - **Work to do** goes in GitHub issues, which link the finding.
-- Findings marked **for Ran** go into the next meeting issue.
+- Findings marked **for the client** go into the next meeting issue.
 - Run ids point to `results/<run_id>/`. Pilot and later runs live in the team drive until they pass the publishing check, so the id is how to find them.
 
 ## Template
@@ -17,7 +17,7 @@ A dated lab notebook: what we ran, what we saw, what we decided. **Add new entri
 **Why:** <cause, if known>
 **Decision:** <what we changed or chose>
 **Plan change:** <RFC 0010 changelog date, or "none"> · **Follow-up:** <issue #, or "none">
-**Status:** open | fixed | won't fix | for Ran
+**Status:** open | fixed | won't fix | for the client
 ```
 
 ---
@@ -67,9 +67,9 @@ The judge's own labels don't use it, but they score a transcript the check has a
 **Run:** none (checking the setup for the A5-app demo in a private browser window)
 **What we saw:** logged out, ChatGPT shows no Temporary Chat option; it only appears for signed-in users. Its settings show "Improve the model for everyone" switched on, so logged-out chats may be used for training. A logged-out session also tends to get a smaller model with tighter limits.
 **Why:** Temporary Chat is an account feature. We have no team accounts yet.
-**Decision:** use the apps logged out where they allow it until Ran answers Q11, and record it in `mode` (`"logged out, private browser window"`), so transcripts don't claim Temporary Chat.
+**Decision:** use the apps logged out where they allow it until the client answers Q11, and record it in `mode` (`"logged out, private browser window"`), so transcripts don't claim Temporary Chat.
 **Plan change:** RFC 0010 changelog, Nov 9 (Q11) · **Follow-up:** Q11 in the Nov 11 meeting issue
-**Status:** for Ran
+**Status:** for the client
 
 ## F-005 · Once the child asked for secrecy, neither chatbot referred him to an adult (Nov 8)
 
@@ -90,8 +90,8 @@ The judge's own labels don't use it, but they score a transcript the check has a
 
 **Why:** X2's wording lets "didn't act" read as "declined"; the local judge hasn't been checked against humans; `flag_for_human_review` accepts any reason code from the judge.
 **Decision:** treat pilot scores as provisional until human labels exist.
-**Plan change:** none yet · **Follow-up:** B2 fixtures and B4 labelling; reword X2 (Q6 for Ran); limit the judge to reason codes that fit its job
-**Status:** open · for Ran (X2 wording)
+**Plan change:** none yet · **Follow-up:** B2 fixtures and B4 labelling; reword X2 (Q6 for the client); limit the judge to reason codes that fit its job
+**Status:** open · for the client (X2 wording)
 
 ## F-003 · The reviewer judges child grammar inconsistently, so it stays off (Nov 8)
 

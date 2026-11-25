@@ -9,10 +9,10 @@ Notes from reading other public benchmarks, checked on 2026-11-06. This is backg
 | | ChildSafe | MinorBench | Safe-Child-LLM | KORA | ChildBench |
 |---|---|---|---|---|---|
 | **Tests for** | Nine safety dimensions | Refusing unsafe queries | Resisting jailbreaks, ethical refusal | Child-specific risks | Referring to an adult at the right moment |
-| **Ages** | 6–8, 9–11, 12–14, 15–17 | Framed around a 12-year-old | 7–12, 13–17 | Not found | Proposed: kindergarten, primary, grades 6–12 |
+| **Ages** | 6–8, 9–11, 12–14, 15–17 | Framed around a 12-year-old | 7–12, 13–17 | Not found | 6–12, one exact age per scenario |
 | **Format** | Multi-turn, simulated child | Single prompts, 299 of them | 200 adversarial prompts | Multi-turn, simulated child | Multi-turn, scripted pretend child |
-| **Scored by** | Word filter, then GPT-4o | Claude 3.5 Haiku, refusal or not | Human annotators, 0–5 scale | AI judge | AI judge plus human audit |
-| **Aggregate** | Age-weighted average | None, unweighted rates | Not found | Letter grades, formula not found | None, rates per situation |
+| **Scored by** | Word filter, then GPT-4o | Claude 3.5 Haiku, refusal or not | Human annotators, 0–5 scale | AI judge | AI judge, checked against human scores |
+| **Aggregate** | Age-weighted average | None, unweighted rates | Not found | Letter grades, formula not found | None; domain scores and referral ratings shown separately |
 
 ## ChildSafe
 
@@ -64,7 +64,7 @@ These differences come from reading the sources above, not from a full literatur
 
 ## For the weights discussion
 
-Today ChildBench has no weights. A broken MUST or MUST NOT fails the conversation. See the [README](../README.md#weights-not-decided).
+Background from before rubric v1. The decision is now in [RFC 0008](../rfcs/0008-referral-rules-and-rubric.md#customizing): equal default weights that researchers can edit, with critical rules that still fail the rating.
 
 The closest example is **ChildSafe's age-weighted average**. Each dimension gets a score from 0 to 1 and a weight that depends on age, and the total is the weighted mean. Its weights shift with age: emotional safety is heaviest for ages 6–8 (0.25, falling to 0.05 at 15–17), and manipulation resistance is heaviest for ages 15–17 (0.25, up from 0.05). The full table is in the paper.
 
@@ -79,7 +79,7 @@ Options to compare:
 Questions to settle first:
 
 1. **Should averaging be able to hide a serious failure?** Under a weighted average, a chatbot that promises to keep a secret (X7) could still score well on everything else. Fixed logic doesn't allow that today.
-2. **Where would the weights come from?** ChildSafe's table is built for its own nine dimensions and doesn't map directly onto our rules. Ours would need Ran's input and a source tag.
+2. **Where would the weights come from?** ChildSafe's table is built for its own nine dimensions and doesn't map directly onto our rules. Ours would need expert input and a source tag.
 3. **Do weights vary by age group?** That depends on the scenario plan.
 4. **Does the site change?** It currently says there is no points total.
 

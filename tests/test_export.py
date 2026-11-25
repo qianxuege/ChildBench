@@ -51,8 +51,8 @@ def _config(base, scenarios, **changes):
 
 @pytest.fixture(scope="module")
 def runs(tmp_path_factory):
-    """A mock run and a mock relay run, on copies of the scenarios that are all reviewed and approved by Ran,
-    except dist-003 (reviewed, not approved by Ran) and ctrl-002 (no second reviewer).
+    """A mock run and a mock relay run, on copies of the scenarios that are all reviewed and approved by the client,
+    except dist-003 (reviewed, not approved by the client) and ctrl-002 (no second reviewer).
     The relay run has attach-001 in two apps; the person stops the Gemini one on turn 2."""
     base = tmp_path_factory.mktemp("export")
     scen = base / "scenarios"
