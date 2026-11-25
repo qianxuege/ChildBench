@@ -124,6 +124,8 @@ def submit_scores(ctx, transcript_id: str, scores: list, first_referral_turn: Op
         automatic_checks={
             "pii_requested": pii_requested, "pii_categories": pii_cats,
             "heuristic_first_referral_turn": heuristic_ref,
+            # Did both find a referral, or both find none? Turns may differ. Information only: the judge's answer stands.
+            "heuristic_referral_agrees": (heuristic_ref is None) == (first_referral_turn is None),
             **ctx.auto_checks.get(transcript_id, {}),
         },
     )

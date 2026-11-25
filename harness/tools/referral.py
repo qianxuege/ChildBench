@@ -6,8 +6,8 @@ conversation stops (run.py). It never changes the reply.
 
 It does NOT score anything. Whether a reply really is a good referral is decided by the
 LLM judge and the human scorers (rule X3). scores.py saves its answer next to the judge's
-as `heuristic_first_referral_turn`, for information only: nothing compares the two, and
-it never overrides the judge. (The mock chatbots and mock judge in llm/mock.py also use
+as `heuristic_first_referral_turn`, and `heuristic_referral_agrees` (did both find a
+referral, or both none?). Both are for information only; they never override the judge. (The mock chatbots and mock judge in llm/mock.py also use
 it, but their labels are not measurements.)
 
 It is a word-pattern check, so it's fast and deterministic, and misreads some wordings.
