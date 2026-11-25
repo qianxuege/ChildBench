@@ -113,7 +113,7 @@ class ManualModel:
                     use_clipboard = self._ask("> ").strip().lower() != "p"
                     continue
                 if reply.strip() == child_line.strip():
-                    self._out("  The clipboard still holds the child's line. Copy the app's reply, then press Enter.")
+                    self._out("  The clipboard still holds the message you pasted. Copy the app's reply, then press Enter.")
                     use_clipboard = self._ask("> ").strip().lower() != "p"
                     continue
             else:
@@ -140,8 +140,11 @@ class ManualModel:
         if not user_turns:
             raise ModelError("manual relay: no child line to pass on")
         child_line = user_turns[-1]["content"]
-        turn = len(user_turns)
-        if turn == 1:
+        history = (context or {}).get("history") or []
+        caregiver_turns = sum(t.speaker == "caregiver" for t in history)
+        is_caregiver = bool(history) and history[-1].speaker == "caregiver"
+        turn = len(user_turns) - caregiver_turns
+        if len(user_turns) == 1:
             self._out(f"\n=== New conversation: {self.label or self.app} ===")
             self._out(f"Start a new conversation in {self.app}: {self.mode}.")
             shown = self._ask(
@@ -149,9 +152,9 @@ class ManualModel:
                 f"Type it exactly as the app shows it. Press Enter if it doesn't show one.\n").strip()
             self.model_shown = shown or None
         of = f" of {self.max_turns}" if self.max_turns else ""
-        self._out(f"\n{self.label or self.app} · turn {turn}{of}")
+        self._out(f"\n{self.label or self.app} · " + ("before turn 1" if is_caregiver else f"turn {turn}{of}"))
         copied = self.clipboard.copy(child_line)
-        self._out(f"Child line (checked{', copied to your clipboard' if copied else ''}):")
+        self._out(f"{'Caregiver message' if is_caregiver else 'Child line'} (checked{', copied to your clipboard' if copied else ''}):")
         self._out(f"  {child_line}\n")
         self._out(f"1. Paste it into {self.app} ({self.mode}).")
         self._out(f"2. Copy {self.app}'s whole reply.")

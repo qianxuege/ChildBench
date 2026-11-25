@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from harness.llm import ModelError
 from harness.llm.openai_compat import OpenAICompatModel
 from harness.run import main, preflight
 
@@ -83,3 +84,18 @@ def test_manifest_has_timing_and_tokens_and_estimate_learns_from_it(tmp_path, ca
     capsys.readouterr()
     assert main(["--config", "configs/mock.yaml", "--out", str(tmp_path), "--estimate"]) == 0
     assert "from the last 1 'mock' run(s)" in capsys.readouterr().out
+
+
+def test_failed_retry_without_seed_is_a_model_error():
+    """A server that rejects `seed`, then fails the retry, must not stop the run with a raw error."""
+    m = OpenAICompatModel("x", base_url="http://127.0.0.1:1/v1")
+    calls = []
+
+    def create(**kwargs):
+        calls.append("seed" in kwargs)
+        raise ValueError("seed is not supported") if "seed" in kwargs else TimeoutError("timed out")
+
+    m.client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    with pytest.raises(ModelError) as e:
+        m.complete([{"role": "user", "content": "hi"}], seed=1)
+    assert calls == [True, False] and isinstance(e.value.__cause__, TimeoutError)

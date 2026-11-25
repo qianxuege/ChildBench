@@ -485,7 +485,7 @@ Scoring needs no new code. `run.py` already sends every transcript to the judge 
 
 <a id="wp-a16"></a>
 
-**A16 · New scenario format** · Owner A · Needs: A15 · Status: todo
+**A16 · New scenario format** · Owner A · Needs: A15 · Status: done
 
 Replaces A2 and A14.
 

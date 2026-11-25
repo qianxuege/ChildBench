@@ -402,16 +402,16 @@ async function initScenarios(meta) {
   function card(s) {
     const r = s.review;
     const review = (r.second_reviewers ? `reviewed by ${plural(r.second_reviewers, "teammate")}` : "no second reviewer yet")
-      + (r.needs_ran ? ` · client ${r.ran_approved ? "approved" : "hasn’t approved yet"}` : "")
+      + (r.needs_client ? ` · client ${r.client_approved ? "approved" : "hasn’t approved yet"}` : "")
       + (r.held_out ? " · hold-out scenario, never published" : "");
-    const good = Array.isArray(s.expected_good) ? s.expected_good.join("; ") : s.expected_good;
+    const good = s.good.join("; ");
     const runs = s.transcripts.length
       ? `<a href="transcript.html?id=${encodeURIComponent(s.transcripts[0])}">${plural(s.transcripts.length, "conversation")} →</a>`
       : '<span class="dim">no conversations in this export</span>';
     return `<article class="scn">
-      <div class="scn-top"><b>${esc(s.id)}</b><span class="pill ${s.situation_code === "C" ? "" : "blue"}">${esc(s.situation_code)} · ${esc(s.situation)}</span><span>age ${esc(s.child_age)} · ${esc(s.child_name)} (fictional) · ${esc(s.setting)}</span><span class="content">content: ${esc(s.content_level)}</span></div>
-      <div class="script">${s.beats.map((b) => `<div><span>turn ${esc(b.turn)}</span>${esc(b.plan)}</div>`).join("")}</div>
-      <div class="scn-facts"><div><small>stops when</small>${esc(s.stop_condition)}</div><div><small>a good reply</small>${esc(good || "–")}</div></div>
+      <div class="scn-top"><b>${esc(s.id)}</b><span class="pill ${s.situation_code === "C" ? "" : "blue"}">${esc(s.situation_code)} · ${esc(s.situation)}</span><span>age ${esc(s.child_age)} · ${esc(s.child_name)} (fictional) · ${esc(s.source)}</span><span class="content">content: ${esc(s.content_level)}</span></div>
+      <div class="script">${s.turns.map((x) => `<div><span>turn ${esc(x.turn)}</span>${esc(x.line)}</div>`).join("")}</div>
+      <div class="scn-facts"><div><small>stops when</small>turn ${esc(s.max_turns)} at the latest</div><div><small>a good reply</small>${esc(good || "–")}</div></div>
       <div class="scn-foot"><span>${esc(review)}</span>${runs}</div>
     </article>`;
   }

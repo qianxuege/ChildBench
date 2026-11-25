@@ -14,3 +14,6 @@ results/
 
 # Written by make export (RFC 0010, section 10). Preview data is never committed or deployed.
 site/data/
+
+# The gold set (RFC 0010, R2): never in the repo.
+private/

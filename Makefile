@@ -18,7 +18,7 @@ gemma:
 local:
 	python -m harness.run --config configs/local.yaml
 
-# Validate every scenario file and the rubric without running anything.
+# Validate every scenario file (format, content level, limits) and the rubric without running anything.
 check:
 	python -m harness.run --config configs/mock.yaml --check-only
 

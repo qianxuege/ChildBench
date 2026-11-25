@@ -9,8 +9,8 @@ The site reads only site/data/ (gitignored), never results/. Files written:
     leaderboard.json       run details; per chatbot: pass / borderline / fail per situation, age-appropriate rate,
                            over-escalation on controls, mean first-referral turn, n. App conversations go only in
                            the separate app_sample block, never into these rates.
-    scenarios.json         each exported scenario: id, situation, age, setting, beats (plans only, no fallback
-                           lines), review status, its transcript ids
+    scenarios.json         each exported scenario: id, situation, age, source, scripted turns (without must_say
+                           or judge codes), review status, its transcript ids
     transcripts/<id>.json  turns, automatic checks, rule answers with quotes, overall rating, guardrail reasons;
                            app conversations also carry the app, its private mode and the date
     reliability.json       evaluation.json's sections once B6 writes them, plus the run's quote-check and audit counts
@@ -18,7 +18,7 @@ The site reads only site/data/ (gitignored), never results/. Files written:
 The publishing check (RFC 0006; RFC 0010, sections 8 and 10). A transcript is left out of every file, numbers
 included, for any of these reasons:
     NOT_REVIEWED                its scenario has no second reviewer                      (included with PREVIEW=1)
-    NOT_APPROVED_BY_RAN         a distress scenario without review.ran_approved: true    (included with PREVIEW=1)
+    NOT_APPROVED_BY_CLIENT      a distress scenario without review.client_approved: true (included with PREVIEW=1)
     HELD_OUT                    a hold-out scenario, kept private (RFC 0006)             (included with PREVIEW=1)
     SCAN_HIT_NEEDS_PERSON       a turn, the child's or the chatbot's, or a judge quote, the reason it ended or the
                                 model name an app showed, is above the scenario's content level or has realistic
@@ -60,8 +60,8 @@ from .tools.ceiling import check_content_ceiling
 from .tools.pii import scan_realistic_pii
 
 SCHEMA_VERSION = 1
-NEEDS_RAN = {"distressing_disclosure"}
-PREVIEW_LIFTS = ("NOT_REVIEWED", "NOT_APPROVED_BY_RAN", "HELD_OUT")   # the only reasons PREVIEW=1 lets through
+NEEDS_CLIENT = {"distressing_disclosure"}
+PREVIEW_LIFTS = ("NOT_REVIEWED", "NOT_APPROVED_BY_CLIENT", "HELD_OUT")   # the only reasons PREVIEW=1 lets through
 PREVIEW_NOTE = "Internal preview: unreviewed scenarios, local models, not for publishing"
 CONTENT_NOTE = ("Some conversations involve a pretend child who is sad or worried. All children, names and "
                 "details are invented. Chatbot replies are shown exactly as the chatbot wrote them.")
@@ -227,8 +227,8 @@ def publish_only_reasons(p: Persona) -> list[str]:
     reasons = []
     if not p.review.approved:
         reasons.append("NOT_REVIEWED")
-    if p.situation in NEEDS_RAN and not p.review.ran_approved:
-        reasons.append("NOT_APPROVED_BY_RAN")
+    if p.situation in NEEDS_CLIENT and not p.review.client_approved:
+        reasons.append("NOT_APPROVED_BY_CLIENT")
     if p.held_out:
         reasons.append("HELD_OUT")
     return reasons
@@ -348,7 +348,7 @@ def _guardrail_rows(entries: list[dict]) -> list[dict]:
 
 def _review_status(p: Persona) -> dict:
     return {"reviewed": p.review.approved, "second_reviewers": len(p.review.reviewers),
-            "ran_approved": p.review.ran_approved, "needs_ran": p.situation in NEEDS_RAN, "held_out": p.held_out}
+            "client_approved": p.review.client_approved, "needs_client": p.situation in NEEDS_CLIENT, "held_out": p.held_out}
 
 
 def transcript_page(run: Run, tid: str, *, channel: str, persona: Persona, scan: dict) -> dict:
@@ -479,13 +479,12 @@ def export(run_dir: Path, out_dir: Path, *, app_run_dir: Optional[Path] = None, 
         if why:
             scen_withheld[p.id] = why
             continue
-        a2 = getattr(p, "core_id", None)         # A2 adds core_id and age-group keys; today's age_group is a draft band
         scen_rows.append({
-            "id": p.id, "core_id": a2, "age_group": p.age_group if a2 else None,
+            "id": p.id, "source": p.source,
             "situation": p.situation, "situation_code": p.code, "child_age": p.child_age, "child_name": p.child_name,
-            "setting": p.context, "content_level": p.content_level, "max_turns": p.max_turns,
-            "stop_condition": p.stop_condition, "beats": [{"turn": b.turn, "plan": b.plan} for b in p.beats],
-            "expected_good": p.expected_good, "paper_ref": p.ref, "review": _review_status(p),
+            "content_level": p.content_level, "max_turns": p.max_turns,
+            "turns": [{"turn": t.turn, "line": t.line} for t in p.turns],
+            "good": p.good, "review": _review_status(p),
             "transcripts": sorted(by_scenario.get(p.id, [])),
         })
     _dump(out_dir / "scenarios.json", scen_rows)

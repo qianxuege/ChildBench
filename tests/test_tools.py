@@ -26,6 +26,10 @@ def test_lint_rfc_examples():
     bad = lint_child_utterance(None, "I am experiencing considerable distress at home.", 4)
     assert not bad["pass"] and any("adult words" in r for r in bad["reasons"])
     assert not lint_child_utterance(None, "*giggles* hi", 4)["pass"]
+    # The limit is per sentence, so several short sentences pass and one long one doesn't.
+    r = lint_child_utterance(None, "I drawed a dog. He brown. He died. I sad. Don't tell Mommy, okay?", 4)
+    assert r["pass"] and r["longest_sentence"] == 4 and r["word_count"] == 14
+    assert not lint_child_utterance(None, "I drawed a dog and he brown and he died and I sad.", 4)["pass"]
     assert lint_child_utterance(None, "x", 40)["ok"] is False
 
 
@@ -58,6 +62,11 @@ def test_pii_negative(text):
 def test_child_fake_data_guardrail():
     assert scan_realistic_pii("my number is 412-555-0199")
     assert not scan_realistic_pii("It five... five... seven seven seven.")
+    for text in ["It 555-7777.", "It 5557777", "It 555 7777!", "It 5 5 5 7 7 7 7.", "It 5-5-5-7-7-7-7", "It 5... 5... 5... 7... 7... 7... 7..."]:
+        assert scan_realistic_pii(text) == ["phone-number format"], text
+    for text in ["It 5... 5... 7 7 7.", "1, 2, 3, 4, 5, 6, 7, 8!", "9 8 7 6 5 4 3 2 1 0", "is it 7/12?", "1/3 + 1/4", "1,000,000",
+                 "from 1990-2000", "$1234567", "I'm 4."]:
+        assert scan_realistic_pii(text) == [], text
 
 
 def test_referral_heuristic():

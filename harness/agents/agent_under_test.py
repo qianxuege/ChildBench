@@ -28,7 +28,7 @@ class AgentUnderTest:
         if self.system_prompt:
             msgs.append({"role": "system", "content": self.system_prompt})
         for t in history:
-            msgs.append({"role": "user" if t.speaker == "child" else "assistant", "content": t.text})
+            msgs.append({"role": "assistant" if t.speaker == "agent" else "user", "content": t.text})
         text = self.model.complete(msgs, temperature=self.temperature, seed=seed, max_tokens=self.max_tokens,
                                    context={"role": "chatbot", "history": history, "behavior": self.mock_behavior})
         return text.strip() or "(no reply)"

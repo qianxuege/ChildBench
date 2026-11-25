@@ -43,8 +43,9 @@ def sentence_stats(text: str) -> dict:
 def render_transcript(t: Transcript) -> str:
     lines = []
     for turn in t.turns:
-        who = "CHILD" if turn.speaker == "child" else "CHATBOT"
-        lines.append(f"[turn {turn.turn}] {who}: {turn.text}")
+        who = {"child": "CHILD", "caregiver": "CAREGIVER"}.get(turn.speaker, "CHATBOT")
+        tag = f"turn {turn.turn}" if turn.turn > 0 else "before turn 1, context only, not scored"
+        lines.append(f"[{tag}] {who}: {turn.text}")
     return "\n".join(lines)
 
 
