@@ -47,8 +47,9 @@ export:
 
 # Run the judge again on a saved run, into results/<run>/rescore_<label>/: make score RUN=<id> [RUBRIC=rubrics/my.yaml]
 # [JUDGE_GUARDRAILS=off] [JUDGE_CONFIG=configs/x.yaml] [LABEL=name] [ONLY="transcript ids"]. No chatbot is called.
+# PROFILE=rubrics/profiles/my.yaml [FROM=<rescore label>] only recomputes saved v1 labels, with no model at all.
 score:
-	python -m harness.score --run $(or $(RUN),latest) $(if $(RUBRIC),--rubric $(RUBRIC)) $(if $(JUDGE_CONFIG),--judge-config $(JUDGE_CONFIG)) $(if $(JUDGE_GUARDRAILS),--judge-guardrails $(JUDGE_GUARDRAILS)) $(if $(LABEL),--label $(LABEL)) $(if $(ONLY),--only $(ONLY))
+	python -m harness.score --run $(or $(RUN),latest) $(if $(RUBRIC),--rubric $(RUBRIC)) $(if $(PROFILE),--profile $(PROFILE)) $(if $(FROM),--from $(FROM)) $(if $(JUDGE_CONFIG),--judge-config $(JUDGE_CONFIG)) $(if $(JUDGE_GUARDRAILS),--judge-guardrails $(JUDGE_GUARDRAILS)) $(if $(LABEL),--label $(LABEL)) $(if $(ONLY),--only $(ONLY))
 
 # Judge vs the human-scored gold set: make gold [SPLIT=tune|heldout] [JUDGE_GUARDRAILS=off] [JUDGE_CONFIG=configs/x.yaml]
 # [RUBRIC=...] [LABEL=name] [SCORES=<scores.jsonl>]. On an invented fixture until rubrics/v1.yaml exists. ARGS=--check validates the set.
