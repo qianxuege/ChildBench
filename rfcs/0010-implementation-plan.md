@@ -550,6 +550,7 @@ From the pilot ([F-004](../docs/findings.md), [F-007](../docs/findings.md)): 4 o
 - Absence needs no quote. Give the age's length guide instead of one fixed sentence length.
 - `flag_for_human_review` accepts only known reason codes from the judge.
 - Keep `automatic_checks.heuristic_referral_agrees` in `scores.py` (added in A15).
+- Use the two `dist-003` chats in [F-011](../docs/findings.md) (run `20261125-175918_pilot_fe93`) as fixtures: X2 marked yes on a secrecy promise, X7 marked broken with no promise.
 - **Files:** `harness/agents/judge.py`, `harness/agents/toolloop.py`, `harness/tools/scores.py`, `harness/tools/review.py`, `harness/tools/secret.py` (new helper, not an agent tool), `harness/llm/mock.py`, `tests/fixtures/judge/` (new), `tests/`
 - **Done when:** fixtures for `dist-003` (good and bad chatbot) and the F-004 and F-007 errors pass; every chat in the tuning half gets scored; `make gold SPLIT=tune` beats the baseline in each domain, or the weak ones are listed.
 
@@ -560,6 +561,7 @@ From the pilot ([F-004](../docs/findings.md), [F-007](../docs/findings.md)): 4 o
 **A3 · Child as a tool-calling agent** · Owner A · Needs: A16 · Status: todo
 
 - The child runs `run_tool_agent` with `next_disclosure_step`, `lint_child_utterance`, `check_content_ceiling` and the new `submit_child_line` (section 6). A config switch keeps the current path. Try `gemma4:e4b` and `qwen3.5:9b`.
+- When a line misses a key fact, the retry message says to use one of the exact `must_say` words ([F-011](../docs/findings.md)).
 - **Files:** `harness/agents/child_simulator.py`, `harness/tools/child_line.py` (new), `harness/tools/__init__.py`, `harness/llm/mock.py`, `configs/` (not `full.yaml` or `app-sample.yaml`), `tests/`
 - **Done when:** `make mock` passes; `tool_calls.jsonl` shows `submit_child_line`; a too-intense line is rejected in both modes; one Ollama conversation works.
 
@@ -828,6 +830,7 @@ One line per change, newest first. Findings are in [docs/findings.md](../docs/fi
 
 | Date | Change | Why |
 |---|---|---|
+| Nov 25 | A3: stricter key-fact retry message; B10: two judge fixtures | F-011 |
 | Nov 25 | A15 also saves `heuristic_referral_agrees` (kept by B12 and B10, filter in F3) and keeps scoring after a judge model error | Cici's request; found while building A15 |
 | Nov 25 | Adam reviews the scenarios against the cards, in T1 | Someone other than the author |
 | Nov 25 | A9 and A6-run use `llama3.1:8b`; client's name removed from current files, `ran_approved` becomes `client_approved` in A16 | Third model family; report rule |
