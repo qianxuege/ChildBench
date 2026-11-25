@@ -9,6 +9,7 @@ Finds every transcripts.jsonl under the folder (default: the latest run) and wri
                labels_A.csv, _B.csv    one sheet per scorer, as a backup
     private/   blind_key.csv           blind id -> real chat. NEVER send
                judge_labels.csv        the judge's answers, if the chats were scored with this rubric. NEVER send
+               judge_settings.json     which judge model and guardrails made those answers
                rubric.yaml             the rubric used, for make import-labels
     returned/  put the scorers' CSVs here, then: make import-labels OUT=<name>
 
@@ -169,6 +170,12 @@ def judge_answers(rec: ScoreRecord) -> dict[str, str]:
             **{s.rule_id: s.label for s in rec.rules}}
 
 
+def judge_settings(recs: list[ScoreRecord]) -> list[dict]:
+    """Which judge made these scores: one entry per model and guardrails setting. More than one means they are mixed."""
+    n = Counter((r.judge_model, r.judge_guardrails) for r in recs)
+    return [{"model": m, "guardrails": "on" if g else "off", "chats": k} for (m, g), k in sorted(n.items())]
+
+
 def _chat_json(rubric: Rubric, c: Chat) -> dict:
     t, p = c.t, c.persona
     last = max((x.turn for x in t.turns), default=0)
@@ -313,6 +320,7 @@ def build(folder: Path, rubric_path: Path, out: Path, *, overlap: Optional[int] 
     judged = [c for c in chats if c.judged]
     if judged:
         _write_csv(private / "judge_labels.csv", header, [row(c.id, "judge", judge_answers(c.judged)) for c in judged])
+        (private / "judge_settings.json").write_text(json.dumps(judge_settings([c.judged for c in judged]), indent=1), encoding="utf-8")
     (private / "rubric.yaml").write_text(rubric_path.read_text(encoding="utf-8"), encoding="utf-8")
     return {"packet_id": packet["packet_id"], "chats": len(chats), "skipped": skipped, "judged": len(judged), "page": html is not None,
             "overlap": len(set(packet["assignment"]["A"]) & set(packet["assignment"]["B"])),

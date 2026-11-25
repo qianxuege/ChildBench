@@ -30,7 +30,7 @@ from pathlib import Path
 from typing import Optional
 
 from . import REPO_ROOT
-from .labels import SCORERS, LabelError, judge_answers
+from .labels import SCORERS, LabelError, judge_answers, judge_settings
 from .rating import DEFAULT_PROFILE, LABEL_VALUE, apply_profile, load_profile
 from .run import load_rubric
 from .schemas import CODE_VALUES, CodeScore, DomainScore, Facts, Rubric, RuleScore, ScoreRecord
@@ -226,8 +226,8 @@ def _agreed(p: Path, packet: dict, rows: list[dict]) -> Answers:
     return out
 
 
-def rescored(label: str, key: dict[str, dict[str, str]], rubric: Rubric) -> Answers:
-    """The judge's answers from every run's rescore_<label>/. A chat the judge failed on is left out."""
+def rescored(label: str, key: dict[str, dict[str, str]], rubric: Rubric) -> tuple[Answers, list[dict]]:
+    """The judge's answers from every run's rescore_<label>/, and its settings. A chat the judge failed on is left out."""
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", label):
         raise LabelError(f"SCORES '{label}' may only have letters, digits, '.', '_' and '-'")
     found, problems = {}, []
@@ -243,7 +243,8 @@ def rescored(label: str, key: dict[str, dict[str, str]], rubric: Rubric) -> Answ
             found[d, rec.transcript_id] = rec
     if problems:
         raise LabelError("can't use these judge scores:\n  - " + "\n  - ".join(problems))
-    return {c: judge_answers(found[r["run_folder"], r["transcript_id"]]) for c, r in key.items() if (r["run_folder"], r["transcript_id"]) in found}
+    recs = {c: found[r["run_folder"], r["transcript_id"]] for c, r in key.items() if (r["run_folder"], r["transcript_id"]) in found}
+    return {c: judge_answers(rec) for c, rec in recs.items()}, judge_settings(list(recs.values()))
 
 
 def import_labels(folder: Path, scores: Optional[str] = None) -> dict:
@@ -261,11 +262,13 @@ def import_labels(folder: Path, scores: Optional[str] = None) -> dict:
         raise LabelError("private/blind_key.csv doesn't match send/packet.json")
     labels, notes = read_returned(folder, packet)
     everyone = dict(labels)
-    judge, source = {}, None
+    judge, source, settings = {}, None, []
     if scores:
-        judge, source = rescored(scores, key, rubric), f"rescore_{scores}"
+        (judge, settings), source = rescored(scores, key, rubric), f"rescore_{scores}"
     elif (private / "judge_labels.csv").exists():
         judge, source = {r["chat_id"]: r for r in read_csv(private / "judge_labels.csv")[1]}, "the copy made with the packet"
+        if (private / "judge_settings.json").exists():
+            settings = json.loads((private / "judge_settings.json").read_text(encoding="utf-8"))
     if judge:
         everyone["judge"] = {c["id"]: {q: judge[c["id"]][q] for q in c["questions"]} for c in packet["chats"] if c["id"] in judge}
     ratings = {who: {c: rating(rubric, key[c], a) for c, a in answers.items()} for who, answers in everyone.items()}
@@ -280,7 +283,8 @@ def import_labels(folder: Path, scores: Optional[str] = None) -> dict:
 
     pairs = [(first, second)] + ([(s, "judge") for s in SCORERS] if "judge" in everyone else [])
     report = {"packet_id": packet["packet_id"], "rubric_hash": packet["rubric_hash"], "chats": len(packet["chats"]),
-              "judge_scores": source if judge else None, "judge_scored": len(judge), "disagreements": len(rows), "settled": sum(bool(r["agreed"]) for r in rows),
+              "judge_scores": source if judge else None, "judge_scored": len(judge), "judge_settings": settings,
+              "disagreements": len(rows), "settled": sum(bool(r["agreed"]) for r in rows),
               "comparisons": {f"{a}_vs_{b}": compare(rubric, everyone[a], everyone[b], (ratings[a], ratings[b])) for a, b in pairs}}
     human = {"packet_id": packet["packet_id"], "rubric_hash": packet["rubric_hash"], "scorers": list(SCORERS), "chats": {
         key[c]["transcript_id"]: {"chat_id": c, "agent_name": key[c]["agent_name"], "scenario_id": key[c]["scenario_id"],
@@ -315,6 +319,10 @@ def main(argv=None) -> int:
         print("\nno judge scores for this rubric, so only the two people are compared")
     else:
         print(f"\njudge scores: {r['judge_scores']}, {r['judge_scored']} of {r['chats']} chats")
+        for s in r["judge_settings"]:
+            print(f"  judge {s['model']}, guardrails {s['guardrails']}: {s['chats']} chats")
+        if len(r["judge_settings"]) > 1:
+            print("  WARNING: these scores come from more than one judge setting, so the judge's agreement mixes them")
     print(f"\nproblems, missed and false alarms take the first name as right. {r['disagreements']} answers differ, {r['settled']} settled "
           "(private/disagreements.csv). Small samples: kappa ranges are wide.")
     print(f"wrote {folder / 'private'}/ (human_labels.json, agreement.json, disagreements.csv). Never send private/.")

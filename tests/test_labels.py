@@ -114,7 +114,7 @@ def test_two_runs_make_one_packet(made):
     assert p["assignment"]["A"] != p["assignment"]["B"]                              # another order for each scorer
     assert p["rubric_hash"] == f"v1-{RUBRIC.labels_hash()}"
     assert {f.name for f in (out / "send").iterdir()} == {"packet.json", "packet_A.md", "packet_B.md", "labels_A.csv", "labels_B.csv"}
-    assert {f.name for f in (out / "private").iterdir()} == {"blind_key.csv", "judge_labels.csv", "rubric.yaml"}
+    assert {f.name for f in (out / "private").iterdir()} == {"blind_key.csv", "judge_labels.csv", "judge_settings.json", "rubric.yaml"}
     sheet = _rows(out / "send/labels_A.csv")
     assert list(sheet[0]) == p["csv_header"] and [r["chat_id"] for r in sheet] == p["assignment"]["A"]
     chats = {c["id"]: c for c in p["chats"]}
@@ -456,5 +456,12 @@ def test_judge_scores_from_a_later_scoring(runs, tmp_path, capsys):
     assert vj.main(args[:-1]) == 0
     r = json.loads((d / "private/agreement.json").read_text())
     assert (r["judge_scores"], r["judge_scored"]) == ("the copy made with the packet", 21)
+    assert r["judge_settings"] == [{"model": "mock:judge", "guardrails": "on", "chats": 21}]
+    rescore(dirs[0], rubric_file="rubrics/v1.yaml", label="mixed", guardrails=False)
+    rescore(dirs[1], rubric_file="rubrics/v1.yaml", label="mixed")
+    capsys.readouterr()
+    assert vj.main([*args, "mixed"]) == 0 and "more than one judge setting" in capsys.readouterr().out
+    r = json.loads((d / "private/agreement.json").read_text())
+    assert [(s["guardrails"], s["chats"]) for s in r["judge_settings"]] == [("off", 21), ("on", 21)]
     assert vj.main([*args, "old"]) == 1 and "another version of the rubric" in capsys.readouterr().err
     assert vj.main([*args, "../x"]) == 1
