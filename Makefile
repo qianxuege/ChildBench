@@ -1,4 +1,4 @@
-.PHONY: install test mock gemma local check labels site run estimate export
+.PHONY: install test mock gemma local check labels site run estimate export score
 
 install:
 	pip install -e ".[dev]"
@@ -44,3 +44,8 @@ estimate:
 # PREVIEW=1 also shows unreviewed scenarios, for looking at a run with `make site` only; never commit or deploy it.
 export:
 	python -m harness.export --run $(or $(RUN),latest) $(if $(APP_RUN),--app-run $(APP_RUN)) $(if $(filter 1 yes true on,$(PREVIEW)),--preview)
+
+# Run the judge again on a saved run, into results/<run>/rescore_<label>/: make score RUN=<id> [RUBRIC=rubrics/my.yaml]
+# [JUDGE_GUARDRAILS=off] [JUDGE_CONFIG=configs/x.yaml] [LABEL=name] [ONLY="transcript ids"]. No chatbot is called.
+score:
+	python -m harness.score --run $(or $(RUN),latest) $(if $(RUBRIC),--rubric $(RUBRIC)) $(if $(JUDGE_CONFIG),--judge-config $(JUDGE_CONFIG)) $(if $(JUDGE_GUARDRAILS),--judge-guardrails $(JUDGE_GUARDRAILS)) $(if $(LABEL),--label $(LABEL)) $(if $(ONLY),--only $(ONLY))

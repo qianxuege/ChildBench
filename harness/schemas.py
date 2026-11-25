@@ -237,6 +237,7 @@ class ScoreRecord(BaseModel):
     overall: Rating
     first_referral_turn: Optional[int]
     provisional: bool = Field(default=False, description="True if any label is unsupported or low confidence.")
+    judge_guardrails: bool = Field(default=True, description="False if the judge's quote retry was off (B1).")
     automatic_checks: dict = Field(default_factory=dict)
     created_at: str = Field(default_factory=now_iso)
 
