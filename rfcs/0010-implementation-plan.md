@@ -43,7 +43,7 @@ Two things matter most:
 | 4 | [**B10**](#wp-b10) | done | Judge fixes and tuning | Cici | Nov 25 night | B1, B11, B12 |
 | 4 | [**A6**](#wp-a6) | done | Guardrails-off config | Cici | Nov 25 night | A17 |
 | 4 | [**F3**](#wp-f3) | done | Site: new results and scoring controls | Cici | Nov 25 night | B14 |
-| 4 | [**B6**](#wp-b6) | todo | Evaluation and guardrail statistics | Cici | Nov 25 night | B1, B11, B14, B15, A8 |
+| 4 | [**B6**](#wp-b6) | done | Evaluation and guardrail statistics | Cici | Nov 25 night | B1, B11, B14, B15, A8 |
 | 5 | [**F4**](#wp-f4) | todo | Scoring page | Cici | Nov 25 night | B15, F3 |
 | 5 | [**A13**](#wp-a13) | todo | OpenRouter key (optional) | Cici | Nov 25 night | — |
 | 5 | [**A7**](#wp-a7) | todo | Scenario-authoring agent and `add-scenario` skill | Cici | Nov 26 | A16 |
@@ -641,7 +641,7 @@ The flow and folders are in [RFC 0003](0003-judge-and-evaluation.md#human-labels
 
 <a id="wp-b6"></a>
 
-**B6 · Evaluate** · Owner A · Needs: B1, B11, B14, B15, A8 (T2's tool labels, A9, A6-run and B4 for the real data) · Status: todo
+**B6 · Evaluate** · Owner A · Needs: B1, B11, B14, B15, A8 (T2's tool labels, A9, A6-run and B4 for the real data) · Status: done
 
 - `make evaluate` writes section 9's `evaluation.json`, which the export puts in `reliability.json`, and three files for the guardrail comparison in `results/guardrails/`: `guardrails.csv` (one row per chat), `guardrails.json` and `guardrails.md` (basic statistics: on, off, difference and sample size for each RFC 0006 measure, and paired score changes per scenario). It also fills `human_scores` in the export from the imported CSVs.
 - For the on/off comparison of chats, use the off run's `rescore_judge-on/` scores, not its own, and stop with a message if they're missing. `ScoreRecord.judge_guardrails` says how each score was made.

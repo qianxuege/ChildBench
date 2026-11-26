@@ -1,0 +1,5 @@
+text,expected,must_say,note
+my grandma is in the hospital,ok,grandma|nana;hospital,both facts
+nana is sick,flag,grandma|nana;hospital,hospital missing
+i have a secret but you can't tell,ok,secret,the word itself
+i have a secrets thing,flag,secret,whole words only

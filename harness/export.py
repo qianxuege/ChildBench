@@ -17,10 +17,15 @@ The site reads only site/data/ (gitignored), never results/. Files written (RFC 
                            the batches it ran in, its transcript ids
     transcripts/<id>.json  turns, automatic checks, rule answers with quotes, domains and codes with quotes, the
                            referral rating, guardrail reasons, the batch; app chats also carry the app, its private
-                           mode, the date and `human_scores` (empty until B6 fills it)
+                           mode, the date and `human_scores`: each scorer's answers, rating and DIM total, from
+                           RUN's evaluation.json (`make evaluate`, B6); empty until then
     rubric.json            the run's rubric (domains, codes, caps, checks) and the default scoring profile, for the
                            site's scoring controls
-    reliability.json       evaluation.json's sections once B6 writes them, plus the run's quote-check and audit counts
+    reliability.json       RUN's evaluation.json (`make evaluate`, B6): judge vs gold and vs our scorers, human vs
+                           human, realism, tool accuracy, guardrails on vs off, the 4.1 and 9.4 pairs, apps vs Ollama,
+                           the app grid and over-escalation, plus the run's quote-check and audit counts. Rows about
+                           single chats keep only exported ones; the guardrail comparison keeps its totals, not its
+                           per-chat pairs
 
 The publishing check (RFC 0006; RFC 0010, sections 8 and 10). A transcript is left out of every file, numbers
 included, for any of these reasons:
@@ -421,7 +426,8 @@ def _v1_page(rec: ScoreRecord) -> dict:
     }
 
 
-def transcript_page(run: Run, tid: str, *, channel: str, persona: Persona, scan: dict) -> dict:
+def transcript_page(run: Run, tid: str, *, channel: str, persona: Persona, scan: dict,
+                    human: Optional[dict] = None) -> dict:
     t, raw, rec = run.transcripts[tid], run.raw[tid], run.scored[tid]
     rules = {r.id: r for r in run.rubric.rules}
     profile = default_profile(run.rubric)
@@ -450,11 +456,12 @@ def transcript_page(run: Run, tid: str, *, channel: str, persona: Persona, scan:
         **_v1_page(rec),
     }
     if channel == "app":
-        page["human_scores"] = {}                # filled by B6 from the imported scorer CSVs
+        page["human_scores"] = (human or {}).get(tid, {})      # from evaluation.json (B6)
     return page
 
 
-def _boards(items: list[tuple[Run, str]], channel: dict[str, str], batch: str) -> list[dict]:
+def _boards(items: list[tuple[Run, str]], channel: dict[str, str], batch: str,
+            human: Optional[dict] = None) -> list[dict]:
     """Per-chatbot leaderboard rows from summarize(), for the transcripts of one batch only."""
     if odd := sorted(tid for _, tid in items if batch_of_channel(channel[tid]) != batch):
         raise ExportError(f"chats from another batch in the {batch} block: {', '.join(odd[:3])}")
@@ -469,7 +476,8 @@ def _boards(items: list[tuple[Run, str]], channel: dict[str, str], batch: str) -
         row = {"chatbot": name, "model": s["model"], "batch": batch, "transcripts": sorted(ids.get(name, []))}
         if "batches" in s:                       # rubric v1: the case grid
             block = s["batches"][batch]
-            cases = [{**c, "human_scores": {}} if batch == "app" else c for c in block["cases"]]
+            cases = [{**c, "human_scores": (human or {}).get(c["transcript_id"], {})} if batch == "app" else c
+                     for c in block["cases"]]
             row.update({**block, "cases": cases})
         else:
             row.update({"overall": {**s["headline"], "over_escalation_rate": s["headline"]["false_referral_rate_controls"]},
@@ -527,6 +535,8 @@ def export(run_dir: Path, out_dir: Path, *, app_run_dir: Optional[Path] = None, 
     app = [(r, t) for r, t in exported if channel[t] == "app"]
 
     # ---------------------------------------------------------------- write
+    evaluation = load_evaluation(main_run)
+    human = evaluation.get("human_scores") or {}
     out_dir.mkdir(parents=True, exist_ok=True)
     tdir = out_dir / "transcripts"
     if tdir.exists():
@@ -534,7 +544,7 @@ def export(run_dir: Path, out_dir: Path, *, app_run_dir: Optional[Path] = None, 
     tdir.mkdir()
     for run, tid in exported:
         _dump(tdir / f"{tid}.json", transcript_page(run, tid, channel=channel[tid], persona=persona_of[tid],
-                                                    scan=scans[run.dir][tid]))
+                                                    scan=scans[run.dir][tid], human=human))
 
     models = main_run.manifest.get("models", {})
     run_details = {"run_id": main_run.run_id, "created_at": main_run.manifest.get("created_at"),
@@ -548,7 +558,7 @@ def export(run_dir: Path, out_dir: Path, *, app_run_dir: Optional[Path] = None, 
                           f"{runs[1].rubric.version}; score both with the same rubric (make score)")
     app_block = None
     if app or app_run_dir is not None:
-        rows = _boards(app, channel, "app")
+        rows = _boards(app, channel, "app", human)
         for row in rows:
             infos = [app_info(r, r.raw[t]) for r, t in app if r.transcripts[t].agent_name == row["chatbot"]]
             row.update({"app": infos[0]["app"], "app_mode": infos[0]["app_mode"],
@@ -604,7 +614,9 @@ def export(run_dir: Path, out_dir: Path, *, app_run_dir: Optional[Path] = None, 
         })
     _dump(out_dir / "scenarios.json", scen_rows)
 
-    _dump(out_dir / "reliability.json", reliability(main_run, [t for r, t in exported if r is main_run]))
+    _dump(out_dir / "reliability.json", reliability(main_run, [t for r, t in exported if r is main_run], evaluation,
+                                                    exported_all={t for _, t in exported},
+                                                    app_run_ids=[r.run_id for r in runs[1:]]))
 
     withheld = {tid: s["withheld_because"] for scan in scans.values() for tid, s in scan.items() if not s["exported"]}
     by_reason: dict[str, int] = {}
@@ -654,17 +666,58 @@ def profile_meta(rubric: Rubric, recs: list[ScoreRecord]) -> Optional[dict]:
             "custom": any(h != default.settings_hash() for h in hashes)}
 
 
-def reliability(run: Run, exported: list[str]) -> dict:
+EVALUATION_SECTIONS = ("judge_vs_gold", "judge_vs_labels", "human_vs_human", "realism", "tool_accuracy",
+                       "guardrail_comparison", "context_4_1", "age_9_4", "app_vs_api", "app_grid", "over_escalation")
+
+
+def load_evaluation(run: Run) -> dict:
+    """RUN's evaluation.json from `make evaluate` (B6), or {} if there is none yet."""
+    p = run.dir / "evaluation.json"
+    return json.loads(p.read_text()) if p.exists() else {}
+
+
+def _only_exported(section: Any, keep: set[str]) -> Any:
+    """Drop rows about chats the publishing check withheld: they leave every file, numbers included."""
+    if not isinstance(section, dict) or section.get("status") != "ok":
+        return section
+    out = dict(section)
+    if "rows" in out:                                            # app_grid, app_vs_api
+        rows = []
+        for r in out["rows"]:
+            if "transcript_id" in r:
+                if r["transcript_id"] in keep:
+                    rows.append(r)
+            else:
+                r = {**r, **{b: [c for c in r[b] if c["transcript_id"] in keep] for b in ("ollama", "app") if b in r}}
+                if any(r.get(b) for b in ("ollama", "app")):
+                    rows.append(r)
+        out["rows"] = rows
+    for batch in ("ollama", "app"):                              # the 4.1 and 9.4 pairs
+        if isinstance(out.get(batch), dict) and "rows" in out[batch]:
+            rows = [r for r in out[batch]["rows"] if r["with"]["transcript_id"] in keep and r["without"]["transcript_id"] in keep]
+            out[batch] = {**out[batch], "rows": rows, "pairs": len(rows)}
+    out.pop("paired", None)                                      # guardrail comparison: totals only
+    out.pop("files", None)
+    return out
+
+
+def reliability(run: Run, exported: list[str], ev: Optional[dict] = None, *, exported_all: Optional[set[str]] = None,
+                app_run_ids: Optional[list[str]] = None) -> dict:
     """evaluation.json's sections (B6) when they exist, plus what the run itself can say."""
-    ev_path = run.dir / "evaluation.json"
-    ev = json.loads(ev_path.read_text()) if ev_path.exists() else {}
+    ev = load_evaluation(run) if ev is None else ev
+    keep = set(exported) if exported_all is None else exported_all
     answers = [s for t in exported for s in run.scored[t].rules if s.label != "na"]
+    info = None
+    if ev:
+        info = {k: ev.get(k) for k in ("created_at", "off_run_id", "app_run_id", "label_packet", "judge_model", "mock", "missing")}
+        if ev.get("app_run_id") and app_run_ids is not None and ev["app_run_id"] not in app_run_ids:
+            info["warning"] = (f"evaluated with APP_RUN {ev['app_run_id']}, but this export has "
+                               f"{', '.join(app_run_ids) or 'no APP_RUN'}; run make evaluate again")
     return {
         "schema_version": SCHEMA_VERSION, "run_id": run.run_id,
         "status": "evaluated" if ev else "not evaluated yet (make evaluate, B6)",
-        "kappa_per_rule": ev.get("kappa"), "realism": ev.get("realism"),
-        "tool_accuracy": ev.get("tool_accuracy"), "guardrail_comparison": ev.get("guardrail_comparison"),
-        "over_escalation": ev.get("over_escalation"), "app_vs_api": ev.get("app_vs_api"),
+        "evaluation": info,
+        **{k: _only_exported(ev.get(k), keep) for k in EVALUATION_SECTIONS},
         "judge_quote_check": {"rule_answers": len(answers), "quotes_not_verified": sum(not s.supported for s in answers)},
         "audit_sample": {"n": len({i.split(":")[0] for i, r in run.queued if r == "AUDIT_SAMPLE"} & set(exported))},
     }
