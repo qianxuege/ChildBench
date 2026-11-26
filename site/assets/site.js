@@ -3,11 +3,10 @@
 // they show an explicit empty state and never substitute sample measurements or conversations.
 const DATA = "data/";
 
-// The menu (F5): Scenarios, Run, Score, Results. Results also covers the transcript and judge reliability pages,
-// which the leaderboard links to; About (the method page) is in the footer. score.js keeps the same list.
+// Results also covers the transcript and judge reliability pages, which the leaderboard links to; About (the
+// method page) is in the footer. score.js keeps the same list.
 const PAGES = [
   ["scenarios.html", "/scenarios"],
-  ["run.html", "/run"],
   ["score.html", "/score"],
   ["leaderboard.html", "/results", ["transcript.html", "judge-reliability.html"]],
 ];

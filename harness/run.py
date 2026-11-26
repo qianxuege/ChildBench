@@ -4,7 +4,7 @@ Plain code, no LLM decides the order of steps. Usage:
     python -m harness.run --config configs/mock.yaml
     python -m harness.run --config configs/gemma-local.yaml --only dist-003 --seeds 1
     python -m harness.run --config configs/mock.yaml --check-only
-    python -m harness.run --resume <run_id>     # finish an unscored run: its unfinished chats, then scoring (F5)
+    python -m harness.run --resume <run_id>     # finish an unscored run: its unfinished chats, then scoring
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ from .agents.judge import Judge
 from .context import RunContext
 from .llm import ModelError, make_model
 from .llm.manual import ManualModel, ManualStop
-from .schemas import SITUATION_CODE, Persona, Rubric, Transcript, Turn
+from .schemas import SITUATION_CODE, Persona, Rubric, ScoreRecord, Transcript, Turn
 from .summary import print_table, summarize
 from .tools.ceiling import scenario_content_problems
 from .tools.referral import detect_referral
@@ -241,7 +241,7 @@ def converse(persona: Persona, agent: AgentUnderTest, child: ChildSimulator, ctx
                       app_model_shown=manual.model_shown if manual else None)
 
 
-PLAN_FILE = "run_plan.json"      # written when a run starts; lets `--resume` and `make app` reopen the folder (F5)
+PLAN_FILE = "run_plan.json"      # written when a run starts; lets `--resume` reopen the folder
 TALK_LOG = "talk_log.jsonl"      # one line per chat attempt, so timing survives a resume
 
 
@@ -277,8 +277,8 @@ def load_scenarios(cfg: dict, only: list[str] | None, *, quiet: bool = False) ->
 class Run:
     """One run folder: its models, its plan of chats, and its results.
 
-    Chats are talked one at a time with `talk` (the terminal loops over `todo()`; `make app` asks for one chat per
-    click), then scored once with `score`. Opened again with `resume_id`, it skips chats that already have a complete
+    Chats are talked one at a time with `talk` (the terminal loops over `todo()`), then scored once with `score`.
+    Opened again with `resume_id`, it skips chats that already have a complete
     transcript and starts unfinished ones again; the unfinished attempt stays in transcripts.jsonl, marked incomplete.
     """
 
@@ -314,14 +314,14 @@ class Run:
         if resume_id:
             self.run_id, self.stamp = resume_id, resume_id.split("_", 1)[0]
             self.out_dir = out_root / resume_id
-            if (self.out_dir / "manifest.json").exists():
-                raise SystemExit(f"{resume_id} is already scored, so it can't be resumed")
         else:
             self.stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
             self.run_id = f"{self.stamp}_{run_name(cfg)}_{uuid.uuid4().hex[:4]}"
             self.out_dir = out_root / self.run_id
         self.ctx = RunContext(self.run_id, self.out_dir, rubric, personas, enforce=g.get("enforce", True),
                               audit_rate=g.get("audit_rate", 0.10), seed=cfg.get("audit_seed", 0))
+        if resume_id:
+            self.ctx.tool_calls = len(read_jsonl(self.out_dir / "tool_calls.jsonl"))
         if not resume_id:
             (self.out_dir / PLAN_FILE).write_text(json.dumps(
                 {"run_id": self.run_id, "config_file": str(config_file), "config": cfg, "only": only, "seeds": seeds,
@@ -333,13 +333,15 @@ class Run:
                                       temperature=temps.get("agent", 0.7), mock_behavior=a["model"].get("behavior"))
                        for a, m in zip(agent_cfgs, agent_models)]
         self.plan = [(p, a, s) for p in personas.values() for a in self.agents for s in seeds]
+        if resume_id and (self.out_dir / "manifest.json").exists() and not self.todo():
+            raise SystemExit(f"{resume_id} already has a complete transcript for every planned chat, so it can't be resumed")
 
     @classmethod
     def reopen(cls, run_dir: Path, *, skip_preflight: bool = False, quiet: bool = True) -> "Run":
         """The run in `run_dir`, from its run_plan.json, ready to talk to its unfinished chats."""
         plan_file = run_dir / PLAN_FILE
         if not plan_file.exists():
-            raise SystemExit(f"{run_dir.name} has no {PLAN_FILE}, so it can't be resumed (it was started before F5)")
+            raise SystemExit(f"{run_dir.name} has no {PLAN_FILE}, so it can't be resumed (it predates resume support)")
         plan = json.loads(plan_file.read_text())
         cfg = plan["config"]
         rubric, rubric_path, personas, hashes = load_scenarios(cfg, plan.get("only"), quiet=quiet)
@@ -375,7 +377,7 @@ class Run:
 
     def score(self) -> dict:
         """Score every complete conversation in the folder, once, and write summary.json, manifest.json and LATEST."""
-        if (self.out_dir / "manifest.json").exists():
+        if (self.out_dir / "manifest.json").exists() and not self.resumed:
             raise SystemExit(f"{self.run_id} is already scored")
         rows = read_jsonl(self.out_dir / "transcripts.jsonl")
         attempts: dict[str, list[Transcript]] = {}
@@ -383,6 +385,13 @@ class Run:
             t = Transcript(**d)
             attempts.setdefault(t.transcript_id, []).append(t)
         ctx, rubric = self.ctx, self.rubric
+        if self.resumed:
+            for d in read_jsonl(self.out_dir / "scores.jsonl"):
+                rec = ScoreRecord(**d)
+                ctx.scored[rec.transcript_id] = rec
+            for d in read_jsonl(self.out_dir / "review_queue.jsonl"):
+                if d.get("item_id") and d.get("reason_code"):
+                    ctx.queued.add((d["item_id"], d["reason_code"]))
         for tid, ts in attempts.items():
             done = [t for t in ts if t.complete]
             if done:
@@ -397,6 +406,9 @@ class Run:
         score_start = time.perf_counter()
         for tid, t in ctx.transcripts.items():
             per_conv.setdefault(tid, {})
+            if tid in ctx.scored:
+                print(f"  kept     {tid:<40} existing score")
+                continue
             if not rubric.scores_situation(SITUATION_CODE[t.situation]):
                 print(f"  skipped  {tid:<40} rubric {rubric.version} has no rules for '{t.situation}', so it isn't scored")
                 continue

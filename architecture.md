@@ -68,7 +68,7 @@ They protect four points: before a run, on every child line, during scoring and 
 
 ### Site
 
-Plain HTML, CSS and JavaScript read exported data. The static site includes separate app and Ollama batches, scoring controls, a human scoring page, transcripts, and judge-reliability evidence. An optional local Run page exists but is not required for benchmark runs.
+Plain HTML, CSS and JavaScript read exported data. The static site includes separate app and Ollama batches, scoring controls, a standalone human scoring page, transcripts, and judge-reliability evidence. Benchmark runs use the CLI; consumer-app chats use its terminal relay.
 
 ## 5. Example
 

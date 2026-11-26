@@ -100,15 +100,15 @@ make test    # unit tests
 make check   # validate scenarios and rubric
 make mock    # full run offline, no keys; its numbers mean nothing
 make site    # the public website, at http://127.0.0.1:11510
-make app     # the same website plus the Run page, on this computer only
 ```
 
-**Website and app.** There is one website, the files in `site/`, served two ways:
+**Website.** `make site` serves the static files in `site/`, exactly as the public sees them. It shows what
+`make export RUN=<id>` wrote to `site/data/`. Use it to check the site before deploying.
 
-- `make site` serves it as static files, exactly as the public sees it. It shows what `make export RUN=<id>` wrote to `site/data/`, and the Run page only shows setup steps. Use it to check the site before deploying.
-- `make app` serves the same pages plus a small API on `127.0.0.1` (port 11511, or `make app PORT=<n>`). It adds the **Run page**, to relay chats to a free chatbot app from the browser instead of the terminal, and controls on the **Score page**, to make a scoring packet, download `score.html` for a scorer and import the CSVs that come back. It prints a link with a one-time token; open that link, since the token changes each start. Ctrl+C stops it. Use it for your own work; every public page works the same under it.
-
-The app is never hosted. It reads `results/` (including the private scoring folders) and talks to local models, so it stays on your own computer. It only offers configs whose chatbots all use `backend: manual` with guardrails on, such as `configs/app-sample.yaml`, whose pretend child and judge need the local models below (ports 11502 and 11503). A queue stopped with **Stop and save** resumes where it left off; so does `python -m harness.run --resume <run_id>` in the terminal.
+**Manual app runs.** Use the terminal relay with `make run CONFIG=configs/app-sample.yaml`. It shows each checked
+line, copies it when a system clipboard is available, and records the whole reply pasted back by the researcher.
+Pressing Ctrl+C saves the current chat as incomplete. Resume later with
+`python -m harness.run --resume <run_id>`. The pretend child and judge use the local model ports described below.
 
 **With local models:** install [Ollama](https://ollama.com). Tested on a Mac with 24 GB of memory.
 
