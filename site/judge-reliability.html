@@ -19,14 +19,20 @@
     <dl class="meta"><dt>labeled</dt><dd id="rel-labeled">[N] transcripts</dd><dt>target</dt><dd>~20 pilot · ~60 final</dd><dt>rubric</dt><dd id="rel-rubric">[v0]</dd></dl>
   </div>
   <div class="grid g3" style="margin-top:28px">
-    <div class="card"><b style="font:600 15px var(--sans)">Human vs human</b><div class="kappa">κ<span>—</span></div><div class="mono dim" style="font-size:12.5px;margin-top:8px">likely range [low, high]</div><p style="margin-top:4px">Is each rule clear enough that people agree?</p></div>
-    <div class="card"><b style="font:600 15px var(--sans)">Judge vs human consensus</b><div class="kappa">κ<span>—</span></div><div class="mono dim" style="font-size:12.5px;margin-top:8px">likely range [low, high]</div><p style="margin-top:4px">Does the judge agree with people?</p></div>
-    <div class="card"><b style="font:600 15px var(--sans)">Judge vs itself, 3 runs</b><div class="kappa">κ<span>—</span></div><div class="mono dim" style="font-size:12.5px;margin-top:8px">likely range [low, high]</div><p style="margin-top:4px">Does it give the same answer twice?</p></div>
+    <div class="card"><b style="font:600 15px var(--sans)">Human vs human</b><div class="kappa">κ<span id="rel-hh">—</span></div><div class="mono dim" style="font-size:12.5px;margin-top:8px" id="rel-hh-sub">two scorers, the app chats</div><p style="margin-top:4px">Is each item clear enough that people agree?</p></div>
+    <div class="card"><b style="font:600 15px var(--sans)">Judge vs human</b><div class="kappa">κ<span id="rel-jh">—</span></div><div class="mono dim" style="font-size:12.5px;margin-top:8px" id="rel-jh-sub">the same app chats</div><p style="margin-top:4px">Does the judge agree with our scorers?</p></div>
+    <div class="card"><b style="font:600 15px var(--sans)">Judge vs gold</b><div class="kappa">κ<span id="rel-jg">—</span></div><div class="mono dim" style="font-size:12.5px;margin-top:8px" id="rel-jg-sub">the preprint’s held-out human-scored chats</div><p style="margin-top:4px">Does the judge agree with the preprint’s consensus scores?</p></div>
   </div>
   <section style="padding-top:32px">
-    <div class="section-head" style="margin-bottom:14px"><h3>Agreement per rule</h3><div class="tabs" id="rel-tabs"></div></div>
-    <div class="table-box"><table id="rel-table"><thead><tr><th>rule</th><th>what it asks</th><th style="text-align:center">human vs human</th><th style="text-align:center">judge vs human</th><th style="text-align:center">judge vs itself</th><th>status</th></tr></thead><tbody></tbody></table></div>
-    <p class="body small" style="margin:14px 0 0">“Yes” against “partial” counts as half a disagreement. A wide range means we need more hand-scored conversations before trusting the judge on that rule.</p>
+    <div class="section-head" style="margin-bottom:14px"><h3>Agreement per item</h3><div class="tabs" id="rel-tabs"></div></div>
+    <div class="table-box"><table id="rel-table"><thead><tr><th>item</th><th>what it asks</th><th style="text-align:center">human vs human</th><th style="text-align:center">judge vs human</th><th style="text-align:center">judge vs gold</th><th>scored by</th></tr></thead><tbody></tbody></table></div>
+    <p class="body small" id="rel-foot" style="margin:14px 0 0">Domains use weighted κ (one level apart counts as half a disagreement), with exact and within-one agreement and the score from always guessing the most common level next to it; the judge has to beat that guess. Items where it doesn’t are scored by people only.</p>
+  </section>
+  <section id="guardrails" style="padding-top:32px">
+    <div class="section-head" style="margin-bottom:14px"><h3>With and without guardrails</h3><span class="body small">the same scenarios, one Ollama chatbot, guardrails on and off</span></div>
+    <div class="table-box"><table id="guard-table"><thead><tr><th>measure</th><th style="text-align:center">on</th><th style="text-align:center">off</th><th style="text-align:center">difference</th><th style="text-align:center">n</th></tr></thead><tbody><tr><td colspan="5" class="body">Not evaluated yet (make evaluate).</td></tr></tbody></table></div>
+    <p class="body small" style="margin:14px 0 0;max-width:860px">Chats with guardrails off are never published as a batch: their pretend child wasn’t checked. Only the examples below are shown, each one read by a person first.</p>
+    <div id="guard-examples"></div>
   </section>
   <div class="grid g2" style="margin-top:28px;gap:16px">
     <div class="card" style="padding:24px">

@@ -22,6 +22,18 @@ A dated lab notebook: what we ran, what we saw, what we decided. **Add new entri
 
 ---
 
+## F-018 · The site now fixes the shape of `human_scores` and of the reliability sections, which B6 hasn't written yet (Nov 26)
+
+**Run:** two mock runs exported together with `PREVIEW=1`: `mock-ollama` (15 DIM files, one mock Ollama chatbot) and `mock-apps` (the 8 illustration files × 3 apps through a scripted relay); `human_scores` and `reliability.json` filled by hand with made-up values to try the pages. Nothing was committed.
+**What we saw:** B14 exports `human_scores: {}` and B6's block only says it "fills" it; `reliability.json`'s agreement and guardrail sections are `null` until B6, with no agreed shape. F3 had to pick one to build the toggle, the disagreement display and the reliability tables.
+**Why:** F3 and B6 are in the same build step and share no files.
+**Decision:** the site reads
+- `human_scores` per chat (in the transcript page; the case copy is a fallback) as `{"<scorer letter>": {"domains": {<domain>: 0-2}, "codes": {<code>: value}, "rules": {<rule id>: yes|partial|no|na}, "referral": optional}}`. People's domain levels get no caps; their rules give the referral rating under the open profile.
+- `human_vs_human`, `judge_vs_human` and `judge_vs_gold` as a number (κ) or `{weighted_kappa | kappa, exact, within_1, n, baseline, per_item: {<domain, code or rule id>: same}}`; `human_only` as a list of item ids; `guardrail_comparison` as `{measures: [{measure, on, off, difference, n}], examples: [{scenario_id, measure, on, off, note, checked}]}`. Only examples with `checked: true` are shown, at most 6.
+Anything missing shows "–". B6 can write a different shape, but then `site/assets/site.js` needs the matching change.
+**Plan change:** none · **Follow-up:** B6 writes these shapes (or updates the site's readers)
+**Status:** open
+
 ## F-017 · B10's judge scores every gold tuning chat and beats the guess in each domain; scaffolding and responsiveness stay weak (Nov 26)
 
 **Run:** `make gold SPLIT=tune`, labels `b10-v1` and `b10-v2` (judge `qwen3.5:9b` on local Ollama via `configs/pilot.yaml`, rubric v1, guardrails on; 24 tuning chats; reports in `private/gold/runs/tune/`, never shared)
