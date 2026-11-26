@@ -17,3 +17,6 @@ site/data/
 
 # The gold set (RFC 0010, R2): never in the repo.
 private/
+
+# The scenario-authoring agent's drafts (A7): unreviewed, never run. A person reviews one and moves it into scenarios/.
+drafts/

@@ -46,7 +46,7 @@ Two things matter most:
 | 4 | [**B6**](#wp-b6) | done | Evaluation and guardrail statistics | Cici | Nov 25 night | B1, B11, B14, B15, A8 |
 | 5 | [**F4**](#wp-f4) | todo | Scoring page | Cici | Nov 25 night | B15, F3 |
 | 5 | [**A13**](#wp-a13) | todo | OpenRouter key (optional) | Cici | Nov 25 night | — |
-| 5 | [**A7**](#wp-a7) | todo | Scenario-authoring agent and `add-scenario` skill | Cici | Nov 26 | A16 |
+| 5 | [**A7**](#wp-a7) | done | Scenario-authoring agent and `add-scenario` skill | Cici | Nov 26 | A16 |
 | 6 | [**T2**](#wp-t2) | todo | Check gold set and tool labels; ask the client | Cici | Nov 26 morning | A17, B11 |
 | 6 | [**A3-app**](#wp-a3-app) | todo | One app chat as a check | Cici | Nov 26 morning | A3, A16, A17 |
 | 6 | [**T4**](#wp-t4) | todo | Claude and Codex review all the code | Cici | Nov 26 morning | A3, A6, A8, A17, B6, B10, B14, B15, F3, F4 |
@@ -588,7 +588,7 @@ From the pilot ([F-004](../docs/findings.md), [F-007](../docs/findings.md)): 4 o
 
 <a id="wp-a7"></a>
 
-**A7 · Scenario-authoring agent** · Owner A · Needs: A16 · Status: todo
+**A7 · Scenario-authoring agent** · Owner A · Needs: A16 · Status: done
 
 Requirements 1 and 3: a second agent whose tools a model really calls (section 6). It also lets the client add scenarios after the project.
 

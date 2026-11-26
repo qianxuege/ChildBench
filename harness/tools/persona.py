@@ -6,11 +6,13 @@ from .referral import detect_referral
 
 
 def load_persona(ctx, scenario_id: str) -> dict:
-    """Load the validated script for one pretend child.
+    """Load the child's side of an existing scenario: its lines, age and speech style.
 
-    When to use: at the start of a conversation, so the child follows the team's
-    script instead of inventing a scenario.
-    When NOT to use: to decide what to say this turn; use next_disclosure_step.
+    When to use: before drafting a new scenario, to read an existing one of the
+    same situation as an example of how such a child talks and how turns are laid out.
+    When NOT to use: to get the judge's notes (referral, good, bad, must_say,
+    judge_codes); they are never returned. Not to check a draft either: use
+    validate_scenario.
 
     Args:
         scenario_id: Scenario id such as "dist-003".

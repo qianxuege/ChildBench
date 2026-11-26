@@ -1,14 +1,14 @@
 # RFC 0004: Custom Agentic Tools
 
 - **Status:** Draft
-- **Created:** 2026-10-25 (updated 2026-11-23)
+- **Created:** 2026-10-25 (updated 2026-11-26)
 - **Owner role:** 3 and 4 (shared)
 - **Tech requirements addressed:** 3, 6, 7
 - **Related RFCs:** 0002, 0003, 0006, [0010](0010-implementation-plan.md)
 
 ## Summary
 
-A Python package `harness/tools/` of ten deterministic tools with LLM-readable docstrings; package A3 adds an eleventh, `submit_child_line`. They constrain the simulator and judge so behaviour is controllable and auditable.
+A Python package `harness/tools/` of deterministic tools with LLM-readable docstrings. Two agents call 9 of them, the judge and the scenario-authoring agent (A7); 3 more are helpers only code calls (`next_disclosure_step`, `detect_pii_request`, `compute_agreement`). They keep behaviour controllable and auditable.
 
 ## Motivation
 
@@ -18,19 +18,24 @@ Requirement 3 asks for >= 5 custom tools, documented for LLM agents, that contro
 
 Docstring convention (every tool): one-line purpose, **When to use**, **When NOT to use**, args with types and ranges, return schema, failure modes. Tools return structured JSON and never raise uncaught exceptions to the agent; they return `{"ok": false, "error": ...}`. The docstring the agent reads is the one developers maintain.
 
+**Called by** says who calls each tool: a model in a tool loop (the judge or the authoring agent), or code. Only tools a model calls count for requirement 3. Every call goes through `call_tool`, so it is logged to `tool_calls.jsonl`, which the guardrail evidence uses; that's why the code-only tools stay in `harness/tools/`. `harness/tools/__init__.py` keeps the same list.
+
 | # | Tool | Called by | Purpose |
 |---|---|---|---|
-| 1 | `load_persona(scenario_id)` | Child | The child's own script, age and style. Never the expected behaviour or judge codes. |
-| 2 | `next_disclosure_step(scenario_id, turn, ...)` | Child | Which scripted turn applies now: script, pushback or react. |
-| 3 | `lint_child_utterance(text, age)` | Child | **Realism**: does this sound like a child of this age? |
-| 4 | `check_content_ceiling(text, level)` | Child, export | **Severity**: is the content within the approved level? |
-| 5 | `submit_child_line(text)` (A3) | Child | **Enforces** the content, speech, fake-data and key-fact checks before a line reaches the chatbot. |
-| 6 | `detect_pii_request(agent_reply)` | Judge | Detects when the chatbot asks the child for personal details. Its result decides check S2.1, even if the judge disagrees. |
-| 7 | `load_rubric(version, situation)` | Judge | The domains, codes and checks for this situation. |
-| 8 | `verify_evidence_quote(transcript_id, quote, speaker)` | Judge | Confirms a quote really appears, said by that speaker. |
-| 9 | `submit_scores(transcript_id, ...)` | Judge | Validates scores, checks quotes, applies caps and overrides, computes ratings in code. |
-| 10 | `flag_for_human_review(item_id, reason_code, details)` | Child, judge, orchestrator | Adds a case to the review queue with a known reason code. |
-| 11 | `compute_agreement(labels_a, labels_b)` | Analysis | Kappa with a confidence interval. |
+| 1 | `load_persona(scenario_id)` | Authoring agent | The child's side of a scenario: lines, age and style. Never the expected behaviour, `must_say` or judge codes. The agent reads one as an example. |
+| 2 | `next_disclosure_step(scenario_id, turn, ...)` | Code (the pretend child's loop) | Which scripted turn applies now: script, pushback or react. |
+| 3 | `lint_child_utterance(text, age)` | Authoring agent; code, on every pretend-child line | **Realism**: does this sound like a child of this age? |
+| 4 | `check_content_ceiling(text, level)` | Authoring agent; code, on every pretend-child line and at export | **Severity**: is the content within the approved level? |
+| 5 | `validate_scenario(yaml_text)` (A7) | Authoring agent | Runs the scenario-format checks, content level, fake-data scan, speech check on every line, a unique id and the referral expectation, and lists every problem as a short reason. Writes nothing. |
+| 6 | `save_scenario_draft(yaml_text)` (A7) | Authoring agent | Saves a draft that passes `validate_scenario` to `drafts/`, sets `review` itself (no reviewers), and refuses existing ids. Never writes to `scenarios/` or `rubrics/`. |
+| 7 | `detect_pii_request(agent_reply)` | Code, before the judge | Detects when the chatbot asks the child for personal details. Its result decides check S2.1, even if the judge disagrees. The judge sees the result but isn't offered the tool (A7). |
+| 8 | `load_rubric(version, situation)` | Judge | The domains, codes and checks for this situation. |
+| 9 | `verify_evidence_quote(transcript_id, quote, speaker)` | Judge | Confirms a quote really appears, said by that speaker. |
+| 10 | `submit_scores(transcript_id, ...)` | Judge | Validates scores, checks quotes, applies caps and overrides, computes ratings in code. |
+| 11 | `flag_for_human_review(item_id, reason_code, details)` | Judge; code (child loop, orchestrator) | Adds a case to the review queue with a known reason code. |
+| 12 | `compute_agreement(labels_a, labels_b)` | Code (analysis) | Kappa with a confidence interval. |
+
+Models call 9 tools, the ones that count for requirement 3: the judge 4 (`load_rubric`, `verify_evidence_quote`, `submit_scores`, `flag_for_human_review`) and the authoring agent 5 (`load_persona`, `validate_scenario`, `check_content_ceiling`, `lint_child_utterance`, `save_scenario_draft`). The pretend child calls none: it is a fixed loop run by code ([RFC 0002](0002-child-simulator-agent.md)), so the planned `submit_child_line` was dropped on Nov 26.
 
 ### `lint_child_utterance` vs `check_content_ceiling`
 

@@ -14,7 +14,7 @@ Team 20, Carnegie Mellon University, Introduction to AI, Fall 2026.
 
 <img src="docs/diagrams/childbench-concept.svg" alt="ChildBench pipeline: scenarios go to a pretend child, which talks with the chatbot under test; the transcript goes to the judge and to human scorers, and then to results" width="820" style="max-width: 100%; height: auto;">
 
-Two AI agents do the work. The **pretend child** plays a scripted child and reacts to the chatbot. The **judge** scores the finished conversation and must quote evidence. Plain code runs the steps, enforces the checks and computes the scores, and people check the judge.
+A model plays the **pretend child**: it says each scripted line in its own words, in a fixed loop that code runs and checks. Two AI agents choose their own tool calls: the **judge** scores the finished conversation and must quote evidence, and the **scenario-authoring agent** drafts new scenarios for a person to review. Plain code runs the steps, enforces the checks and computes the scores, and people check the judge.
 
 ## Why it matters
 
@@ -68,10 +68,10 @@ Full explanation: [architecture.md](architecture.md). Design decisions: [rfcs/](
 
 | # | Requirement | How we meet it | Status |
 |---|---|---|---|
-| 1 | Agentic workflow | Judge runs a tool loop; the child becomes a tool-calling agent ([A3](rfcs/0010-implementation-plan.md#wp-a3)) | Judge done; child *planned* |
+| 1 | Agentic workflow | The judge and the scenario-authoring agent each run a tool loop in which the model picks the next tool. The pretend child is a fixed loop run by code, not an agent | Done |
 | 2 | Pretrained models | Gemma and Qwen through Ollama; nothing is trained | Done |
-| 3 | At least 5 custom tools, documented for agents | 10 deterministic tools with agent-facing docstrings ([RFC 0004](rfcs/0004-agentic-tools.md)); an 11th *planned* | Done |
-| 4 | Skill folder used by the team or made for the client | [`dev-work-package`](.claude/skills/dev-work-package/SKILL.md), which takes a work package from plan to pull request | Done |
+| 3 | At least 5 custom tools, documented for agents | 9 tools that a model calls, each with an agent-facing docstring ([RFC 0004](rfcs/0004-agentic-tools.md)): the judge's 4 (`load_rubric`, `verify_evidence_quote`, `submit_scores`, `flag_for_human_review`) and the authoring agent's 5 (`load_persona`, `validate_scenario`, `check_content_ceiling`, `lint_child_utterance`, `save_scenario_draft`). Three more are helpers only code calls, and aren't counted | Done |
+| 4 | Skill folder used by the team or made for the client | [`dev-work-package`](.claude/skills/dev-work-package/SKILL.md), which takes a work package from plan to pull request; [`add-scenario`](skills/add-scenario/SKILL.md) for the client, which runs the authoring agent and walks a person through reviewing its draft | Done |
 | 5 | Evaluation | Judge vs gold set, human vs human, tool accuracy, child realism and script fidelity | *Planned* |
 | 6 | Data protection and simulated-data quality | Synthetic data only, fake-data and content checks; key-fact checks and scenario reviews | Partly done |
 | 7 | Safety guardrails | Content, speech, fake-data, quote and publishing checks ([RFC 0006](rfcs/0006-safety-guardrails.md)) | Done; key-fact check *planned* |
@@ -123,6 +123,8 @@ make local
 | 11503 | `qwen3.5:9b` | Judge |
 
 The short keep-alive stops the two large models from being in memory together. Thinking is off for both, because it used up the token limit and gave empty replies.
+
+**New scenarios:** `make author IDEA="..." [SITUATION=...] [AGE=...]` has the authoring agent draft one into `drafts/` (Ollama port 11502; `MODEL=mock` offline). No run reads `drafts/`: a person reviews the draft and moves it into `scenarios/`, as [`add-scenario`](skills/add-scenario/SKILL.md) explains.
 
 **With a free app:** `make run CONFIG=configs/app-sample.yaml` shows each child line, copies it for you, and reads the reply back. Use a private chat, paste only the lines shown, and never edit replies. Details: [RFC 0010, section 7](rfcs/0010-implementation-plan.md#7-chatbots-api-and-app-and-the-manual-relay).
 

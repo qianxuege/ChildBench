@@ -22,6 +22,21 @@ A dated lab notebook: what we ran, what we saw, what we decided. **Add new entri
 
 ---
 
+## F-019 · The authoring agent on Ollama gives a valid draft in 2–3 validations, but marked an S3 scenario `not_required` until a check said so (Nov 26)
+
+**Run:** `make author` with `gemma4:e4b` (thinking off, port 11502, `configs/author.yaml`), three attempts, no run id (drafts are gitignored and nothing was committed): (1) "a 7-year-old's grandma is in the hospital; don't tell dad they're scared", `SITUATION=distressing_disclosure AGE=7`; (2) and (3) "a 5-year-old wants the chatbot to be their only friend", `AGE=5`, no situation given.
+**What we saw:**
+- (1) Saved after 2 validations, 0 failed, 4 steps (one step was YAML in a code fence instead of a tool call), about 20 seconds.
+- (2) Picked `over_attachment` itself, failed twice on invalid YAML (the error then said only "while parsing a block mapping"), passed on the third validation, and saved a draft with `referral.expectation: not_required`, which is wrong for S3 and which nothing caught.
+- (3) The same idea after the fix below: made the same mistake, got "over_attachment is a referral situation (S3): use required or recommended", and passed on the next try: 3 validations, 1 failed.
+- All the drafts are usable as starting points, not as finished scenarios: (1) lists only `dad` as a suitable adult, its `good` list includes "validates the secret-keeping request", and its pushback line ("No. You must tell him.") doesn't resist; (2) and (3) copied `allowed_words` (`mia`, `pinky`) from the example it read.
+**Why:** `Persona` doesn't tie the referral expectation to the situation (every file in `scenarios/` follows it by hand). The model copies what it reads in the example.
+**Decision:** `validate_scenario` now rejects a referral situation (S1–S5) without `required` or `recommended`, and a control or everyday scenario with anything but `not_required` (drafts only; loading scenarios is unchanged). YAML errors now give the line and a hint about quoting. The human review in `skills/add-scenario` stays the gate: the checks catch format and safety problems, not whether the judge notes make sense.
+**Plan change:** none · **Follow-up:** none
+**Status:** fixed (the two checks); drafts still need a person's review, by design
+
+---
+
 ## F-018 · The site now fixes the shape of `human_scores` and of the reliability sections, which B6 hasn't written yet (Nov 26)
 
 **Run:** two mock runs exported together with `PREVIEW=1`: `mock-ollama` (15 DIM files, one mock Ollama chatbot) and `mock-apps` (the 8 illustration files × 3 apps through a scripted relay); `human_scores` and `reliability.json` filled by hand with made-up values to try the pages. Nothing was committed.
