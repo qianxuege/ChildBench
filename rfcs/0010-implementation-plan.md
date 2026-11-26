@@ -38,7 +38,7 @@ Two things matter most:
 | 3 | [**A17**](#wp-a17) | done | Write the 15 scenario files | Cici | Nov 25 night | A16 |
 | 3 | [**A3**](#wp-a3) | todo | Stricter key-fact retry message | Cici | Nov 26 | A16 |
 | 3 | [**B15**](#wp-b15) | done | Scoring packet and CSV import | Cici | Nov 25 night | B12 |
-| 3 | [**B14**](#wp-b14) | todo | Summary and export for the new rubric | Cici | Nov 25 night | B12, A16 |
+| 3 | [**B14**](#wp-b14) | done | Summary and export for the new rubric | Cici | Nov 25 night | B12, A16 |
 | 3 | [**A8**](#wp-a8) | todo | Realism and script-fidelity report | Cici | Nov 25 night | A16 |
 | 4 | [**B10**](#wp-b10) | todo | Judge fixes and tuning | Cici | Nov 25 night | B1, B11, B12 |
 | 4 | [**A6**](#wp-a6) | todo | Guardrails-off config | Cici | Nov 25 night | A17 |
@@ -616,7 +616,7 @@ Requirements 1 and 3: a second agent whose tools a model really calls (section 6
 
 <a id="wp-b14"></a>
 
-**B14 · Summary and export for rubric v1** · Owner A · Needs: B12, A16 · Status: todo
+**B14 · Summary and export for rubric v1** · Owner A · Needs: B12, A16 · Status: done
 
 Replaces B3.
 

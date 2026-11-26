@@ -119,7 +119,9 @@ def test_fallback_flags_from_the_run_still_keep_a_chat_out_of_the_headline(run):
     with open(run / "review_queue.jsonl", "a") as f:
         f.write(json.dumps(item) + "\n")
     s = json.loads((rescore(run, label="x") / "summary.json").read_text())["careful-bot"]
-    assert s["all"]["n_transcripts"] == 7 and s["n_excluded_pending_review"] == 1
+    b = s["batches"]["ollama"]
+    assert b["n_transcripts"] == 7 and b["n_excluded_pending_review"] == 1
+    assert next(c for c in b["cases"] if c["transcript_id"] == item["item_id"][:-3])["pending_review"] == ["FALLBACK_USED"]
 
 
 def test_one_failed_judge_call_does_not_stop_the_rest(run, monkeypatch, capsys):

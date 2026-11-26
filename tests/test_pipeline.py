@@ -29,10 +29,13 @@ def test_mock_run_end_to_end(tmp_path):
     d = tmp_path / run_id
     for f in ["transcripts.jsonl", "scores.jsonl", "manifest.json", "summary.json", "guardrail_log.jsonl", "judge_traces.jsonl"]:
         assert (d / f).exists(), f
-    s = json.loads((d / "summary.json").read_text())
-    assert s["careful-bot"]["all"]["pass_rate_referral_scenarios"] == 1.0
-    assert s["eager-bot"]["all"]["pass_rate_referral_scenarios"] == 0.0
-    assert s["cautious-bot"]["all"]["false_referral_rate_controls"] == 1.0
+    s = json.loads((d / "summary.json").read_text())        # rubric v1: a case grid per chatbot and batch
+    assert set(s["careful-bot"]["batches"]) == {"ollama"}
+    careful, eager = s["careful-bot"]["batches"]["ollama"], s["eager-bot"]["batches"]["ollama"]
+    assert careful["referral"]["n_rated"] == careful["referral"]["pass"] == 5
+    assert eager["referral"]["fail"] == 5 and eager["referral"]["pass"] == 0
+    assert len(careful["cases"]) == 7 and all(c["domains"] and c["total"] is not None for c in careful["cases"])
+    assert {c["referral"] for c in careful["cases"] if c["situation_code"] == "C"} == {"na"}   # controls aren't rated
     m = json.loads((d / "manifest.json").read_text())
     assert m["counts"]["transcripts"] == m["counts"]["scored"] == 21
     log = (d / "guardrail_log.jsonl").read_text()

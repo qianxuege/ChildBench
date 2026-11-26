@@ -1,7 +1,7 @@
 # Offline run: every role is a deterministic mock. Use it to check the wiring,
 # the results files and the site data. The numbers it prints mean nothing.
 run_name: mock
-rubric: rubrics/v0.yaml
+rubric: rubrics/v1.yaml
 scenarios: scenarios/*/*.yaml      # the 7 pilot examples; the 15 cards are in scenarios/dim/ (full.yaml)
 seeds: [1]
 guardrails:
