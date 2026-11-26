@@ -1,0 +1,183 @@
+{
+  "built_at": "2026-11-26T08:47:41+00:00",
+  "source": "MacWhinney, B. (2000). The CHILDES Project: Tools for analyzing talk (3rd ed.). Lawrence Erlbaum. https://talkbank.org/childes/",
+  "aoa_source": null,
+  "citations": {
+    "OCSC": "Wagner, L., Alghowinhem, S., Alwan, A., Bowdrie, K., Breazeal, C., Clopper, C. G., Fosler-Lussier, E., Jamsek, I. A., Lander, D., Ramnath, R., & Ross, J. (2025). The Ohio Child Speech Corpus. Speech Communication, 170, 103206. doi:10.21415/60TV-D669"
+  },
+  "corpora": {
+    "OCSC": 303
+  },
+  "skipped_files": {},
+  "skipped_tasks": {
+    "tasks": [
+      "alphabet",
+      "numbers",
+      "reading",
+      "wug"
+    ],
+    "utterances": {
+      "alphabet": 19870,
+      "numbers": 16162,
+      "reading": 11088,
+      "wug": 15860
+    }
+  },
+  "note": "Target-child utterances only (*CHI), typically developing children; ages are whole years.",
+  "by_age": {
+    "3": {
+      "lines": 70,
+      "sentences": 70,
+      "words": 145,
+      "words_per_sentence": {
+        "mean": 2.071,
+        "sd": 1.756,
+        "p95": 6.0
+      },
+      "questions": {
+        "n": 5,
+        "share": 0.071
+      },
+      "vocabulary": {
+        "types": 92,
+        "ttr": 0.634,
+        "mattr": 0.841,
+        "window": 25
+      },
+      "aoa": null,
+      "children": 1
+    },
+    "4": {
+      "lines": 4543,
+      "sentences": 4543,
+      "words": 15406,
+      "words_per_sentence": {
+        "mean": 3.391,
+        "sd": 2.583,
+        "p95": 8.0
+      },
+      "questions": {
+        "n": 175,
+        "share": 0.039
+      },
+      "vocabulary": {
+        "types": 1564,
+        "ttr": 0.102,
+        "mattr": 0.7605,
+        "window": 25
+      },
+      "aoa": null,
+      "children": 25
+    },
+    "5": {
+      "lines": 12000,
+      "sentences": 12000,
+      "words": 48268,
+      "words_per_sentence": {
+        "mean": 4.022,
+        "sd": 3.12,
+        "p95": 10.0
+      },
+      "questions": {
+        "n": 448,
+        "share": 0.037
+      },
+      "vocabulary": {
+        "types": 2856,
+        "ttr": 0.059,
+        "mattr": 0.7723,
+        "window": 25
+      },
+      "aoa": null,
+      "children": 52
+    },
+    "6": {
+      "lines": 14621,
+      "sentences": 14621,
+      "words": 61166,
+      "words_per_sentence": {
+        "mean": 4.183,
+        "sd": 3.191,
+        "p95": 10.0
+      },
+      "questions": {
+        "n": 593,
+        "share": 0.041
+      },
+      "vocabulary": {
+        "types": 3302,
+        "ttr": 0.054,
+        "mattr": 0.7769,
+        "window": 25
+      },
+      "aoa": null,
+      "children": 61
+    },
+    "7": {
+      "lines": 16650,
+      "sentences": 16650,
+      "words": 74940,
+      "words_per_sentence": {
+        "mean": 4.501,
+        "sd": 3.405,
+        "p95": 11.0
+      },
+      "questions": {
+        "n": 603,
+        "share": 0.036
+      },
+      "vocabulary": {
+        "types": 3721,
+        "ttr": 0.05,
+        "mattr": 0.7841,
+        "window": 25
+      },
+      "aoa": null,
+      "children": 64
+    },
+    "8": {
+      "lines": 15566,
+      "sentences": 15566,
+      "words": 69993,
+      "words_per_sentence": {
+        "mean": 4.497,
+        "sd": 3.402,
+        "p95": 11.0
+      },
+      "questions": {
+        "n": 574,
+        "share": 0.037
+      },
+      "vocabulary": {
+        "types": 3640,
+        "ttr": 0.052,
+        "mattr": 0.7891,
+        "window": 25
+      },
+      "aoa": null,
+      "children": 57
+    },
+    "9": {
+      "lines": 11123,
+      "sentences": 11123,
+      "words": 54953,
+      "words_per_sentence": {
+        "mean": 4.94,
+        "sd": 3.862,
+        "p95": 12.0
+      },
+      "questions": {
+        "n": 310,
+        "share": 0.028
+      },
+      "vocabulary": {
+        "types": 3083,
+        "ttr": 0.056,
+        "mattr": 0.7916,
+        "window": 25
+      },
+      "aoa": null,
+      "children": 43
+    }
+  }
+}
