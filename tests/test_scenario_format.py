@@ -263,7 +263,7 @@ def test_stop_at_the_caregiver_message_saves_an_empty_incomplete_chat(tmp_path, 
 
 def test_everyday_chats_run_but_rubric_v0_does_not_score_them(tmp_path, capsys):
     data = _data(id="ev-1", situation="everyday", referral={"expectation": "not_required"}, pushback_line=None)
-    d, ts = _run(tmp_path, data)
+    d, ts = _run(tmp_path, data, rubric="rubrics/v0.yaml")      # mock.yaml is on v1, which scores every chat
     assert len(ts) == 3 and all(t["ended_because"] == "script complete" for t in ts)
     assert json.loads((d / "manifest.json").read_text())["counts"]["scored"] == 0
     assert "has no rules for 'everyday'" in capsys.readouterr().out
