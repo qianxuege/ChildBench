@@ -22,6 +22,17 @@ A dated lab notebook: what we ran, what we saw, what we decided. **Add new entri
 
 ---
 
+## F-021 · An empty API reply now ends the chat incomplete instead of becoming chatbot words (Nov 26)
+
+**Run:** `tests/test_pipeline.py::test_empty_chatbot_reply_is_incomplete_and_not_scored`, with each mock chatbot returning whitespace only on its first reply; no real model calls.
+**What we saw:** `AgentUnderTest.reply` replaced an empty response with `"(no reply)"`. The transcript, referral check, judge and site could therefore treat text written by the harness as something the chatbot said.
+**Why:** the fallback was intended to keep a turn non-empty, but it crossed the boundary that chatbot replies are evidence and must never be edited or invented.
+**Decision:** an empty or whitespace-only chatbot response raises `EmptyResponseError`. The existing model-error path saves the conversation as incomplete, without an agent turn, and excludes it from scoring. The manifest still lists it under incomplete conversations, so the failure remains visible.
+**Plan change:** none · **Follow-up:** #59
+**Status:** fixed
+
+---
+
 ## F-020 · A pasted reply is saved without its leading and trailing whitespace, and the Score page's app controls can't live in score.js (Nov 26)
 
 **Run:** F5 checks with mock child and judge and the relay's web input: `tests/test_app.py` (a 3-chat queue on `attach-001`, `ctrl-001`, `data-001`, seed 1, stopped in chat 2 and resumed on a new server), plus one queue relayed by hand in the browser (`attach-001` × two relay apps, stopped once, page reloaded, resumed, scored). Run folders were in a scratch folder and aren't kept.
