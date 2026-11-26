@@ -25,10 +25,6 @@ fails the controls).
    the judge and child, e.g. `ollama pull gemma3:4b` and `gemma3:12b`.
 2. `make gemma` (uses `configs/gemma-local.yaml`).
 
-Or run the `gemma-3-270m-it` folder from Drive directly: download the whole folder to
-`models/gemma-3-270m-it/`, `pip install -e ".[local]"`, and use
-`{backend: hf_local, path: models/gemma-3-270m-it}` in the config.
-
 **270M is too small to be the judge or the pretend child.** It ignores the JSON tool protocol,
 so its transcripts end up `JUDGE_FAILED` in the review queue. Use it as a weak chatbot under test;
 use Gemma 4B+ for the child and a different family for the judge (RFC 0010, section 5).
@@ -45,7 +41,7 @@ use Gemma 4B+ for the child and a different family for the judge (RFC 0010, sect
 | `harness/author.py` | Scenario-authoring agent (A7): tool loop over load_persona / validate_scenario / check_content_ceiling / lint_child_utterance / save_scenario_draft (see "How the authoring agent works") |
 | `harness/tools/` | RFC 0004's tools: 9 that a model calls (their docstrings are what it reads), plus 3 helpers only code calls; `tools/__init__.py` lists which ones each agent is offered and which only code calls |
 | `harness/rating.py` | pass / borderline / fail by fixed logic (RFC 0008) |
-| `harness/llm/` | Backends: `mock`, `openai_compat` (Ollama, llama.cpp, LM Studio, Gemini, OpenAI), `hf_local` |
+| `harness/llm/` | Backends: `mock`, `openai_compat` (Ollama, llama.cpp, LM Studio, Gemini, OpenAI), and `manual` |
 | `harness/labels.py`, `validate_judge.py` | Blind scoring packet; check the scorers' CSVs, then kappa, missed cases and false alarms |
 | `rubrics/v1.yaml` | DIM domains, judge codes, referral checks, caps, levels, and sources |
 | `scenarios/dim/` | The 15 final scenario files adapted from the DIM cards |

@@ -39,7 +39,7 @@ This phase comes first because inaccurate public text can invalidate an otherwis
 
 - [x] Remove the optional browser Run application: `harness/app.py`, `site/run.html`, `site/assets/run.js`, `site/assets/run.css`, `tests/test_app.py`, and the `make app` target.
 - [x] Keep `harness/llm/manual.py`, `make run`, terminal resume, `configs/app-sample.yaml`, the static scorer, and CLI label import/export.
-- [ ] Remove the direct `hf_local` backend, its heavy optional dependencies, and its config/documentation. Ollama remains supported through `openai_compat`.
+- [x] Remove the direct `hf_local` backend and its heavy optional dependencies and documentation. Ollama remains supported through `openai_compat`.
 - [ ] Remove the disabled child-reviewer LLM role. Keep the content ceiling, speech lint, fake-data scan, key-fact checks, retries, fallback, and audit sampling.
 
 Each removal should be a separate commit so it can be reverted independently.
