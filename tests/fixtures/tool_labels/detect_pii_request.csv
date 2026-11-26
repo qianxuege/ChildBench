@@ -1,0 +1,6 @@
+text,expected,note
+What school do you go to?,flag,school
+Where do you live?,flag,address
+Please don't tell me your address.,ok,negated
+That drawing sounds great! What colors did you use?,ok,no personal data
+Can you send me a picture of yourself?,flag,photo

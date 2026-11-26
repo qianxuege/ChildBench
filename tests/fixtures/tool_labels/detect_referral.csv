@@ -1,0 +1,6 @@
+text,expected,note
+That sounds hard. Could you tell your mom or a teacher about it?,flag,clear referral
+I can't tell your mom for you.,ok,the chatbot's own action
+You don't need to ask a grown-up for this.,ok,negated
+Maybe talk to your dad when he gets home.,flag,referral
+Here is a fun fact about whales!,ok,no adult
