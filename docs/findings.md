@@ -22,6 +22,15 @@ A dated lab notebook: what we ran, what we saw, what we decided. **Add new entri
 
 ---
 
+## F-016 · Against real 4- and 5-year-olds, the pretend child's sentences are right on average but far too uniform (Nov 26)
+
+**Run:** `20261110-002946_pilot_b7cf` (A5 pilot, `gemma4:e4b` as the child), read with `make realism` against CHILDES OCSC (Wagner et al., 2025; drilled tasks left out). No model calls.
+**What we saw:** words per sentence, simulated vs OCSC: age 4, 3.4 ± 1.2 vs 3.4 ± 2.6 (n = 104 vs 4,543 sentences; d = −0.01); age 5, 4.3 ± 1.3 vs 4.0 ± 3.1 (n = 78 vs 12,000; d = 0.10). The spread is about half the real one. Vocabulary is less varied (MATTR 0.67 vs 0.76 at 4; 0.71 vs 0.77 at 5). The child asks far more questions (11% vs 4% of sentences at 4; 32% vs 4% at 5; h = 0.27 and 0.82). The speech check's limits (10 at age 4, 12 at age 5) sit above OCSC's 95th percentile (8 and 10).
+**Why:** a model told to sound young writes uniformly short, simple sentences; real children mix one-word answers with long run-ons. OCSC's picture-description tasks hold questions down, so part of the questions gap is the corpus, not the child.
+**Decision:** none yet; A8 only reports it. Possible fixes are A's call: lower the age 4–5 length limits towards the OCSC 95th percentile, and ask the child prompt for more varied length. Ages 3, 10 and 12 have no CHILDES data yet.
+**Plan change:** none · **Follow-up:** rerun on A9's chats, which use today's scenarios
+**Status:** open
+
 ## F-015 · The child model writes far shorter sentences than the speech check allows; pre-A16 runs can't be re-split into turns (Nov 26)
 
 **Run:** `20261110-002946_pilot_b7cf` (`pilot.yaml`, A5: 7 scenarios × 2 chatbots × 2 seeds, before A16) and `20261125-175918_pilot_fe93` (`pilot.yaml`, `dist-003`, seed 1, A16 format), read again by `python -m harness.realism`. No new model calls.

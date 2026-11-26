@@ -44,12 +44,20 @@ REFERENCE = DATA / "childes_reference.json"
 NORMS = DATA / "raw" / "kuperman_aoa.csv"
 MATTR_WINDOW = 25            # small, because a scenario's child says only a few hundred words per age
 MIN_SENTENCES = 2            # fewer than this on either side: no comparison
+MIN_CHILDREN = 5             # fewer CHILDES children than this at an age: shown, not compared
 
 SOURCES = {
     "childes": "MacWhinney, B. (2000). The CHILDES Project: Tools for analyzing talk (3rd ed.). Lawrence Erlbaum. "
                "https://talkbank.org/childes/",
     "kuperman": "Kuperman, V., Stadthagen-Gonzalez, H., & Brysbaert, M. (2012). Age-of-acquisition ratings for "
                 "30,000 English words. Behavior Research Methods, 44(4), 978-990. https://doi.org/10.3758/s13428-012-0210-4",
+}
+
+# TalkBank's rules: any use of a corpus is cited with its own reference (from the corpus page).
+CORPUS_CITATIONS = {
+    "OCSC": "Wagner, L., Alghowinhem, S., Alwan, A., Bowdrie, K., Breazeal, C., Clopper, C. G., Fosler-Lussier, E., "
+            "Jamsek, I. A., Lander, D., Ramnath, R., & Ross, J. (2025). The Ohio Child Speech Corpus. Speech Communication, "
+            "170, 103206. doi:10.21415/60TV-D669",
 }
 
 LIMITS_TEXT = [
@@ -211,17 +219,24 @@ def load_norms(path: Optional[Path]) -> Optional[dict[str, float]]:
 
 
 _CLINICAL_OK = {"", "td", "typical", "typ", "normal"}
+# Drilled tasks (@G gems), not the child's own speech: naming letters and numbers, plural tests, reading aloud.
+DRILL_TASKS = frozenset({"alphabet", "numbers", "wug", "reading"})
 _CHA_DROP = [
     re.compile(r"\x15[^\x15]*\x15"),         # time bullets
+    re.compile(r"\u21ab[^\u21ab]*\u21ab"),     # ↫sh↫ repetition markers
     re.compile(r"\[[^\]]*\]"),               # [: replacement], [*], [/], [=! laughs] ...
     re.compile(r"\+[^\s]*"),                 # +... +/. +"/. and other terminators and linkers
     re.compile(r"(?<!\S)(&\S*|0\S*|xxx|yyy|www)(?!\S)"),   # fillers, omitted words, unintelligible
 ]
 
 
-def parse_cha(text: str) -> tuple[Optional[int], str, list[tuple[list[str], bool]]]:
-    """The target child's age in years, group and utterances in one CHAT file."""
-    age, group, utts, cur = None, "", [], None
+def _task(gem: str) -> str:
+    return re.sub(r"[^a-z]", "", gem.lower())       # "HowTo ." -> "howto"
+
+
+def parse_cha(text: str, skip_tasks: frozenset[str] = frozenset()) -> tuple[Optional[int], str, list, Counter]:
+    """The target child's age in years, group, utterances and, per skipped task (@G), how many were left out."""
+    age, group, utts, cur, task, dropped = None, "", [], None, "", Counter()
     lines = text.replace("\r\n", "\n").split("\n")
     merged: list[str] = []
     for line in lines:          # continuation lines start with a tab
@@ -235,7 +250,12 @@ def parse_cha(text: str) -> tuple[Optional[int], str, list[tuple[list[str], bool
             if len(f) > 7 and f[2] == "CHI":
                 m = re.match(r"(\d+);", f[3])
                 age, group = (int(m.group(1)) if m else None), f[5]
+        elif line.startswith("@G:"):
+            task = _task(line[3:])
         elif line.startswith("*CHI:"):
+            if task in skip_tasks:
+                dropped[task] += 1
+                continue
             cur = line[5:].strip()
             q = bool(re.search(r"\?\s*(\x15[^\x15]*\x15)?\s*$", cur))
             for pat in _CHA_DROP:
@@ -246,17 +266,20 @@ def parse_cha(text: str) -> tuple[Optional[int], str, list[tuple[list[str], bool
             words = tokens(cur)
             if words:
                 utts.append((words, q))
-    return age, group, utts
+    return age, group, utts, dropped
 
 
-def build_childes(cha_dir: Path, norms: Optional[dict[str, float]], out: Path) -> dict:
-    """Summary numbers per year of age from every .cha file under cha_dir. Typically developing children only."""
+def build_childes(cha_dir: Path, norms: Optional[dict[str, float]], out: Path,
+                  skip_tasks: frozenset[str] = DRILL_TASKS) -> dict:
+    """Summary numbers per year of age from every .cha file under cha_dir. Typically developing children only,
+    leaving out drilled tasks. A child is a corpus plus file name (e.g. Bates/frankst across its sessions)."""
     by_age: dict[int, list] = defaultdict(list)
     children: dict[int, set] = defaultdict(set)
     corpora: Counter = Counter()
     skipped: Counter = Counter()
+    tasks_out: Counter = Counter()
     for f in sorted(cha_dir.rglob("*.cha")):
-        age, group, utts = parse_cha(f.read_text(encoding="utf-8", errors="replace"))
+        age, group, utts, dropped = parse_cha(f.read_text(encoding="utf-8", errors="replace"), skip_tasks)
         if age is None:
             skipped["no target child age"] += 1
             continue
@@ -264,15 +287,18 @@ def build_childes(cha_dir: Path, norms: Optional[dict[str, float]], out: Path) -
             skipped[f"group {group}"] += 1
             continue
         by_age[age].extend(utts)
+        tasks_out.update(dropped)
         rel = f.relative_to(cha_dir)
-        children[age].add(rel.parts[0] + "/" + (rel.parts[1] if len(rel.parts) > 2 else f.stem))
+        children[age].add((rel.parts[0] if len(rel.parts) > 1 else ".") + "/" + f.stem)
         corpora[rel.parts[0] if len(rel.parts) > 1 else "."] += 1
     if not by_age:
         raise ValueError(f"no usable CHILDES files under {cha_dir}")
     ref = {
         "built_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "source": SOURCES["childes"], "aoa_source": SOURCES["kuperman"] if norms else None,
+        "citations": {c: CORPUS_CITATIONS.get(c, "add this corpus's reference from its CHILDES page") for c in sorted(corpora)},
         "corpora": dict(sorted(corpora.items())), "skipped_files": dict(skipped),
+        "skipped_tasks": {"tasks": sorted(skip_tasks), "utterances": dict(sorted(tasks_out.items()))},
         "note": "Target-child utterances only (*CHI), typically developing children; ages are whole years.",
         "by_age": {str(a): {**measures(u, a, norms), "children": len(children[a])} for a, u in sorted(by_age.items())},
     }
@@ -446,7 +472,7 @@ def realism(transcripts: list[Transcript], personas: dict[str, Persona], norms: 
             "simulated": sim,
             "fallback": measures(fallback[age], age, norms, lines[(age, True)]),
             "childes": ref,
-            "comparison": compare(sim, ref) if ref else None,
+            "comparison": compare(sim, ref) if ref and ref.get("children", 0) >= MIN_CHILDREN else None,
             "speech_check_limit": {"lint_limit": LINT_LIMITS.get(age), "simulated_p95": sim["words_per_sentence"]["p95"],
                                    "childes_p95": ref["words_per_sentence"]["p95"] if ref else None},
         }
@@ -476,7 +502,7 @@ def report(run_dir: Path, *, reference_path: Path = REFERENCE, norms_path: Optio
                    "scenarios_not_found": unknown, "scenarios_changed_since_run": changed},
         "realism": realism(transcripts, personas, norms, reference),
         "fidelity": fidelity(transcripts, personas, log, set(changed)),
-        "sources": {k: v for k, v in SOURCES.items()},
+        "sources": {**SOURCES, **{f"childes:{k}": v for k, v in ((reference or {}).get("citations") or {}).items()}},
         "limits": LIMITS_TEXT,
     }
     (run_dir / "realism.json").write_text(json.dumps(out, indent=2) + "\n")
@@ -543,7 +569,8 @@ def to_markdown(r: dict) -> str:
     for age, a in re_["by_age"].items():
         for label, key in (("simulated", "simulated"), ("fallback", "fallback"), ("CHILDES", "childes")):
             L.append(f"| {age} | {label} | " + " | ".join(_m(a[key])) + " |")
-    L += ["", "**Simulated minus CHILDES** (effect sizes first; n is in the table above):", "",
+    L += ["", f"**Simulated minus CHILDES** (effect sizes first; n is in the table above). Ages with fewer than "
+          f"{MIN_CHILDREN} CHILDES children are shown above but not compared.", "",
           "| Age | Words per sentence: diff, d, p | Questions: diff, h, p | MATTR diff | Late words: diff, h, p |", "|---|---|---|---|---|"]
     any_cmp = False
     for age, a in re_["by_age"].items():
@@ -577,9 +604,12 @@ def main(argv: Optional[list[str]] = None) -> int:
         ap.add_argument("--cha-dir", required=True, type=Path, help="folder with CHILDES .cha files (any depth)")
         ap.add_argument("--norms", type=Path, default=NORMS, help="Kuperman AoA CSV, for the late-word share")
         ap.add_argument("--out", type=Path, default=REFERENCE)
+        ap.add_argument("--skip-tasks", default=",".join(sorted(DRILL_TASKS)),
+                        help="@G tasks to leave out, comma-separated; '' keeps all")
         a = ap.parse_args(argv[1:])
         try:
-            ref = build_childes(a.cha_dir, load_norms(a.norms), a.out)
+            ref = build_childes(a.cha_dir, load_norms(a.norms), a.out,
+                                frozenset(_task(t) for t in a.skip_tasks.split(",") if _task(t)))
         except (ValueError, OSError) as e:
             print(f"error: {e}", file=sys.stderr)
             return 2

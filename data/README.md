@@ -21,6 +21,22 @@ outside sources. Neither is committed: put them in `data/raw/` (gitignored), the
 - **Cite:** MacWhinney, B. (2000). *The CHILDES Project: Tools for analyzing talk* (3rd ed.). Lawrence
   Erlbaum. Plus each corpus used (listed under `corpora` in `childes_reference.json`).
 
+### Corpora checked so far
+
+| Corpus | Ages | Use? | Why |
+|---|---|---|---|
+| **OCSC** (Ohio Child Speech Corpus), Eng-NA | 4–9 (one child just under 4) | **Yes** | Typically developing, 302 children at ages 4–9. The builder leaves out its drilled tasks (Alphabet, Numbers, Wug, Reading aloud), about 45% of the child's lines, and keeps HowTo, the picture tasks, the robot intro and end-of-session chat. |
+| **Bates**, Eng-NA | 1;08 and 2;04 | No | Toddlers only; our youngest scenario child is 3. It adds nothing to the comparison. |
+
+**OCSC limits, on top of the ones below:** the children describe pictures and explain tasks to an adult in a
+museum lab, with a social robot present for about half of them. That shortens turns and holds down
+questions, so a simulated child who asks more questions isn't necessarily wrong. Mostly White, highly
+educated families in Ohio. It covers none of our ages 3, 10 or 12.
+
+**Cite:** Wagner, L., Alghowinhem, S., Alwan, A., Bowdrie, K., Breazeal, C., Clopper, C. G., Fosler-Lussier,
+E., Jamsek, I. A., Lander, D., Ramnath, R., & Ross, J. (2025). The Ohio Child Speech Corpus. *Speech
+Communication, 170*, 103206. doi:10.21415/60TV-D669
+
 ## 2. Kuperman age-of-acquisition norms
 
 - **What:** adults' estimates of the age at which they learned about 30,000 English words.

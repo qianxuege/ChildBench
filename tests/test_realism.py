@@ -23,6 +23,10 @@ CHA = """@Begin
 *CHI:\tthe big
 \tred truck@f is mine .
 *CHI:\t0is it raining ?
+@G:\tAlphabet
+*CHI:\ta and a apple .
+@G:\tHowTo .
+*CHI:\t\u21absh\u21abshe brush teeth .
 @End
 """
 
@@ -75,9 +79,10 @@ def test_norms_csv(tmp_path):
 
 
 def test_parse_cha_keeps_only_the_target_child():
-    age, group, utts = parse_cha(CHA)
-    assert (age, group) == (4, "TD")
-    assert utts == [(["doggy", "going", "home"], False), (["where", "my", "ball"], True), (["i", "want", "it"], False),
+    age, group, utts, dropped = parse_cha(CHA, frozenset({"alphabet"}))
+    assert (age, group) == (4, "TD") and dropped == {"alphabet": 1}
+    assert utts[-1] == (["she", "brush", "teeth"], False)      # a drilled task is left out; ↫sh↫ is dropped
+    assert utts[:-1] == [(["doggy", "going", "home"], False), (["where", "my", "ball"], True), (["i", "want", "it"], False),
                     (["the", "big", "red", "truck", "is", "mine"], False), (["it", "raining"], True)]
 
 
@@ -88,7 +93,8 @@ def test_build_childes_skips_clinical_groups(tmp_path):
     ref = build_childes(tmp_path / "cha", {"truck": 4.5, "dog": 2.0}, tmp_path / "ref.json")
     assert list(ref["by_age"]) == ["4"] and ref["skipped_files"] == {"group SLI": 1}
     a4 = ref["by_age"]["4"]
-    assert a4["sentences"] == 5 and a4["children"] == 1 and a4["questions"]["n"] == 2
+    assert a4["sentences"] == 6 and a4["children"] == 1 and a4["questions"]["n"] == 2
+    assert ref["skipped_tasks"]["utterances"] == {"alphabet": 1}
     assert a4["aoa"]["after_age"] == 1 and json.loads((tmp_path / "ref.json").read_text()) == ref
 
 
@@ -168,8 +174,9 @@ def test_guardrails_off_is_labelled(run, tmp_path):
 def test_cli_with_reference_compares_ages(run, tmp_path):
     (tmp_path / "cha" / "T").mkdir(parents=True)
     ages = {t["child_age"] for t in _rows(run / "transcripts.jsonl")}
-    for a in ages:
-        (tmp_path / "cha" / "T" / f"{a}.cha").write_text(CHA.replace("4;02.10", f"{a};00.00") * 3)
+    for a in ages:          # 5 children per age: fewer are shown but not compared (MIN_CHILDREN)
+        for k in range(5):
+            (tmp_path / "cha" / "T" / f"{a}-{k}.cha").write_text(CHA.replace("4;02.10", f"{a};00.00") * 3)
     (tmp_path / "n.csv").write_text("Word,AoA_Kup_lem\ndog,3\nmine,4\n")
     assert main(["build-childes", "--cha-dir", str(tmp_path / "cha"), "--norms", str(tmp_path / "n.csv"),
                  "--out", str(tmp_path / "ref.json")]) == 0
@@ -181,6 +188,17 @@ def test_cli_with_reference_compares_ages(run, tmp_path):
     assert a["comparison"]["words_per_sentence"]["cohens_d"] is not None
     assert a["simulated"]["aoa"] is not None and a["speech_check_limit"]["childes_p95"] is not None
     assert "Simulated minus CHILDES" in (run / "realism.md").read_text()
+    assert r["sources"]["childes:T"].startswith("add this corpus")      # TalkBank: every corpus is cited
+
+
+def test_too_few_children_shown_not_compared(run, tmp_path):
+    (tmp_path / "cha" / "T").mkdir(parents=True)
+    for a in {t["child_age"] for t in _rows(run / "transcripts.jsonl")}:
+        (tmp_path / "cha" / "T" / f"{a}.cha").write_text(CHA.replace("4;02.10", f"{a};00.00") * 3)
+    build_childes(tmp_path / "cha", None, tmp_path / "ref.json")
+    r = report(run, reference_path=tmp_path / "ref.json", norms_path=None)
+    a = next(iter(r["realism"]["by_age"].values()))
+    assert a["childes"]["children"] == 1 and a["comparison"] is None
 
 
 def test_cli_bad_run(tmp_path):
