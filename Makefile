@@ -1,4 +1,4 @@
-.PHONY: install test mock gemma local check labels import-labels site run estimate export score gold
+.PHONY: install test mock gemma local check labels import-labels site run estimate export score gold realism
 
 install:
 	pip install -e ".[dev]"
@@ -62,3 +62,8 @@ score:
 # [RUBRIC=...] [LABEL=name] [SCORES=<scores.jsonl>]. On an invented fixture until rubrics/v1.yaml exists. ARGS=--check validates the set.
 gold:
 	python -m harness.gold --split $(or $(SPLIT),tune) $(if $(RUBRIC),--rubric $(RUBRIC)) $(if $(JUDGE_CONFIG),--judge-config $(JUDGE_CONFIG)) $(if $(JUDGE_GUARDRAILS),--judge-guardrails $(JUDGE_GUARDRAILS)) $(if $(LABEL),--label $(LABEL)) $(if $(SCORES),--scores $(SCORES)) $(ARGS)
+
+# Realism and script-fidelity report for a saved run, into results/<run>/realism.json and realism.md: make realism [RUN=<id>]
+# No model is called. The CHILDES side needs data/childes_reference.json first (data/README.md).
+realism:
+	python -m harness.realism --run $(or $(RUN),latest)

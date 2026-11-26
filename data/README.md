@@ -35,7 +35,7 @@ outside sources. Neither is committed: put them in `data/raw/` (gitignored), the
 
 ```bash
 python -m harness.realism build-childes --cha-dir data/raw/childes
-python -m harness.realism --run <run_id>
+make realism RUN=<run_id>     # or: python -m harness.realism --run <run_id>
 ```
 
 The first writes `data/childes_reference.json`; the second writes `realism.json` and `realism.md` in the
