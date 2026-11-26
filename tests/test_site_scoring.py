@@ -148,3 +148,12 @@ def test_site_scripts_parse():
     for f in ("site.js", "scoring.js"):
         r = subprocess.run([NODE, "--check", str(REPO_ROOT / "site" / "assets" / f)], capture_output=True, text=True, timeout=60)
         assert r.returncode == 0, r.stderr
+
+
+def test_site_without_export_has_no_fabricated_results():
+    js = (REPO_ROOT / "site" / "assets" / "site.js").read_text()
+    for old_sample in ("SAMPLE_OUTCOMES", "SAMPLE_FALSE_REFERRALS", "TRANSCRIPTS", "GUARDRAIL_LOG", "Layout preview"):
+        assert old_sample not in js
+    assert "No exported results." in js
+    assert "No exported scenario data." in js
+    assert 'transcriptMissing(null)' in js

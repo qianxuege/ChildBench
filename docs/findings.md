@@ -22,6 +22,17 @@ A dated lab notebook: what we ran, what we saw, what we decided. **Add new entri
 
 ---
 
+## F-022 · Terminal resume refused every stopped run because partial runs already had a manifest (Nov 26)
+
+**Run:** `tests/test_manual_relay.py::test_terminal_resume_restarts_an_incomplete_chat_and_scores_it`; mock child and judge, terminal manual relay, `attach-001`, seed 1; no real model calls.
+**What we saw:** after stopping a terminal-relay chat, `python -m harness.run --resume <run_id>` exited with “already scored” even though the manifest listed the chat as incomplete.
+**Why:** the terminal path scores whatever finished and writes `manifest.json` after a stop, while resume treated the existence of that file as proof every planned chat was complete. The removed browser runner had postponed scoring until its queue ended, so its resume test did not exercise this path.
+**Decision:** resume now checks complete transcript ids against the saved run plan. It retains existing scores and review items, restarts only incomplete or unstarted chats, scores only newly completed chats, and rewrites the summary and manifest for the complete run.
+**Plan change:** none · **Follow-up:** none
+**Status:** fixed
+
+---
+
 ## F-021 · An empty API reply now ends the chat incomplete instead of becoming chatbot words (Nov 26)
 
 **Run:** `tests/test_pipeline.py::test_empty_chatbot_reply_is_incomplete_and_not_scored`, with each mock chatbot returning whitespace only on its first reply; no real model calls.

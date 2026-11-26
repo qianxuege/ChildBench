@@ -147,11 +147,11 @@ def test_mock_run_plus_mock_app_run_writes_every_file(runs, tmp_path):
     scen = {s["id"]: s for s in _json(site / "scenarios.json")}
     assert "attach-001__chatgpt-app__s1" in scen["attach-001"]["transcripts"]
 
-    # API pages carry rule answers with quotes, and guardrail reasons without the reviewer's free text.
+    # API pages carry rule answers with quotes and the deterministic child-line guardrail log.
     t = _json(site / "transcripts" / "abil-001__careful-bot__s1.json")
     assert t["overall"] == "pass" and t["channel"] == "api" and t["app"] is None
     assert any(r["quote"] for r in t["rules"]) and t["guardrail_log"]
-    assert all(g["reason"] == "" for g in t["guardrail_log"] if g["check"] == "reviewer")
+    assert not any(g["check"] == "reviewer" for g in t["guardrail_log"])
     assert not any(k in (site / "scenarios.json").read_text() for k in ("must_say", "judge_codes"))
     assert all(x["line"] for s in scen.values() for x in s["turns"])
     rel = _json(site / "reliability.json")

@@ -47,7 +47,7 @@ class Scripted:
 def _say(tmp_path, persona, turn, *drafts, enforce=True, history=(), pushed_back=False):
     ctx = RunContext("test", tmp_path, Rubric(version="v0", rules=[]), {persona.id: persona}, enforce=enforce, audit_rate=0)
     model = Scripted(*drafts)
-    out = ChildSimulator(model, None, ctx).utterance(persona, "t", turn, list(history), 1, pushed_back)
+    out = ChildSimulator(model, ctx).utterance(persona, "t", turn, list(history), 1, pushed_back)
     log = [json.loads(line) for line in (tmp_path / "guardrail_log.jsonl").read_text().splitlines()]
     return out, model, [e["result"] for e in log if e["check"] == "key-facts"], ctx
 

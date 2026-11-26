@@ -2,9 +2,9 @@
 
 Plain code, no LLM decides the order of steps. Usage:
     python -m harness.run --config configs/mock.yaml
-    python -m harness.run --config configs/gemma-local.yaml --only dist-003 --seeds 1
+    python -m harness.run --config configs/pilot.yaml --only dist-003 --seeds 1
     python -m harness.run --config configs/mock.yaml --check-only
-    python -m harness.run --resume <run_id>     # finish an unscored run: its unfinished chats, then scoring (F5)
+    python -m harness.run --resume <run_id>     # finish an unscored run: its unfinished chats, then scoring
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ from .agents.judge import Judge
 from .context import RunContext
 from .llm import ModelError, make_model
 from .llm.manual import ManualModel, ManualStop
-from .schemas import SITUATION_CODE, Persona, Rubric, Transcript, Turn
+from .schemas import SITUATION_CODE, Persona, Rubric, ScoreRecord, Transcript, Turn
 from .summary import print_table, summarize
 from .tools.ceiling import scenario_content_problems
 from .tools.referral import detect_referral
@@ -158,9 +158,8 @@ def run_name(cfg: dict) -> str:
 def estimate(cfg: dict, n_personas: int, n_seeds: int, results_dir: Path) -> None:
     n_agents = len(cfg["agents"])
     n = n_personas * n_agents * n_seeds
-    has_rev = bool(cfg["roles"].get("child_reviewer"))
     print(f"\nestimate: {n_personas} scenarios x {n_agents} chatbots x {n_seeds} seeds = {n} conversations")
-    print(f"  model calls, at most ~{n * 6 * (2 + (1 if has_rev else 0)) + n * 14} (turn cap 6, judge cap 14 steps)")
+    print(f"  model calls, at most ~{n * 6 * 2 + n * 14} (turn cap 6, judge cap 14 steps)")
     name = run_name(cfg)
     past = past_timing(results_dir, name)
     if past:
@@ -241,7 +240,7 @@ def converse(persona: Persona, agent: AgentUnderTest, child: ChildSimulator, ctx
                       app_model_shown=manual.model_shown if manual else None)
 
 
-PLAN_FILE = "run_plan.json"      # written when a run starts; lets `--resume` and `make app` reopen the folder (F5)
+PLAN_FILE = "run_plan.json"      # written when a run starts; lets `--resume` reopen the folder
 TALK_LOG = "talk_log.jsonl"      # one line per chat attempt, so timing survives a resume
 
 
@@ -277,8 +276,8 @@ def load_scenarios(cfg: dict, only: list[str] | None, *, quiet: bool = False) ->
 class Run:
     """One run folder: its models, its plan of chats, and its results.
 
-    Chats are talked one at a time with `talk` (the terminal loops over `todo()`; `make app` asks for one chat per
-    click), then scored once with `score`. Opened again with `resume_id`, it skips chats that already have a complete
+    Chats are talked one at a time with `talk` (the terminal loops over `todo()`), then scored once with `score`.
+    Opened again with `resume_id`, it skips chats that already have a complete
     transcript and starts unfinished ones again; the unfinished attempt stays in transcripts.jsonl, marked incomplete.
     """
 
@@ -300,12 +299,11 @@ class Run:
             agent_cfgs = [a for a in agent_cfgs if a["name"] in agent_names]
         self.agent_names = [a["name"] for a in agent_cfgs] if agent_names else None
         self.gen = make_model(roles["child_generator"])
-        self.rev = make_model(roles["child_reviewer"]) if roles.get("child_reviewer") else None
         self.judge_model = make_model(roles["judge"])
         agent_models = [make_model(a["model"]) for a in agent_cfgs]
         if any(isinstance(m, ManualModel) for m in agent_models) and not g.get("enforce", True):
             raise SystemExit("guardrails.enforce must be true for relay runs: an unchecked child line would reach a real app.")
-        self.all_models = [m for m in [self.gen, self.rev, self.judge_model, *agent_models] if m is not None]
+        self.all_models = [self.gen, self.judge_model, *agent_models]
         if not skip_preflight:
             problems = preflight(self.all_models)
             if problems:
@@ -314,32 +312,34 @@ class Run:
         if resume_id:
             self.run_id, self.stamp = resume_id, resume_id.split("_", 1)[0]
             self.out_dir = out_root / resume_id
-            if (self.out_dir / "manifest.json").exists():
-                raise SystemExit(f"{resume_id} is already scored, so it can't be resumed")
         else:
             self.stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
             self.run_id = f"{self.stamp}_{run_name(cfg)}_{uuid.uuid4().hex[:4]}"
             self.out_dir = out_root / self.run_id
         self.ctx = RunContext(self.run_id, self.out_dir, rubric, personas, enforce=g.get("enforce", True),
                               audit_rate=g.get("audit_rate", 0.10), seed=cfg.get("audit_seed", 0))
+        if resume_id:
+            self.ctx.tool_calls = len(read_jsonl(self.out_dir / "tool_calls.jsonl"))
         if not resume_id:
             (self.out_dir / PLAN_FILE).write_text(json.dumps(
                 {"run_id": self.run_id, "config_file": str(config_file), "config": cfg, "only": only, "seeds": seeds,
                  "agents": self.agent_names}, indent=2, default=str))
-        self.child = ChildSimulator(self.gen, self.rev, self.ctx, temperature=temps.get("child", 0.9),
+        self.child = ChildSimulator(self.gen, self.ctx, temperature=temps.get("child", 0.9),
                                     demo_adult_first_draft=demo.get("adult_first_draft", False))
         self.judge = Judge(self.judge_model, self.ctx, temperature=temps.get("judge", 0.0), demo_bad_quote=demo.get("bad_quote", False))
         self.agents = [AgentUnderTest(a["name"], m, system_prompt=a.get("system_prompt"),
                                       temperature=temps.get("agent", 0.7), mock_behavior=a["model"].get("behavior"))
                        for a, m in zip(agent_cfgs, agent_models)]
         self.plan = [(p, a, s) for p in personas.values() for a in self.agents for s in seeds]
+        if resume_id and (self.out_dir / "manifest.json").exists() and not self.todo():
+            raise SystemExit(f"{resume_id} already has a complete transcript for every planned chat, so it can't be resumed")
 
     @classmethod
     def reopen(cls, run_dir: Path, *, skip_preflight: bool = False, quiet: bool = True) -> "Run":
         """The run in `run_dir`, from its run_plan.json, ready to talk to its unfinished chats."""
         plan_file = run_dir / PLAN_FILE
         if not plan_file.exists():
-            raise SystemExit(f"{run_dir.name} has no {PLAN_FILE}, so it can't be resumed (it was started before F5)")
+            raise SystemExit(f"{run_dir.name} has no {PLAN_FILE}, so it can't be resumed (it predates resume support)")
         plan = json.loads(plan_file.read_text())
         cfg = plan["config"]
         rubric, rubric_path, personas, hashes = load_scenarios(cfg, plan.get("only"), quiet=quiet)
@@ -375,7 +375,7 @@ class Run:
 
     def score(self) -> dict:
         """Score every complete conversation in the folder, once, and write summary.json, manifest.json and LATEST."""
-        if (self.out_dir / "manifest.json").exists():
+        if (self.out_dir / "manifest.json").exists() and not self.resumed:
             raise SystemExit(f"{self.run_id} is already scored")
         rows = read_jsonl(self.out_dir / "transcripts.jsonl")
         attempts: dict[str, list[Transcript]] = {}
@@ -383,6 +383,13 @@ class Run:
             t = Transcript(**d)
             attempts.setdefault(t.transcript_id, []).append(t)
         ctx, rubric = self.ctx, self.rubric
+        if self.resumed:
+            for d in read_jsonl(self.out_dir / "scores.jsonl"):
+                rec = ScoreRecord(**d)
+                ctx.scored[rec.transcript_id] = rec
+            for d in read_jsonl(self.out_dir / "review_queue.jsonl"):
+                if d.get("item_id") and d.get("reason_code"):
+                    ctx.queued.add((d["item_id"], d["reason_code"]))
         for tid, ts in attempts.items():
             done = [t for t in ts if t.complete]
             if done:
@@ -397,6 +404,9 @@ class Run:
         score_start = time.perf_counter()
         for tid, t in ctx.transcripts.items():
             per_conv.setdefault(tid, {})
+            if tid in ctx.scored:
+                print(f"  kept     {tid:<40} existing score")
+                continue
             if not rubric.scores_situation(SITUATION_CODE[t.situation]):
                 print(f"  skipped  {tid:<40} rubric {rubric.version} has no rules for '{t.situation}', so it isn't scored")
                 continue
@@ -417,23 +427,22 @@ class Run:
 
         summary = summarize(ctx.transcripts, ctx.scored, ctx.queued)
         (self.out_dir / "summary.json").write_text(json.dumps(summary, indent=2))
-        gen, rev, judge_model = self.gen, self.rev, self.judge_model
+        gen, judge_model = self.gen, self.judge_model
         manifest = {
             "run_id": self.run_id, "created_at": self.stamp, "harness_version": __version__, "git": git_info(),
             "python": platform.python_version(), "config_file": str(self.config_file), "config": self.cfg,
             "rubric": {"version": rubric.version, "sha256": hashlib.sha256(self.rubric_path.read_bytes()).hexdigest()[:16]},
             "scenarios": self.hashes if not self.only else {k: self.hashes[k] for k in self.personas},
             "seeds": self.seeds,
-            "models": {"child_generator": gen.model_id, "child_reviewer": rev.model_id if rev else None,
-                       "judge": judge_model.model_id, "agents": {a.name: a.model_id for a in self.agents}},
+            "models": {"child_generator": gen.model_id, "judge": judge_model.model_id,
+                       "agents": {a.name: a.model_id for a in self.agents}},
             "guardrails": {"enforce": ctx.enforce, "audit_rate": ctx.audit_rate},
             "counts": {"transcripts": len(ctx.transcripts), "incomplete": incomplete, "restarted": restarted,
                        "scored": len(ctx.scored), "review_items": len(ctx.queued), "tool_calls": ctx.tool_calls},
             "timing": {"conversations": len(ctx.transcripts), "talk_seconds": round(talk_seconds, 2),
                        "score_seconds": round(score_seconds, 2), "per_conversation": per_conv},
             "tokens": {"total": model_usage(self.all_models),
-                       "by_role": {"child_generator": model_usage([gen]), "child_reviewer": model_usage([rev] if rev else []),
-                                   "judge": model_usage([judge_model]),
+                       "by_role": {"child_generator": model_usage([gen]), "judge": model_usage([judge_model]),
                                    "agents": {a.name: model_usage([a.model]) for a in self.agents}},
                        "note": "from each response's usage; 0 for mock models" + ("; this session only, the run was resumed" if self.resumed else "")},
             "provider_data_retention": self.cfg.get("provider_data_retention", "[record each provider's retention/training settings before publishing]"),
@@ -480,10 +489,10 @@ def main(argv: list[str] | None = None) -> int:
                   skip_preflight=args.skip_preflight)
 
     todo = run.todo()
-    n, rev = len(run.plan), run.rev
+    n = len(run.plan)
     print(f"\nrun {run.run_id}: {len(run.personas)} scenarios x {len(run.agents)} chatbots x {len(run.seeds)} seeds = {n} conversations"
           + (f", {n - len(todo)} already done" if len(todo) < n else ""))
-    print(f"max model calls ~ {len(todo) * 6 * (2 + (1 if rev else 0)) + len(todo) * 14} (turn cap 6, judge cap 14 steps)")
+    print(f"max model calls ~ {len(todo) * 6 * 2 + len(todo) * 14} (turn cap 6, judge cap 14 steps)")
     for p, a, s in todo:
         run.talk(p, a, s)
         if getattr(a.model, "quit_requested", False):

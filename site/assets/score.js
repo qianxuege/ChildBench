@@ -193,9 +193,8 @@ function load() {
 
 // ------------------------------------------------------------------ header
 
-const NAV = [                                    // the same menu as site.js (F5)
+const NAV = [                                    // the same menu as site.js
   ["scenarios.html", "/scenarios"],
-  ["run.html", "/run"],
   ["score.html", "/score"],
   ["leaderboard.html", "/results"],
 ];

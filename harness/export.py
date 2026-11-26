@@ -151,7 +151,7 @@ def resolve_run(run: str, results_dir: Path) -> Path:
 
 def _is_mock(manifest: dict, cfg: dict) -> bool:
     models = manifest.get("models", {})
-    ids = [models.get("child_generator"), models.get("child_reviewer"), models.get("judge"),
+    ids = [models.get("child_generator"), models.get("judge"),
            *(models.get("agents") or {}).values()]
     specs = [*(cfg.get("roles") or {}).values(), *(a.get("model", {}) for a in cfg.get("agents", []))]
     return (any(str(m).startswith("mock:") for m in ids if m)

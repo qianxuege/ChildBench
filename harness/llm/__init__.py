@@ -8,7 +8,6 @@ Backends:
     mock           offline, deterministic; for wiring tests and demos (labels mean nothing)
     openai_compat  any OpenAI-compatible server: Ollama, llama.cpp, LM Studio, vLLM,
                    Gemini's OpenAI endpoint, OpenAI itself
-    hf_local       load a Hugging Face model folder directly (e.g. gemma-3-270m-it)
     manual         a person relays lines to a free chatbot app (chatbots under test only; RFC 0010, A11)
 """
 
@@ -60,10 +59,6 @@ def make_model(spec: dict[str, Any]) -> ChatModel:
             timeout=spec.get("timeout", 120),
             reasoning_effort=spec.get("reasoning_effort"),
         )
-    if backend == "hf_local":
-        from .hf_local import HFLocalModel
-
-        return HFLocalModel(path=spec["path"], device=spec.get("device", "auto"))
     if backend == "manual":
         from .manual import Clipboard, ManualModel
 

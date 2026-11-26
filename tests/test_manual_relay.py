@@ -77,6 +77,22 @@ def test_stop_saves_the_conversation_as_incomplete_and_skips_scoring(tmp_path, m
     assert m["counts"]["incomplete"] == [t["transcript_id"]] and m["counts"]["scored"] == 0
 
 
+def test_terminal_resume_restarts_an_incomplete_chat_and_scores_it(tmp_path, monkeypatch):
+    d, first = _run(tmp_path, Person(stop_at_turn=2), monkeypatch)
+    run_id, out = d.name, d.parent
+    monkeypatch.setattr("builtins.input", Person(model_shown="TestModel 2"))
+    assert main(["--resume", run_id, "--out", str(out)]) == 0
+
+    attempts = [json.loads(l) for l in (d / "transcripts.jsonl").read_text().splitlines()]
+    assert len(attempts) == 2 and not first[0]["complete"] and attempts[-1]["complete"]
+    assert attempts[-1]["app_model_shown"] == "TestModel 2"
+    manifest = json.loads((d / "manifest.json").read_text())
+    assert manifest["counts"]["incomplete"] == []
+    assert manifest["counts"]["restarted"] == [attempts[-1]["transcript_id"]]
+    assert attempts[-1]["transcript_id"] in (d / "scores.jsonl").read_text()
+    assert len((d / "scores.jsonl").read_text().splitlines()) == 1
+
+
 def test_relay_refuses_guardrails_off(tmp_path, monkeypatch):
     monkeypatch.setattr("builtins.input", Person())
     with pytest.raises(SystemExit, match="guardrails.enforce must be true for relay runs"):
