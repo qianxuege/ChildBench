@@ -114,7 +114,7 @@ def _write(f, ts):
 def test_two_runs_make_one_packet(made):
     out, r = made
     p = _packet(out)
-    assert r["chats"] == len(p["chats"]) == 42 and r["judged"] == 21 and r["overlap"] == 42 and not r["page"]
+    assert r["chats"] == len(p["chats"]) == 42 and r["judged"] == 21 and not r["page"]
     assert sorted(p["assignment"]["A"]) == sorted(p["assignment"]["B"]) == [c["id"] for c in p["chats"]]
     assert p["assignment"]["A"] != p["assignment"]["B"]                              # another order for each scorer
     assert p["rubric_hash"] == f"v1-{RUBRIC.labels_hash()}"
@@ -215,24 +215,12 @@ def _chats(agents=3, scenarios=4):
                             agent_model="m", seed=1, turns=[], ended_because="x"), None, None, None) for a in range(agents) for s in range(scenarios)]
 
 
-@pytest.mark.parametrize("overlap", [0, 3, 6, 7, 12])
-def test_overlap_is_balanced_and_repeatable(overlap):
+def test_both_scorers_get_every_chat_in_their_own_order():
     chats = _chats()
-    got = {w: [c.t.transcript_id for c in cs] for w, cs in assign(chats, overlap).items()}
-    assert got == {w: [c.t.transcript_id for c in cs] for w, cs in assign(list(reversed(chats)), overlap).items()}
-    shared = set(got["A"]) & set(got["B"])
-    assert len(shared) == overlap and set(got["A"]) | set(got["B"]) == {c.t.transcript_id for c in chats}
-    assert abs(len(got["A"]) - len(got["B"])) <= 1 and len(set(got["A"])) == len(got["A"])
-    n = [sum(i.endswith(a) for i in shared) for a in ("a0", "a1", "a2")]
-    assert max(n) - min(n) <= 1
-    n = [sum(i.startswith(s) for i in shared) for s in ("s0", "s1", "s2", "s3")]
-    assert max(n) - min(n) <= 1
-
-
-def test_bad_overlap():
-    for n in (-1, 13):
-        with pytest.raises(LabelError, match="0 to 12"):
-            assign(_chats(), n)
+    got = {w: [c.t.transcript_id for c in cs] for w, cs in assign(chats).items()}
+    assert got == {w: [c.t.transcript_id for c in cs] for w, cs in assign(list(reversed(chats))).items()}
+    assert sorted(got["A"]) == sorted(got["B"]) == sorted(c.t.transcript_id for c in chats)
+    assert got["A"] != got["B"]
 
 
 def test_command_line(runs, tmp_path, capsys):
@@ -395,17 +383,14 @@ def test_unreadable_duplicate_and_missing_files(folder):
         vj.import_labels(folder)
 
 
-def test_chats_assigned_to_the_other_scorer(runs, tmp_path):
-    d = tmp_path / "p"
-    build(runs, V1, d, overlap=10, page=NO_PAGE)
-    _return(d)
-    assert vj.import_labels(d)["comparisons"]["A_vs_B"]["chats"] == 10
-    rows, who = _filled(d, "B"), _packet(d)["assignment"]
-    mine = next(i for i in who["A"] if i not in who["B"])
-    rows[0]["chat_id"] = mine
-    _return(d, B=rows)
+def test_chats_assigned_to_the_other_scorer(folder):
+    """Every packet gives both scorers every chat, but packet.json can be edited by hand."""
+    p = _packet(folder)
+    mine = p["assignment"]["B"].pop()
+    (folder / "send/packet.json").write_text(json.dumps(p))
+    _return(folder)                                     # B's sheet was made before the edit, so it still lists that chat
     with pytest.raises(LabelError, match=f"{mine} isn't assigned to B"):
-        vj.import_labels(d)
+        vj.import_labels(folder)
 
 
 def test_agreed_answers_are_kept_beside_the_originals(folder):

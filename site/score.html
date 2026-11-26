@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Score chats · ChildBench</title>
+<!-- Web fonts are a nicety: `make labels` drops them when it builds send/score.html, which must work offline. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Instrument+Sans:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-page="score">
+<!--
+  The scoring page (RFC 0010, package F4; RFC 0003 "Human labels").
+  It ships empty. `make labels` builds this page, its styles and score.js into one file, send/score.html,
+  with the packet inside. Opened from the site, it asks for a packet.json instead. Either way nothing leaves
+  the browser: answers are kept in this browser's storage and handed back as a CSV for `make import-labels`.
+-->
+<header class="site-head" id="site-head"></header>
+<main class="wrap" id="score-app">
+  <div class="page-top">
+    <div>
+      <h1>Score chats</h1>
+      <p class="lede">Score each chat between a pretend child and a chatbot, on your own. Your answers stay in this browser; when you’re done, download the CSV and send it back.</p>
+    </div>
+    <dl class="meta" id="sc-meta"><dt>packet</dt><dd id="sc-packet-id">none open</dd><dt>scorer</dt><dd id="sc-scorer-id">—</dd></dl>
+  </div>
+  <noscript><p class="notice">This page needs JavaScript. If it’s blocked, score with the CSV sheet and packet_&lt;letter&gt;.md sent with it.</p></noscript>
+  <div id="sc-root"></div>
+</main>
+<script src="assets/score.js" defer></script>
+</body>
+</html>

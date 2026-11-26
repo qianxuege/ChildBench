@@ -44,7 +44,7 @@ Two things matter most:
 | 4 | [**A6**](#wp-a6) | done | Guardrails-off config | Cici | Nov 25 night | A17 |
 | 4 | [**F3**](#wp-f3) | done | Site: new results and scoring controls | Cici | Nov 25 night | B14 |
 | 4 | [**B6**](#wp-b6) | done | Evaluation and guardrail statistics | Cici | Nov 25 night | B1, B11, B14, B15, A8 |
-| 5 | [**F4**](#wp-f4) | todo | Scoring page | Cici | Nov 25 night | B15, F3 |
+| 5 | [**F4**](#wp-f4) | done | Scoring page | Cici | Nov 25 night | B15, F3 |
 | 5 | [**A13**](#wp-a13) | todo | OpenRouter key (optional) | Cici | Nov 25 night | — |
 | 5 | [**A7**](#wp-a7) | done | Scenario-authoring agent and `add-scenario` skill | Cici | Nov 26 | A16 |
 | 6 | [**T2**](#wp-t2) | todo | Check gold set and tool labels; ask the client | Cici | Nov 26 morning | A17, B11 |
@@ -193,7 +193,7 @@ configs/  results/  site/  tests/
 | Command | Status |
 |---|---|
 | `make test`, `make mock`, `make check`, `make site` | exist |
-| `make labels [FROM=<folder>] [OUT=<name>] [OVERLAP=<n>]` | exists for the latest run only; B15 adds the options |
+| `make labels [FROM=<folder>] [OUT=<name>]` | exists for the latest run only; B15 adds the options |
 | `make import-labels OUT=<name>` | B15 |
 | `make app` | F5: the site plus the Run page, on your own computer only |
 | `make run CONFIG=...`, `make estimate CONFIG=...` | exist |
@@ -633,7 +633,7 @@ The flow and folders are in [RFC 0003](0003-judge-and-evaluation.md#human-labels
 
 - `make labels FROM=<folder>` finds every `transcripts.jsonl` under the folder (default: the latest run). It stops on duplicate chat ids, skips incomplete chats and lists them. Judge scores are optional. Writes to `results/labeling/<OUT>/`.
 - `packet.json`: chats, rubric text, rubric hash and A/B assignment. Random blind ids; no chatbot names, judge scores, situation names or scenario ids. Chat order differs per scorer. Any caregiver message is shown as context, not scored.
-- `OVERLAP=<n>`: how many chats everyone scores; the default is all of them. Fewer are picked at random with a fixed seed, balanced by chatbot and, where possible, scenario.
+- Both scorers score every chat, each in their own order. (`OVERLAP=<n>`, for sharing only some chats, was removed on Nov 26.)
 - If F4's page exists, `send/score.html` is that page with the packet, styles and scripts built in. A readable packet and one CSV sheet per scorer are always written too, as a backup.
 - `make import-labels` checks `returned/*.csv` (packet id, rubric hash, chat ids, values, blanks, duplicate scorers), says what to fix, and never edits them. Then it computes agreement, missed cases and false alarms.
 - **Files:** `harness/labels.py`, `harness/validate_judge.py`, `harness/tools/agreement.py`, `Makefile` (`labels`, `import-labels` targets), `tests/`
@@ -650,7 +650,7 @@ The flow and folders are in [RFC 0003](0003-judge-and-evaluation.md#human-labels
 
 <a id="wp-f4"></a>
 
-**F4 · Scoring page** · Owner A · Needs: B15, F3 · Status: todo
+**F4 · Scoring page** · Owner A · Needs: B15, F3 · Status: done
 
 - `site/score.html`, the **Score** menu page, also linked from the judge reliability page. It ships empty and opens a packet file, which stays in the browser. The same page is what B15 turns into `send/score.html`.
 - Pick and confirm the scorer letter; chat beside the questions with rubric text; a full guide one click away; warnings for blanks; progress saved per packet and scorer; **CSV download** on the page, and upload to resume.
@@ -845,6 +845,7 @@ One line per change, newest first. Findings are in [docs/findings.md](../docs/fi
 
 | Date | Change | Why |
 |---|---|---|
+| Nov 26 | `OVERLAP` removed from `make labels`: A and B always score every chat, each in their own order (B15, RFC 0003) | Not needed; one fewer option |
 | Nov 26 | A3 cut to the stricter key-fact retry message; the pretend child stays a fixed loop. A7 becomes the scenario-authoring agent (no longer optional) and removes `detect_pii_request` from the judge's tools; B13 waits for A7 | Requirements 1 and 3: no model called the child's tools, so they were only checks; a separate agent adds tools a model really calls without risking fallbacks in A9 and A12 |
 | Nov 25 | Pushback meanings for declined and accepted role also cover giving in to a request ([ext], for R11) | Found in A17: 9.1, 9.2 and 9.6 have resistance but no confidant; value names unchanged |
 | Nov 25 | B10: the judge is given the scenario's `good`, `bad`, `referral` and coded turns | Found in A17: section 8 says the judge uses them, but nothing passes them |

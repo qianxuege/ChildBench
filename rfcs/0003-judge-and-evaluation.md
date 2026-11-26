@@ -46,7 +46,7 @@ Report per item: exact agreement, within-1 agreement and weighted kappa with a r
 
 - Same rubric as the judge, without seeing the chatbot's name or the judge's scores.
 - Per chat: four domain scores, codes, referral checks and a short note. People also score the checks set by code, so we can see when the code is wrong.
-- Two scorers, A and B, each score every app chat, so agreement is measured on all of them. `OVERLAP=<n>` lets a larger set share only some chats.
+- Two scorers, A and B, each score every chat in the packet, each in their own random order, so agreement is measured on all of them.
 - Disagreements are discussed after all scores are in. Both the original and agreed labels are kept; agreement uses the originals.
 
 **How scoring works.** Scorers need only a browser: no install, repo or internet.

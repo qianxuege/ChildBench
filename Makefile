@@ -22,10 +22,10 @@ local:
 check:
 	python -m harness.run --config configs/check.yaml --check-only
 
-# Blind scoring packet for two people, in results/labeling/<OUT>/: make labels [FROM=<folder of runs>] [OUT=<name>] [OVERLAP=<n>]
+# Blind scoring packet for two people, in results/labeling/<OUT>/: make labels [FROM=<folder of runs>] [OUT=<name>]
 # Send only send/. Default: the latest run, every chat scored by both.
 labels:
-	python -m harness.labels $(if $(FROM),--from "$(FROM)") $(if $(OUT),--out "$(OUT)") $(if $(OVERLAP),--overlap $(OVERLAP))
+	python -m harness.labels $(if $(FROM),--from "$(FROM)") $(if $(OUT),--out "$(OUT)")
 
 # Check the CSVs in results/labeling/<OUT>/returned/ and compute agreement: make import-labels OUT=<name>
 # SCORES=original reads each run's own scores.jsonl now, and SCORES=<label> its rescore_<label>/, instead of the copy made with the packet.
