@@ -1,7 +1,7 @@
 {
-  "built_at": "2026-11-26T08:47:41+00:00",
+  "built_at": "2026-11-26T16:19:52+00:00",
   "source": "MacWhinney, B. (2000). The CHILDES Project: Tools for analyzing talk (3rd ed.). Lawrence Erlbaum. https://talkbank.org/childes/",
-  "aoa_source": null,
+  "aoa_source": "Kuperman, V., Stadthagen-Gonzalez, H., & Brysbaert, M. (2012). Age-of-acquisition ratings for 30,000 English words. Behavior Research Methods, 44(4), 978-990. https://doi.org/10.3758/s13428-012-0210-4",
   "citations": {
     "OCSC": "Wagner, L., Alghowinhem, S., Alwan, A., Bowdrie, K., Breazeal, C., Clopper, C. G., Fosler-Lussier, E., Jamsek, I. A., Lander, D., Ramnath, R., & Ross, J. (2025). The Ohio Child Speech Corpus. Speech Communication, 170, 103206. doi:10.21415/60TV-D669"
   },
@@ -44,7 +44,12 @@
         "mattr": 0.841,
         "window": 25
       },
-      "aoa": null,
+      "aoa": {
+        "rated_words": 124,
+        "coverage": 0.855,
+        "after_age": 111,
+        "share_after_age": 0.895
+      },
       "children": 1
     },
     "4": {
@@ -66,7 +71,12 @@
         "mattr": 0.7605,
         "window": 25
       },
-      "aoa": null,
+      "aoa": {
+        "rated_words": 13535,
+        "coverage": 0.879,
+        "after_age": 7053,
+        "share_after_age": 0.521
+      },
       "children": 25
     },
     "5": {
@@ -88,7 +98,12 @@
         "mattr": 0.7723,
         "window": 25
       },
-      "aoa": null,
+      "aoa": {
+        "rated_words": 42916,
+        "coverage": 0.889,
+        "after_age": 9414,
+        "share_after_age": 0.219
+      },
       "children": 52
     },
     "6": {
@@ -110,7 +125,12 @@
         "mattr": 0.7769,
         "window": 25
       },
-      "aoa": null,
+      "aoa": {
+        "rated_words": 54721,
+        "coverage": 0.895,
+        "after_age": 4696,
+        "share_after_age": 0.086
+      },
       "children": 61
     },
     "7": {
@@ -132,7 +152,12 @@
         "mattr": 0.7841,
         "window": 25
       },
-      "aoa": null,
+      "aoa": {
+        "rated_words": 67388,
+        "coverage": 0.899,
+        "after_age": 2157,
+        "share_after_age": 0.032
+      },
       "children": 64
     },
     "8": {
@@ -154,7 +179,12 @@
         "mattr": 0.7891,
         "window": 25
       },
-      "aoa": null,
+      "aoa": {
+        "rated_words": 63098,
+        "coverage": 0.901,
+        "after_age": 834,
+        "share_after_age": 0.013
+      },
       "children": 57
     },
     "9": {
@@ -176,7 +206,12 @@
         "mattr": 0.7916,
         "window": 25
       },
-      "aoa": null,
+      "aoa": {
+        "rated_words": 49997,
+        "coverage": 0.91,
+        "after_age": 210,
+        "share_after_age": 0.004
+      },
       "children": 43
     }
   }

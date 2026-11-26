@@ -217,3 +217,21 @@ def test_changed_scenario_counts_only_fallback(run, tmp_path):
     assert not any(x["transcript_id"].startswith("abil-001") for x in r["fidelity"]["misses"]
                    if not x["what"].startswith("fallback"))
     assert "Scenario files changed since this run: abil-001" in (run / "realism.md").read_text()
+
+
+def test_norms_xlsx_without_openpyxl(tmp_path):
+    """The OSF .xlsx loads with the standard library, and a missing .csv falls back to the same name in .xlsx."""
+    import zipfile
+
+    sheet = ('<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'
+             '<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c><c r="C1" t="s"><v>2</v></c></row>'
+             '<row r="2"><c r="A2" t="s"><v>3</v></c><c r="C2"><v>2.5</v></c></row>'
+             '<row r="3"><c r="A3" t="inlineStr"><is><t>Cat</t></is></c><c r="C3"><v>NA</v></c></row>'
+             '</sheetData></worksheet>')
+    strings = ''.join(f"<si><t>{s}</t></si>" for s in ("Word", "OccurTotal", "Rating.Mean", "dog"))
+    with zipfile.ZipFile(tmp_path / "kuperman_aoa.xlsx", "w") as z:
+        z.writestr("xl/worksheets/sheet1.xml", sheet)
+        z.writestr("xl/sharedStrings.xml",
+                   f'<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">{strings}</sst>')
+    assert load_norms(tmp_path / "kuperman_aoa.xlsx") == {"dog": 2.5}
+    assert load_norms(tmp_path / "kuperman_aoa.csv") == {"dog": 2.5}

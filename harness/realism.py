@@ -189,18 +189,62 @@ def _p95(xs: list[int]) -> Optional[float]:
 # ------------------------------------------------------------------ reference data
 
 
-def load_norms(path: Optional[Path]) -> Optional[dict[str, float]]:
-    """Kuperman AoA norms from a CSV (or an .xlsx if openpyxl is installed): word -> age in years. None if missing."""
-    if path is None or not path.is_file():
-        return None
-    if path.suffix.lower() in {".xlsx", ".xls"}:
-        import openpyxl  # optional; save the sheet as CSV to avoid it
+_XL = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 
-        ws = openpyxl.load_workbook(path, read_only=True).active
-        rows = [[("" if c is None else str(c)) for c in row] for row in ws.iter_rows(values_only=True)]
+
+def _xlsx_rows(path: Path) -> list[list[str]]:
+    """The first sheet of an .xlsx as rows of strings, with the standard library only (no openpyxl)."""
+    import xml.etree.ElementTree as ET
+    import zipfile
+
+    with zipfile.ZipFile(path) as z:
+        names = z.namelist()
+        shared = []
+        if "xl/sharedStrings.xml" in names:
+            shared = ["".join(t.text or "" for t in si.iter(_XL + "t"))
+                      for si in ET.fromstring(z.read("xl/sharedStrings.xml")).iter(_XL + "si")]
+        sheets = sorted((n for n in names if re.fullmatch(r"xl/worksheets/sheet\d+\.xml", n)),
+                        key=lambda n: int(re.search(r"\d+", n.rsplit("/", 1)[1]).group()))
+        if not sheets:
+            raise ValueError(f"{path}: no worksheet in the .xlsx")
+        rows = []
+        for row in ET.fromstring(z.read(sheets[0])).iter(_XL + "row"):
+            cells = {}
+            for c in row.iter(_XL + "c"):
+                v = c.find(_XL + "v")
+                val = "" if v is None else (v.text or "")
+                if c.get("t") == "s" and val:
+                    val = shared[int(val)]
+                elif c.get("t") == "inlineStr":
+                    val = "".join(x.text or "" for x in c.iter(_XL + "t"))
+                letters = re.match(r"[A-Z]+", c.get("r", "A"))
+                col = 0
+                for ch in letters.group() if letters else "A":
+                    col = col * 26 + ord(ch) - 64
+                cells[col - 1] = val
+            rows.append([cells.get(i, "") for i in range(max(cells) + 1)] if cells else [])
+    return rows
+
+
+def load_norms(path: Optional[Path]) -> Optional[dict[str, float]]:
+    """Kuperman AoA norms from a CSV or the downloaded .xlsx: word -> age in years. None if missing.
+
+    If `path` doesn't exist, the same name with `.xlsx` is tried, so the OSF file can be saved as
+    data/raw/kuperman_aoa.xlsx without converting it.
+    """
+    if path is None:
+        return None
+    if not path.is_file() and path.with_suffix(".xlsx").is_file():
+        path = path.with_suffix(".xlsx")
+    if not path.is_file():
+        return None
+    if path.suffix.lower() == ".xlsx":
+        rows = _xlsx_rows(path)
     else:
         with path.open(newline="", encoding="utf-8-sig") as f:
             rows = list(csv.reader(f))
+    if not rows:
+        raise ValueError(f"{path}: empty")
     head = [h.strip().lower() for h in rows[0]]
     if "word" not in head:
         raise ValueError(f"{path}: no 'Word' column")
@@ -602,7 +646,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     if argv[:1] == ["build-childes"]:
         ap = argparse.ArgumentParser(prog="python -m harness.realism build-childes")
         ap.add_argument("--cha-dir", required=True, type=Path, help="folder with CHILDES .cha files (any depth)")
-        ap.add_argument("--norms", type=Path, default=NORMS, help="Kuperman AoA CSV, for the late-word share")
+        ap.add_argument("--norms", type=Path, default=NORMS, help="Kuperman AoA .csv or .xlsx, for the late-word share")
         ap.add_argument("--out", type=Path, default=REFERENCE)
         ap.add_argument("--skip-tasks", default=",".join(sorted(DRILL_TASKS)),
                         help="@G tasks to leave out, comma-separated; '' keeps all")
@@ -632,6 +676,8 @@ def main(argv: Optional[list[str]] = None) -> int:
           f"fallback {_f(o['fallback'])} · pushback {_f(o['pushback_when_due'])} · key facts final {_f(o['key_facts_final'])}")
     if not r["realism"]["childes_available"]:
         print("note: no CHILDES reference; see data/README.md")
+    if not r["realism"]["norms_available"]:
+        print("note: no word list (Kuperman AoA), so no late-word share; see data/README.md")
     return 0
 
 
