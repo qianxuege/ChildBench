@@ -16,11 +16,11 @@ The pilot ran and we met the client on Nov 11. The child simulator and the judge
 Two things matter most:
 
 1. **A judge we can trust.** No score is citable until the judge agrees with human scores.
-2. **Every technical requirement met.** Still missing: the child as a tool-calling agent, human labels, realism evidence and the guardrails-off comparison.
+2. **Every technical requirement met.** Still missing: the scenario-authoring agent, human labels, realism evidence and the guardrails-off comparison.
 
 ## At a glance
 
-**Target:** all code by the night of Nov 25; app chats by Nov 28; human scoring by Nov 29. If time runs short, cut in this order: the optional `add-scenario` skill (A7), priority-2 app chats (A12), the optional OpenRouter setup (A13), the Run page (F5; the terminal relay stays), the scoring page (F4; scorers then use the CSV sheet from B15). **Never cut** the guardrail comparison (A6, A6-run, B6), which is requirement 7.1 and must be finished on Nov 29, or the site's scoring controls (F3), which the client asked for.
+**Target:** all code by the night of Nov 25; app chats by Nov 28; human scoring by Nov 29. If time runs short, cut in this order: priority-2 app chats (A12), the optional OpenRouter setup (A13), the Run page (F5; the terminal relay stays), the scoring page (F4; scorers then use the CSV sheet from B15). **Never cut** the guardrail comparison (A6, A6-run, B6), which is requirement 7.1 and must be finished on Nov 29, the scenario-authoring agent (A7), which requirements 1 and 3 rest on, or the site's scoring controls (F3), which the client asked for.
 
 ## Who does what, in order
 
@@ -36,7 +36,7 @@ Two things matter most:
 | 2 | [**A16**](#wp-a16) | done | New scenario format and key-fact check | Cici | Nov 25 night | A15 |
 | 2 | [**B12**](#wp-b12) | done | New rubric and scoring profiles | Cici | Nov 25 night | B1 |
 | 3 | [**A17**](#wp-a17) | done | Write the 15 scenario files | Cici | Nov 25 night | A16 |
-| 3 | [**A3**](#wp-a3) | todo | Child as a tool-calling agent | Cici | Nov 25 night | A16 |
+| 3 | [**A3**](#wp-a3) | todo | Stricter key-fact retry message | Cici | Nov 26 | A16 |
 | 3 | [**B15**](#wp-b15) | done | Scoring packet and CSV import | Cici | Nov 25 night | B12 |
 | 3 | [**B14**](#wp-b14) | todo | Summary and export for the new rubric | Cici | Nov 25 night | B12, A16 |
 | 3 | [**A8**](#wp-a8) | todo | Realism and script-fidelity report | Cici | Nov 25 night | A16 |
@@ -46,13 +46,13 @@ Two things matter most:
 | 4 | [**B6**](#wp-b6) | todo | Evaluation and guardrail statistics | Cici | Nov 25 night | B1, B11, B14, B15, A8 |
 | 5 | [**F4**](#wp-f4) | todo | Scoring page | Cici | Nov 25 night | B15, F3 |
 | 5 | [**A13**](#wp-a13) | todo | OpenRouter key (optional) | Cici | Nov 25 night | — |
-| 5 | [**A7**](#wp-a7) | todo | `add-scenario` skill (optional) | Cici | Nov 25 night | A16 |
+| 5 | [**A7**](#wp-a7) | todo | Scenario-authoring agent and `add-scenario` skill | Cici | Nov 26 | A16 |
 | 6 | [**T2**](#wp-t2) | todo | Check gold set and tool labels; ask the client | Cici | Nov 26 morning | A17, B11 |
 | 6 | [**A3-app**](#wp-a3-app) | todo | One app chat as a check | Cici | Nov 26 morning | A3, A16, A17 |
 | 6 | [**T4**](#wp-t4) | todo | Claude and Codex review all the code | Cici | Nov 26 morning | A3, A6, A8, A17, B6, B10, B14, B15, F3, F4 |
 | 7 | [**T1**](#wp-t1) | todo | Check scenarios against the cards; try the whole system from a fresh clone | Adam | Nov 26 | A3, A6, A17, B6, B10, B14, B15, F3, F4 |
 | 7 | [**F5**](#wp-f5) | todo | Run page (`make app`); merge by Nov 26 evening or after Nov 28 | Cici | Nov 26 evening | A3, A16, B1, A6, F3, F4 |
-| 8 | [**B13**](#wp-b13) | todo | Choose the judge, one held-out test, freeze | Cici | Nov 26 evening | B10, T2, T4 |
+| 8 | [**B13**](#wp-b13) | todo | Choose the judge, one held-out test, freeze | Cici | Nov 26 evening | B10, T2, T4, A7 |
 | 9 | [**A9**](#wp-a9) | todo | 15 Ollama chats, guardrails on | Cici | Nov 27 | A3, A15, A17, B13, T1, T2 |
 | 9 | [**A12**](#wp-a12) | todo | 24 app chats: 8 ChatGPT, 8 Claude, 8 Gemini | Adam | Nov 28 | A3-app, A15, A17, B13, T1, T2 |
 | 10 | [**A6-run**](#wp-a6-run) | todo | 15 Ollama chats, guardrails off; statistics Nov 29 | Cici | Nov 28–29 | A6, A9, B6 |
@@ -147,13 +147,13 @@ This is the definition of done.
 
 | # | Requirement | What we show | Status | Package |
 |---|---|---|---|---|
-| 1 | Agentic workflow | Child and judge each run a tool loop | Judge done; child missing | A3 |
+| 1 | Agentic workflow | The judge and the scenario-authoring agent each run their own tool loop: the model picks the next tool. The team also built the packages with Claude Code and `dev-work-package`. The pretend child is a fixed loop run by code, not an agent (section 6) | Judge done; authoring agent missing | A7 |
 | 2 | Pretrained model | Ollama models, optional hosted models | Done | A13 (optional) |
-| 3 | ≥5 tools with LLM-facing docstrings | 10 tools, 11 after A3 | Done | A3 |
-| 4 | Skill folder, used by the team or made for the client | `.claude/skills/dev-work-package/`, used to build the packages; `add-scenario` for the client if A7 is built | Done | A7 (optional) |
+| 3 | ≥5 tools with LLM-facing docstrings | Count only tools a model calls. Judge: `load_rubric`, `verify_evidence_quote`, `submit_scores`, `flag_for_human_review`. Authoring agent: `load_persona`, `validate_scenario`, `check_content_ceiling`, `lint_child_utterance`, `save_scenario_draft`. The other tools are checks that code calls (requirement 7); RFC 0004 says which is which | Judge's 4 done; 5 in A7 | A7 |
+| 4 | Skill folder, used by the team or made for the client | `.claude/skills/dev-work-package/`, used to build the packages; `add-scenario` for the client, which runs the authoring agent (A7) | Done | A7 |
 | 5 | Evaluation | Judge vs gold scores, human vs human, realism, tool accuracy | Missing | B13, B4, A8, B6 |
 | 6 | Simulated-data quality | Source and reviewers per scenario, key-fact checks, realism and script-fidelity report | Partial | A16, A17, A8 |
-| 7 | Guardrails | Content, speech and fake-data checks; quote check; publishing check | Done; A16 adds key facts | A16 |
+| 7 | Guardrails | Content, speech and fake-data checks; quote check; `detect_pii_request` overrides the judge on S2.1; publishing check; authoring drafts can't run until a person reviews them | Done; A16 adds key facts | A16 |
 | 7.1 | With vs without guardrails | Same 15 scenarios, one Ollama chatbot, on and off: results table and side-by-side examples ([RFC 0006](0006-safety-guardrails.md#withwithout-comparison-requirement-71)) | Missing | A6, A6-run, B6 |
 | Client | Customizable rubric | Scoring profiles, re-scoring, site controls | Missing | B1, B12, F3 |
 | Client | Controls | Over-escalation on every chat | Missing | B12, B14 |
@@ -185,7 +185,8 @@ rubrics/
   profiles/default.yaml   new (B12): weights and levels
 scenarios/            the 15 scenarios and our public examples
 private/              new, gitignored: gold set
-skills/               new (A7, optional): add-scenario
+skills/               new (A7): add-scenario
+drafts/               new (A7), gitignored: the authoring agent's drafts
 configs/  results/  site/  tests/
 ```
 
@@ -215,11 +216,13 @@ configs/  results/  site/  tests/
 
 ### 6. Agents and tools
 
-**Pretend child.** Today, code calls the checks for the generator. After A3 the child runs its own loop: `next_disclosure_step` → draft → optional self-checks → `submit_child_line`. A rejected line comes back with reasons; after 3 tries the scripted line is used and flagged `FALLBACK_USED`. In shadow mode, self-checks aren't offered, and speech, fake-data and key-fact failures are only logged. A config switch keeps today's path in case small models break the protocol.
+**Pretend child.** A fixed loop run by code, not an agent: code calls `next_disclosure_step`, the model drafts a line, and code runs the checks. A rejected line goes back to the model with reasons; after 3 tries the scripted line is used and flagged `FALLBACK_USED`. In shadow mode, speech, fake-data and key-fact failures are only logged. We kept it this way on Nov 26 instead of making it a tool-calling agent: the checks are the same either way, and a small model breaking the tool protocol would turn chats into fallbacks in A9 and A12.
+
+**Scenario-authoring agent (A7).** Given an idea (situation, age, what happens), it drafts a scenario file in section 8's format and reads an existing scenario as an example (`load_persona`), checks its own draft with tools until it passes, then saves it to `drafts/`. A draft has no reviewer, so no run accepts it until a person reviews it and moves it into `scenarios/`. It's for the client to add scenarios later, and it gives the child's checks a model that really calls them.
 
 **Judge.** It loads the rubric, records facts with quotes, gives each DIM domain a level, labels codes and referral checks, and calls `submit_scores`. Code rejects quotes that aren't in the transcript, sets `na` where a rule can't apply, and applies caps. Low-confidence and unsupported answers go to the review queue.
 
-**Tools:** `load_persona`, `next_disclosure_step`, `lint_child_utterance`, `check_content_ceiling`, `submit_child_line` (A3), `detect_pii_request`, `load_rubric`, `verify_evidence_quote`, `submit_scores`, `flag_for_human_review`, `compute_agreement`. See [RFC 0004](0004-agentic-tools.md).
+**Tools:** `load_persona`, `next_disclosure_step`, `lint_child_utterance`, `check_content_ceiling`, `validate_scenario` (A7), `save_scenario_draft` (A7), `detect_pii_request`, `load_rubric`, `verify_evidence_quote`, `submit_scores`, `flag_for_human_review`, `compute_agreement`. See [RFC 0004](0004-agentic-tools.md).
 
 ### 7. Chatbots: API and app, and the manual relay
 
@@ -410,7 +413,7 @@ Every package branches from `main` and merges back into `main`.
 
 - **`schemas.py`:** "A's models" are `Persona`, `ScriptTurn`, `Review` and `Transcript`; "B's models" are the rubric, score and review-item models. Change only the ones your package names, and pull `main` right before opening the PR.
 - **`Makefile`:** each package adds only its own target.
-- **`tools/__init__.py`:** only A3 changes it.
+- **`tools/__init__.py`:** only A7 changes it.
 
 #### Before the meeting (Sun Nov 8 – Tue Nov 10)
 
@@ -560,12 +563,11 @@ From the pilot ([F-004](../docs/findings.md), [F-007](../docs/findings.md)): 4 o
 
 <a id="wp-a3"></a>
 
-**A3 · Child as a tool-calling agent** · Owner A · Needs: A16 · Status: todo
+**A3 · Stricter key-fact retry message** · Owner A · Needs: A16 · Status: todo
 
-- The child runs `run_tool_agent` with `next_disclosure_step`, `lint_child_utterance`, `check_content_ceiling` and the new `submit_child_line` (section 6). A config switch keeps the current path. Try `gemma4:e4b` and `qwen3.5:9b`.
-- When a line misses a key fact, the retry message says to use one of the exact `must_say` words ([F-011](../docs/findings.md)).
-- **Files:** `harness/agents/child_simulator.py`, `harness/tools/child_line.py` (new), `harness/tools/__init__.py`, `harness/llm/mock.py`, `configs/` (not `full.yaml` or `app-sample.yaml`), `tests/`
-- **Done when:** `make mock` passes; `tool_calls.jsonl` shows `submit_child_line`; a too-intense line is rejected in both modes; one Ollama conversation works.
+- When a draft misses a key fact, the retry message names the exact `must_say` words and says another way of saying it doesn't count ([F-011](../docs/findings.md): "go sleep" for "died"). The child stays a fixed loop run by code (section 6).
+- **Files:** `harness/agents/child_simulator.py`, `tests/`
+- **Done when:** a test shows the retry message after a missed fact names the exact words and says other wording doesn't count; `make mock` passes.
 
 <a id="wp-a13"></a>
 
@@ -586,12 +588,21 @@ From the pilot ([F-004](../docs/findings.md), [F-007](../docs/findings.md)): 4 o
 
 <a id="wp-a7"></a>
 
-**A7 · `add-scenario` skill (optional)** · Owner A · Needs: A16 · Status: todo
+**A7 · Scenario-authoring agent** · Owner A · Needs: A16 · Status: todo
 
-- Requirement 4 is already met by `dev-work-package`; this one helps the client add scenarios.
-- `skills/add-scenario/SKILL.md` with a template in section 8's format, linked into `.claude/skills/`.
-- **Files:** `skills/add-scenario/` (new), `.claude/skills/add-scenario` (link)
-- **Done when:** a scenario made with `/add-scenario` passes `make check`. A teammate tries it in T1.
+Requirements 1 and 3: a second agent whose tools a model really calls (section 6). It also lets the client add scenarios after the project.
+
+- `make author IDEA="..." [SITUATION=...] [AGE=...]` runs `harness/author.py`: a `run_tool_agent` loop with `load_persona`, `validate_scenario`, `check_content_ceiling`, `lint_child_utterance` and `save_scenario_draft`. Its model comes from `configs/author.yaml` (`gemma4:e4b` on Ollama; mock for tests). Every tool call goes to `drafts/<draft id>/tool_calls.jsonl`.
+- `load_persona` (existing, unused until now) lets the agent read an existing scenario of the same situation as an example. It returns only the child's side (lines, style, age), never `good`, `bad` or `referral`; the skill's template covers those fields. `harness/author.py` loads `scenarios/` into the context so the tool can find them.
+- `validate_scenario(yaml_text)` (new tool) runs the `Persona` checks, `scenario_content_problems` and the speech check on every line, and returns each problem as a short reason the agent can fix. It never writes anything.
+- `save_scenario_draft(yaml_text)` (new tool) saves only a draft that passes `validate_scenario`, to `drafts/scenarios/<situation>/<id>.yaml`. It refuses an id that already exists in `scenarios/` or `drafts/`. It sets `review` itself: `author: "authoring agent (<model>)"`, `reviewers: []`, `client_approved: false`, `approval_basis: null`, whatever the draft says.
+- Guardrails: severe content and realistic personal data are refused (the same checks as scenarios that load); no config reads `drafts/`; the agent never edits files in `scenarios/` or `rubrics/`. After 6 failed validations it stops and saves nothing. Moving a reviewed draft into `scenarios/` is a person's step.
+- `skills/add-scenario/SKILL.md`, linked into `.claude/skills/`: when to use it, how to run it, and how to review and move a draft.
+- Once the agent works, remove `detect_pii_request` from `JUDGE_TOOLS`. Code already runs it and gives the judge the result, and `submit_scores` overrides S2.1 with it, so the judge's own calls add nothing. Merge before B13 freezes the judge.
+- Say who calls each tool. RFC 0004's tool table gets a "Called by" column (the judge, the authoring agent, or code), and the `harness/tools/__init__.py` docstring lists the tools offered to an agent and the ones only code calls. No tool moves out of `harness/tools/`: calls through `call_tool` are logged to `tool_calls.jsonl`, which the guardrail evidence uses.
+- Update the docs that describe the child as becoming an agent or count 10 tools: `README.md` (requirements table), `harness/README.md`, `rfcs/0002-child-simulator-agent.md` and `rfcs/0004-agentic-tools.md`.
+- **Files:** `harness/author.py` (new), `harness/tools/scenario_draft.py` (new), `harness/tools/__init__.py`, `harness/agents/judge.py` (`JUDGE_TOOLS` only), `harness/llm/mock.py` (author role only), `configs/author.yaml` (new), `Makefile` (`author` target), `.gitignore` (`drafts/`), `skills/add-scenario/` (new), `.claude/skills/add-scenario` (link), `README.md`, `harness/README.md`, `rfcs/0002-child-simulator-agent.md`, `rfcs/0004-agentic-tools.md`, `tests/`
+- **Done when:** with the mock model, `make author` saves a draft after one rejected validation, and that draft passes `make check` once moved into a scratch `scenarios/` folder; `tool_calls.jsonl` shows `load_persona`, `validate_scenario` and `save_scenario_draft`; a test shows `load_persona` returns no judge-only fields; drafts with severe content, a realistic phone number, an existing id or a filled-in `reviewers` are refused or reset; the judge's tools no longer include `detect_pii_request` and `make mock` passes; one Ollama idea gives a valid draft, with the number of tries recorded in `docs/findings.md`.
 
 <a id="wp-a8"></a>
 
@@ -684,7 +695,7 @@ Lets a researcher run chats from the site instead of the terminal. The public si
 
 **A3-app · One app chat** · Owner A · *Operation* · Needs: A3, A16, A17 · Status: todo
 
-- One relay chat with card 4.1, to check the new format and child agent. It doesn't count in the full run.
+- One relay chat with card 4.1, to check the new format and the retry message. It doesn't count in the full run.
 - **Done when:** the chat is saved, complete and loads; problems are fixed.
 
 <a id="wp-t1"></a>
@@ -693,7 +704,7 @@ Lets a researcher run chats from the site instead of the terminal. The public si
 
 - Compare each of the 15 scenario files with its card in the preprint's Appendix A: lines and order, key facts, good and bad replies, suitable adults, and our additions (age cue, content level, pushback line). Fix differences with Cici, then add your name to `reviewers`.
 - From a fresh clone: tests, mock run, one Ollama run, `make score`, `make labels`, score two chats, `make import-labels`, `make evaluate`, export, click through the site.
-- If F5 is ready, run one chat from the Run page. If A7 is built, add a scenario with `/add-scenario`. File bugs as issues.
+- If F5 is ready, run one chat from the Run page. If A7 is ready, add a scenario with `/add-scenario`, review the draft, and say whether it was usable. File bugs as issues.
 - **Done when:** every scenario has a reviewer; each step works, or has an issue; bugs that block a run are fixed.
 
 <a id="wp-t4"></a>
@@ -715,7 +726,7 @@ Lets a researcher run chats from the site instead of the terminal. The public si
 
 <a id="wp-b13"></a>
 
-**B13 · Choose and freeze the judge** · Owner A · *Operation* · Needs: B10, T2, T4 (T1 before the held-out test; A13 for a hosted judge) · Status: todo
+**B13 · Choose and freeze the judge** · Owner A · *Operation* · Needs: B10, T2, T4, A7 (T1 before the held-out test; A13 for a hosted judge) · Status: todo
 
 - Compare `qwen3.5:9b` with at least one stronger model on the tuning half. Pick one, run the held-out half once, then freeze them on Nov 26: no lock, just record the commit, model and rubric hash, and don't change the judge, rubric or profile after that.
 - **Done when:** held-out agreement per domain is saved and shared; weak items are marked human-only.
@@ -834,6 +845,7 @@ One line per change, newest first. Findings are in [docs/findings.md](../docs/fi
 
 | Date | Change | Why |
 |---|---|---|
+| Nov 26 | A3 cut to the stricter key-fact retry message; the pretend child stays a fixed loop. A7 becomes the scenario-authoring agent (no longer optional) and removes `detect_pii_request` from the judge's tools; B13 waits for A7 | Requirements 1 and 3: no model called the child's tools, so they were only checks; a separate agent adds tools a model really calls without risking fallbacks in A9 and A12 |
 | Nov 25 | Pushback meanings for declined and accepted role also cover giving in to a request ([ext], for R11) | Found in A17: 9.1, 9.2 and 9.6 have resistance but no confidant; value names unchanged |
 | Nov 25 | B10: the judge is given the scenario's `good`, `bad`, `referral` and coded turns | Found in A17: section 8 says the judge uses them, but nothing passes them |
 | Nov 25 | Status column in the "Who does what, in order" table | Easier to see what's next |
