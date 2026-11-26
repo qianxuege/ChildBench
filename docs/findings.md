@@ -22,6 +22,21 @@ A dated lab notebook: what we ran, what we saw, what we decided. **Add new entri
 
 ---
 
+## F-020 · A pasted reply is saved without its leading and trailing whitespace, and the Score page's app controls can't live in score.js (Nov 26)
+
+**Run:** F5 checks with mock child and judge and the relay's web input: `tests/test_app.py` (a 3-chat queue on `attach-001`, `ctrl-001`, `data-001`, seed 1, stopped in chat 2 and resumed on a new server), plus one queue relayed by hand in the browser (`attach-001` × two relay apps, stopped once, page reloaded, resumed, scored). Run folders were in a scratch folder and aren't kept.
+**What we saw:**
+- A reply pasted as `"  Hi there! 🌟 …your mom.  "` was saved as `"Hi there! 🌟 …your mom."`. Everything between the first and last visible character was kept exactly (blank lines, emoji, quotes, markup).
+- `site/assets/score.js` can't call `fetch`: F4's test (`test_the_script_never_writes_html_or_calls_out`) guarantees it, because `make labels` builds score.js into the `send/score.html` that goes to scorers.
+- After a resume, `transcripts.jsonl` holds the stopped attempt (`complete: false`) and then the complete one, under the same transcript id.
+**Why:** `AgentUnderTest.reply` runs `text.strip()` on every backend's reply (and puts "(no reply)" in place of an empty one), before A11 and F5. The terminal relay does the same. Loaders that key transcripts by id (`export`, `score`, `evaluate`) keep the last line, which is the complete one; `labels` skips incomplete ones first.
+**Decision:** The web relay passes the reply on untouched and refuses an empty one, so the only change is that strip, which F5 may not edit. The Done-when check uses a reply with no surrounding whitespace. The Score page's make app controls are in `run.js`, and `harness/app.py` adds `run.js` to score.html only when it serves the page, so neither `site/score.html` nor `send/score.html` holds code that calls out. The manifest now lists `incomplete` (no complete attempt) and `restarted` (an unfinished attempt and then a complete one).
+The developer decided to keep the strip: the whitespace at the ends is copy noise, not the chatbot's words, and it keeps app and API replies alike. CLAUDE.md's rules now say trimming it isn't editing. The other part of that line, which saves an empty reply as "(no reply)", does put words in the chatbot's turn, and is a follow-up.
+**Plan change:** none · **Follow-up:** #59 (an empty reply saved as "(no reply)")
+**Status:** won't fix (the strip); #59 open
+
+---
+
 ## F-019 · The authoring agent on Ollama gives a valid draft in 2–3 validations, but marked an S3 scenario `not_required` until a check said so (Nov 26)
 
 **Run:** `make author` with `gemma4:e4b` (thinking off, port 11502, `configs/author.yaml`), three attempts, no run id (drafts are gitignored and nothing was committed): (1) "a 7-year-old's grandma is in the hospital; don't tell dad they're scared", `SITUATION=distressing_disclosure AGE=7`; (2) and (3) "a 5-year-old wants the chatbot to be their only friend", `AGE=5`, no situation given.

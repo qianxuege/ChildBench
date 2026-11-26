@@ -99,8 +99,16 @@ pip install -e ".[dev]"
 make test    # unit tests
 make check   # validate scenarios and rubric
 make mock    # full run offline, no keys; its numbers mean nothing
-make site    # the website, at http://127.0.0.1:11510
+make site    # the public website, at http://127.0.0.1:11510
+make app     # the same website plus the Run page, on this computer only
 ```
+
+**Website and app.** There is one website, the files in `site/`, served two ways:
+
+- `make site` serves it as static files, exactly as the public sees it. It shows what `make export RUN=<id>` wrote to `site/data/`, and the Run page only shows setup steps. Use it to check the site before deploying.
+- `make app` serves the same pages plus a small API on `127.0.0.1` (port 11511, or `make app PORT=<n>`). It adds the **Run page**, to relay chats to a free chatbot app from the browser instead of the terminal, and controls on the **Score page**, to make a scoring packet, download `score.html` for a scorer and import the CSVs that come back. It prints a link with a one-time token; open that link, since the token changes each start. Ctrl+C stops it. Use it for your own work; every public page works the same under it.
+
+The app is never hosted. It reads `results/` (including the private scoring folders) and talks to local models, so it stays on your own computer. It only offers configs whose chatbots all use `backend: manual` with guardrails on, such as `configs/app-sample.yaml`, whose pretend child and judge need the local models below (ports 11502 and 11503). A queue stopped with **Stop and save** resumes where it left off; so does `python -m harness.run --resume <run_id>` in the terminal.
 
 **With local models:** install [Ollama](https://ollama.com). Tested on a Mac with 24 GB of memory.
 

@@ -51,7 +51,7 @@ Two things matter most:
 | 6 | [**A3-app**](#wp-a3-app) | todo | One app chat as a check | Cici | Nov 26 morning | A3, A16, A17 |
 | 6 | [**T4**](#wp-t4) | todo | Claude and Codex review all the code | Cici | Nov 26 morning | A3, A6, A8, A17, B6, B10, B14, B15, F3, F4 |
 | 7 | [**T1**](#wp-t1) | todo | Check scenarios against the cards; try the whole system from a fresh clone | Adam | Nov 26 | A3, A6, A17, B6, B10, B14, B15, F3, F4 |
-| 7 | [**F5**](#wp-f5) | todo | Run page (`make app`); merge by Nov 26 evening or after Nov 28 | Cici | Nov 26 evening | A3, A16, B1, A6, F3, F4 |
+| 7 | [**F5**](#wp-f5) | done | Run page (`make app`); merge by Nov 26 evening or after Nov 28 | Cici | Nov 26 evening | A3, A16, B1, A6, F3, F4 |
 | 8 | [**B13**](#wp-b13) | todo | Choose the judge, one held-out test, freeze | Cici | Nov 26 evening | B10, T2, T4, A7 |
 | 9 | [**A9**](#wp-a9) | todo | 15 Ollama chats, guardrails on | Cici | Nov 27 | A3, A15, A17, B13, T1, T2 |
 | 9 | [**A12**](#wp-a12) | todo | 24 app chats: 8 ChatGPT, 8 Claude, 8 Gemini | Adam | Nov 28 | A3-app, A15, A17, B13, T1, T2 |
@@ -674,7 +674,7 @@ Replaces F2.
 
 <a id="wp-f5"></a>
 
-**F5 · Run page and `make app`** · Owner A · Needs: A3, A16, B1, A6, F3, F4 · Status: todo
+**F5 · Run page and `make app`** · Owner A · Needs: A3, A16, B1, A6, F3, F4 · Status: done
 
 Lets a researcher run chats from the site instead of the terminal. The public site stays static and shows setup steps there.
 

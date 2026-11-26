@@ -18,12 +18,18 @@ into the terminal instead). Config:
       - name: chatgpt-app
         model: {backend: manual, app: ChatGPT, mode: Temporary Chat}
         # optional: clipboard: false   (always paste by hand)
+
+Web input (F5, `make app`): with a `WebRelay` attached as `model.web`, each checked line goes to the site's Run page
+instead of the terminal, and the reply pasted there comes back unchanged. The page never sees a line the pretend
+child's checks haven't passed, because it only gets what the orchestrator hands this model.
 """
 
 from __future__ import annotations
 
+import itertools
 import shutil
 import subprocess
+import threading
 from typing import Any, Callable, Optional
 
 from . import Message, ModelError
@@ -72,6 +78,61 @@ class Clipboard:
             return None
 
 
+class WebRelay:
+    """Hands each checked line to the Run page and waits for the reply pasted there (F5).
+
+    The conversation runs in a worker thread that blocks in `ask`; the web server calls `pending`, `answer` and
+    `stop` from its own threads. One line is waiting at a time.
+    """
+
+    def __init__(self):
+        self._cond = threading.Condition()
+        self._seq = itertools.count(1)
+        self._pending: Optional[dict] = None
+        self._answer: Optional[dict] = None
+        self._stopped = False
+
+    def ask(self, prompt: dict) -> dict:
+        """Block until the page answers this prompt. Returns {"reply", "model_shown"}; raises ManualStop on stop."""
+        with self._cond:
+            if self._stopped:
+                raise ManualStop("stopped by the person relaying")
+            self._pending, self._answer = {**prompt, "seq": next(self._seq)}, None
+            self._cond.notify_all()
+            while self._answer is None and not self._stopped:
+                self._cond.wait()
+            self._pending = None
+            if self._stopped:
+                raise ManualStop("stopped by the person relaying")
+            return self._answer
+
+    def pending(self) -> Optional[dict]:
+        with self._cond:
+            return dict(self._pending) if self._pending else None
+
+    def answer(self, seq: int, reply: str, model_shown: Optional[str] = None) -> Optional[str]:
+        """Give the reply for prompt `seq`. Returns an error sentence, or None when it was taken."""
+        if not isinstance(reply, str) or not reply.strip():
+            return "the reply is empty: copy the app's whole reply and paste it in the box"
+        with self._cond:
+            if not self._pending or self._pending["seq"] != seq:
+                return "this line isn't waiting for a reply any more; reload the page"
+            self._answer = {"reply": reply, "model_shown": model_shown}
+            self._cond.notify_all()
+        return None
+
+    def stop(self) -> None:
+        """Stop the conversation that is waiting (or the next one to ask). It is saved as incomplete."""
+        with self._cond:
+            self._stopped = True
+            self._cond.notify_all()
+
+    def reset(self) -> None:
+        """Ready for the next conversation after a stop."""
+        with self._cond:
+            self._stopped, self._pending, self._answer = False, None, None
+
+
 class ManualModel:
     def __init__(self, app: str, mode: str = "private chat", *, clipboard: Optional[Clipboard] = None,
                  input_fn: Optional[Callable[[str], str]] = None, print_fn: Optional[Callable[..., None]] = None):
@@ -82,6 +143,7 @@ class ManualModel:
         self.quit_requested = False                # set by run.py when the person presses Ctrl+C: skip the rest of the run
         self.label = ""                            # set by run.py: "<scenario> · <chatbot>"
         self.max_turns = 0                         # set by run.py, for the "turn N of M" line
+        self.web: Optional[WebRelay] = None        # set by harness/app.py: lines go to the Run page instead (F5)
         self.clipboard = clipboard if clipboard is not None else Clipboard()
         # Looked up at call time, so tests can patch builtins.input / print.
         self._in = input_fn or (lambda prompt: input(prompt))
@@ -144,6 +206,13 @@ class ManualModel:
         caregiver_turns = sum(t.speaker == "caregiver" for t in history)
         is_caregiver = bool(history) and history[-1].speaker == "caregiver"
         turn = len(user_turns) - caregiver_turns
+        if self.web is not None:
+            got = self.web.ask({"label": self.label or self.app, "app": self.app, "mode": self.mode,
+                                "turn": 0 if is_caregiver else turn, "max_turns": self.max_turns,
+                                "caregiver": is_caregiver, "line": child_line, "first": len(user_turns) == 1})
+            if len(user_turns) == 1:
+                self.model_shown = (got.get("model_shown") or "").strip() or None
+            return got["reply"]   # exactly as pasted
         if len(user_turns) == 1:
             self._out(f"\n=== New conversation: {self.label or self.app} ===")
             self._out(f"Start a new conversation in {self.app}: {self.mode}.")

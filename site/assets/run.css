@@ -1,0 +1,74 @@
+/* Run page (RFC 0010, package F5). Builds on site.css: .btn, .card, .notice, .body, .small, .mono, .dim. */
+
+.run-setup { margin-top: 28px; max-width: 860px; }
+.run-steps { margin: 24px 0 12px; padding-left: 22px; color: var(--body); }
+.run-steps li { margin: 0 0 14px; }
+.run-steps b { color: var(--text); font-weight: 600; }
+.run-steps code, .run-setup code { font: 14px var(--mono); color: var(--text); }
+
+.run-panel { margin-top: 28px; max-width: 900px; }
+.run-panel h2 { margin: 0 0 6px; font: 600 22px var(--display); }
+.run-panel h3 { margin: 0 0 10px; font: 600 17px var(--display); }
+.run-panel .card + .card { margin-top: 16px; }
+
+.run-steps-bar { display: flex; gap: 8px; margin: 0 0 20px; font: 13px var(--mono); color: var(--dim); }
+.run-steps-bar span { padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; }
+.run-steps-bar span.on { border-color: var(--accent); color: var(--accent); }
+
+.run-field { display: grid; gap: 6px; margin: 0 0 16px; }
+.run-field label, .run-field .label { font-weight: 600; font-size: 14.5px; }
+.run-field .hint { color: var(--dim); font-size: 13.5px; }
+.run-field select, .run-field input, .run-reply {
+  width: 100%; min-height: 44px; padding: 9px 12px; border: 1px solid #343b4b; border-radius: 8px;
+  background: var(--panel); color: var(--text); font: 15px var(--sans);
+}
+.run-field select:focus, .run-field input:focus, .run-reply:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+.run-reply { min-height: 200px; resize: vertical; font: 14.5px/1.5 var(--sans); }
+
+.run-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.run-row.end { justify-content: space-between; margin-top: 18px; }
+.btn.primary { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn.primary:hover { color: var(--accent-ink); background: #9bb8ff; }
+.btn.quiet { border-color: transparent; color: var(--dim); }
+.btn.quiet:hover { color: var(--coral); border-color: #4a2a26; }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+
+.run-remind { margin: 0 0 16px; padding: 12px 16px; border: 1px solid #4a3a22; border-radius: 8px; background: var(--amber-soft); color: var(--amber); font-size: 14.5px; }
+.run-remind b { color: var(--amber); }
+.run-remind ul { margin: 6px 0 0; padding-left: 18px; }
+
+.run-line-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.run-line {
+  margin: 0 0 18px; padding: 16px 18px; border-radius: 10px; background: var(--panel-2); border-left: 3px solid var(--kid);
+  color: var(--text); font: 17px/1.5 var(--sans); white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.run-line.caregiver { border-left-color: var(--accent); }
+.run-wait { display: flex; gap: 10px; align-items: center; color: var(--body); }
+.run-wait::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); animation: run-pulse 1s ease-in-out infinite; }
+@keyframes run-pulse { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .run-wait::before { animation: none; } }
+
+.run-error { margin: 0 0 16px; padding: 12px 16px; border: 1px solid #4a2a26; border-radius: 8px; background: var(--coral-soft); color: var(--coral); }
+.run-ok { color: var(--green); font-weight: 600; }
+
+.run-queues { list-style: none; margin: 0; padding: 0; }
+.run-queues li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.run-queues li:first-child { border-top: 0; }
+
+.run-chat { display: grid; gap: 10px; margin-top: 14px; }
+.run-chat .turn { padding: 10px 14px; border-radius: 8px; background: var(--panel); white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14.5px; }
+.run-chat .turn small { display: block; color: var(--dim); font: 12px var(--mono); margin-bottom: 4px; }
+.run-chat .turn.child { border-left: 3px solid var(--kid); }
+.run-chat .turn.caregiver { border-left: 3px solid var(--accent); }
+
+details.run-adv { margin: 4px 0 16px; }
+details.run-adv summary { cursor: pointer; color: var(--dim); font-size: 14px; }
+details.run-adv[open] summary { margin-bottom: 12px; }
+
+/* Score page under make app (F5): pick a run, make a packet, send it, take the CSVs back. */
+.app-score { margin: 24px 0; }
+.app-score h2 { margin: 0 0 6px; font: 600 22px var(--display); }
+.app-score h3 { margin: 22px 0 6px; font: 600 16px var(--display); }
+.app-score .sc-flash, .app-score .sc-error { margin: 12px 0 0; }
+.app-score .run-queues li { flex-wrap: wrap; }
+.app-score .msg { flex-basis: 100%; font-size: 14px; color: var(--body); }

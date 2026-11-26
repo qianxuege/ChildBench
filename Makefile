@@ -1,4 +1,4 @@
-.PHONY: install test mock gemma local check labels import-labels site run estimate export score gold realism evaluate author
+.PHONY: install test mock gemma local check labels import-labels site run estimate export score gold realism evaluate author app
 
 install:
 	pip install -e ".[dev]"
@@ -79,3 +79,8 @@ evaluate:
 author:
 	@test -n "$(IDEA)" || (echo 'usage: make author IDEA="..." [SITUATION=...] [AGE=...] [MODEL=mock]' && exit 1)
 	python -m harness.author --idea "$(IDEA)" $(if $(SITUATION),--situation $(SITUATION)) $(if $(AGE),--age $(AGE)) $(if $(MODEL),--model $(MODEL))
+
+# The site plus the Run page, on this computer only (127.0.0.1): relay chats from the browser, then score them.
+# make app [PORT=11511] [CONFIGS=configs]. Prints a link with a one-time token; only relay configs with guardrails on are offered.
+app:
+	python -m harness.app $(if $(PORT),--port $(PORT)) $(if $(CONFIGS),--configs $(CONFIGS)) $(ARGS)
