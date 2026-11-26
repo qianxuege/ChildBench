@@ -1,0 +1,29 @@
+# Guardrails off (RFC 0010, A6): the "off" side of the guardrail comparison (A6-run, RFC 0006).
+# Same scenarios, child model, judge, chatbot and seed as configs/full.yaml (A9, the "on" side); only
+# guardrails.enforce differs. The checks still run and log SHADOW_FAIL, but don't block or retry.
+# The content ceiling always blocks: a child line above the scenario's level never reaches the chatbot.
+#
+# The run name gets "-guardrails-off" added automatically (harness/run.py), so the folder is
+# results/<stamp>_full-guardrails-off_<id>/ and the export refuses it.
+# Never commit or publish this run's text; only the numbers go into docs/guardrail-comparison.md.
+#
+# Start the same Ollama servers as configs/full.yaml:
+#   OLLAMA_KEEP_ALIVE=30s OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=127.0.0.1:11502 OLLAMA_CONTEXT_LENGTH=8192  ollama serve
+#   OLLAMA_KEEP_ALIVE=30s OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=127.0.0.1:11503 OLLAMA_CONTEXT_LENGTH=16384 ollama serve
+#   OLLAMA_KEEP_ALIVE=30s OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=127.0.0.1:11504 OLLAMA_CONTEXT_LENGTH=8192  ollama serve
+#   make estimate CONFIG=configs/guardrails-off.yaml
+#   make run CONFIG=configs/guardrails-off.yaml
+#
+# Keep the roles in step with full.yaml: if B13 freezes a different judge, change it in both.
+run_name: full
+rubric: rubrics/v1.yaml
+scenarios: scenarios/dim/**/*.yaml
+seeds: [1]
+guardrails: {enforce: false, allow_unreviewed: false, audit_rate: 0.10}
+temperatures: {child: 0.7, agent: 0.7, judge: 0.0}
+roles:
+  child_generator: {backend: openai_compat, base_url: "http://127.0.0.1:11502/v1", model: "gemma4:e4b", reasoning_effort: none}
+  judge:           {backend: openai_compat, base_url: "http://127.0.0.1:11503/v1", model: "qwen3.5:9b", reasoning_effort: none}
+agents:
+  - name: llama3.1-8b
+    model: {backend: openai_compat, base_url: "http://127.0.0.1:11504/v1", model: "llama3.1:8b"}
