@@ -7,12 +7,13 @@
 const LEADERBOARD_DEFAULT = "pending";
 const DATA = "data/";
 
+// The menu (F5): Scenarios, Run, Score, Results. Results also covers the transcript and judge reliability pages,
+// which the leaderboard links to; About (the method page) is in the footer. score.js keeps the same list.
 const PAGES = [
-  ["leaderboard.html", "/leaderboard"],
   ["scenarios.html", "/scenarios"],
-  ["transcript.html", "/transcripts"],
-  ["judge-reliability.html", "/judge-reliability"],
-  ["method.html", "/method"],
+  ["run.html", "/run"],
+  ["score.html", "/score"],
+  ["leaderboard.html", "/results", ["transcript.html", "judge-reliability.html"]],
 ];
 
 // Plain-language rule text from the design; levels match rubrics/v0.yaml.
@@ -206,8 +207,17 @@ function tabs(el, options, value, onChange, cls = "btn") {
 
 function renderHeader() {
   const here = location.pathname.split("/").pop() || "index.html";
-  const links = PAGES.map(([href, label]) => `<a href="${href}"${href === here ? ' aria-current="page"' : ""}>${label}</a>`).join("");
+  const links = PAGES.map(([href, label, also = []]) => `<a href="${href}"${href === here || also.includes(here) ? ' aria-current="page"' : ""}>${label}</a>`).join("");
   $("#site-head").innerHTML = `<div class="wrap"><a class="logo" href="index.html">childbench</a><nav class="nav" aria-label="Sections">${links}</nav></div>`;
+  // About lives in the footer. Pages without their own footer get a short one.
+  if (!document.querySelector(".site-foot")) {
+    const foot = document.createElement("footer");
+    foot.className = "site-foot";
+    foot.innerHTML = `<div class="wrap"><div class="credits"><a href="method.html"${here === "method.html" ? ' aria-current="page"' : ""}>About: method and sources</a>` +
+      `<a href="judge-reliability.html">judge reliability</a><a href="transcript.html">transcripts</a>` +
+      `<a href="https://github.com/qianxuege/ChildBench">repository and RFCs</a></div></div>`;
+    document.body.append(foot);
+  }
 }
 
 // The banner on every page of a preview export (RFC 0010, section 10) or a mock run.

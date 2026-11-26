@@ -4,6 +4,7 @@ Plain code, no LLM decides the order of steps. Usage:
     python -m harness.run --config configs/mock.yaml
     python -m harness.run --config configs/gemma-local.yaml --only dist-003 --seeds 1
     python -m harness.run --config configs/mock.yaml --check-only
+    python -m harness.run --resume <run_id>     # finish an unscored run: its unfinished chats, then scoring (F5)
 """
 
 from __future__ import annotations
@@ -240,144 +241,258 @@ def converse(persona: Persona, agent: AgentUnderTest, child: ChildSimulator, ctx
                       app_model_shown=manual.model_shown if manual else None)
 
 
+PLAN_FILE = "run_plan.json"      # written when a run starts; lets `--resume` and `make app` reopen the folder (F5)
+TALK_LOG = "talk_log.jsonl"      # one line per chat attempt, so timing survives a resume
+
+
+def read_jsonl(p: Path) -> list[dict]:
+    return [json.loads(x) for x in p.read_text(encoding="utf-8").splitlines() if x.strip()] if p.exists() else []
+
+
+def load_scenarios(cfg: dict, only: list[str] | None, *, quiet: bool = False) -> tuple[Rubric, Path, dict[str, Persona], dict[str, str]]:
+    """The rubric and the scenarios a config names, narrowed to `only`. Exits on an unknown id or, unless the
+    config allows it, on a scenario without a second reviewer."""
+    rubric_path = REPO_ROOT / cfg.get("rubric", "rubrics/v0.yaml")
+    rubric = load_rubric(rubric_path)
+    personas, hashes = load_personas(cfg.get("scenarios", "scenarios/**/*.yaml"))
+    if only:
+        missing = set(only) - set(personas)
+        if missing:
+            raise SystemExit(f"unknown scenario ids: {sorted(missing)}")
+        personas = {k: v for k, v in personas.items() if k in only}
+    g = cfg.get("guardrails", {})
+    unreviewed = [p.id for p in personas.values() if not p.review.approved]
+    if not quiet:
+        print(f"rubric {rubric.version}: {len(rubric.rules)} rules · {len(personas)} scenarios")
+        print(coverage(personas))
+    if unreviewed:
+        msg = f"{len(unreviewed)} scenario(s) have no second reviewer yet: {', '.join(unreviewed)}"
+        if not g.get("allow_unreviewed", False):
+            raise SystemExit(msg + "\nGuardrail: add a reviewer in each file's `review.reviewers`, or set guardrails.allow_unreviewed for a dry run.")
+        if not quiet:
+            print("WARNING: " + msg + " (allowed for this dry run)")
+    return rubric, rubric_path, personas, hashes
+
+
+class Run:
+    """One run folder: its models, its plan of chats, and its results.
+
+    Chats are talked one at a time with `talk` (the terminal loops over `todo()`; `make app` asks for one chat per
+    click), then scored once with `score`. Opened again with `resume_id`, it skips chats that already have a complete
+    transcript and starts unfinished ones again; the unfinished attempt stays in transcripts.jsonl, marked incomplete.
+    """
+
+    def __init__(self, cfg: dict, config_file: str, rubric: Rubric, rubric_path: Path, personas: dict[str, Persona],
+                 hashes: dict[str, str], seeds: list[int], *, out_root: Path, only: list[str] | None = None,
+                 agent_names: list[str] | None = None, resume_id: str | None = None, skip_preflight: bool = False):
+        self.cfg, self.config_file, self.rubric, self.rubric_path = cfg, config_file, rubric, rubric_path
+        self.personas, self.hashes, self.seeds, self.only, self.out_root = personas, hashes, seeds, only, out_root
+        g = cfg.get("guardrails", {})
+        roles, temps, demo = cfg["roles"], cfg.get("temperatures", {}), cfg.get("demo", {})
+        for role, spec in roles.items():
+            if spec and spec.get("backend") == "manual":
+                raise SystemExit(f"roles.{role} can't use backend: manual. The relay is only for chatbots under test.")
+        agent_cfgs = cfg["agents"]
+        if agent_names:
+            unknown = set(agent_names) - {a["name"] for a in agent_cfgs}
+            if unknown:
+                raise SystemExit(f"unknown chatbot names: {sorted(unknown)}")
+            agent_cfgs = [a for a in agent_cfgs if a["name"] in agent_names]
+        self.agent_names = [a["name"] for a in agent_cfgs] if agent_names else None
+        self.gen = make_model(roles["child_generator"])
+        self.rev = make_model(roles["child_reviewer"]) if roles.get("child_reviewer") else None
+        self.judge_model = make_model(roles["judge"])
+        agent_models = [make_model(a["model"]) for a in agent_cfgs]
+        if any(isinstance(m, ManualModel) for m in agent_models) and not g.get("enforce", True):
+            raise SystemExit("guardrails.enforce must be true for relay runs: an unchecked child line would reach a real app.")
+        self.all_models = [m for m in [self.gen, self.rev, self.judge_model, *agent_models] if m is not None]
+        if not skip_preflight:
+            problems = preflight(self.all_models)
+            if problems:
+                raise SystemExit("preflight failed, nothing was run:\n  - " + "\n  - ".join(problems))
+        self.resumed = bool(resume_id)
+        if resume_id:
+            self.run_id, self.stamp = resume_id, resume_id.split("_", 1)[0]
+            self.out_dir = out_root / resume_id
+            if (self.out_dir / "manifest.json").exists():
+                raise SystemExit(f"{resume_id} is already scored, so it can't be resumed")
+        else:
+            self.stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+            self.run_id = f"{self.stamp}_{run_name(cfg)}_{uuid.uuid4().hex[:4]}"
+            self.out_dir = out_root / self.run_id
+        self.ctx = RunContext(self.run_id, self.out_dir, rubric, personas, enforce=g.get("enforce", True),
+                              audit_rate=g.get("audit_rate", 0.10), seed=cfg.get("audit_seed", 0))
+        if not resume_id:
+            (self.out_dir / PLAN_FILE).write_text(json.dumps(
+                {"run_id": self.run_id, "config_file": str(config_file), "config": cfg, "only": only, "seeds": seeds,
+                 "agents": self.agent_names}, indent=2, default=str))
+        self.child = ChildSimulator(self.gen, self.rev, self.ctx, temperature=temps.get("child", 0.9),
+                                    demo_adult_first_draft=demo.get("adult_first_draft", False))
+        self.judge = Judge(self.judge_model, self.ctx, temperature=temps.get("judge", 0.0), demo_bad_quote=demo.get("bad_quote", False))
+        self.agents = [AgentUnderTest(a["name"], m, system_prompt=a.get("system_prompt"),
+                                      temperature=temps.get("agent", 0.7), mock_behavior=a["model"].get("behavior"))
+                       for a, m in zip(agent_cfgs, agent_models)]
+        self.plan = [(p, a, s) for p in personas.values() for a in self.agents for s in seeds]
+
+    @classmethod
+    def reopen(cls, run_dir: Path, *, skip_preflight: bool = False, quiet: bool = True) -> "Run":
+        """The run in `run_dir`, from its run_plan.json, ready to talk to its unfinished chats."""
+        plan_file = run_dir / PLAN_FILE
+        if not plan_file.exists():
+            raise SystemExit(f"{run_dir.name} has no {PLAN_FILE}, so it can't be resumed (it was started before F5)")
+        plan = json.loads(plan_file.read_text())
+        cfg = plan["config"]
+        rubric, rubric_path, personas, hashes = load_scenarios(cfg, plan.get("only"), quiet=quiet)
+        return cls(cfg, plan["config_file"], rubric, rubric_path, personas, hashes, plan["seeds"], out_root=run_dir.parent,
+                   only=plan.get("only"), agent_names=plan.get("agents"), resume_id=run_dir.name, skip_preflight=skip_preflight)
+
+    # ------------------------------------------------------------------ state
+    @staticmethod
+    def tid(p: Persona, a: AgentUnderTest, s: int) -> str:
+        return f"{p.id}__{a.name}__s{s}"
+
+    def finished(self) -> set[str]:
+        """Transcript ids that already have a complete conversation in this folder."""
+        return {d["transcript_id"] for d in read_jsonl(self.out_dir / "transcripts.jsonl") if d.get("complete", True)}
+
+    def todo(self) -> list[tuple[Persona, AgentUnderTest, int]]:
+        done = self.finished()
+        return [(p, a, s) for p, a, s in self.plan if self.tid(p, a, s) not in done]
+
+    # ------------------------------------------------------------------ talking and scoring
+    def talk(self, p: Persona, a: AgentUnderTest, s: int) -> Transcript:
+        """One conversation, saved to transcripts.jsonl whether or not it finished."""
+        if isinstance(a.model, ManualModel):
+            a.model.label, a.model.max_turns = f"{p.id} · {a.name}", p.max_turns
+        t0, u0 = time.perf_counter(), model_usage(self.all_models)
+        t = converse(p, a, self.child, self.ctx, s)
+        secs = time.perf_counter() - t0
+        self.ctx.write("transcripts.jsonl", t)
+        self.ctx.write(TALK_LOG, {"transcript_id": t.transcript_id, "complete": t.complete, "talk_seconds": round(secs, 2),
+                                  "talk_tokens": usage_delta(model_usage(self.all_models), u0)})
+        print(f"  talked   {t.transcript_id:<40} {len(t.agent_turns())} turns · {t.ended_because} · {secs:.0f} s")
+        return t
+
+    def score(self) -> dict:
+        """Score every complete conversation in the folder, once, and write summary.json, manifest.json and LATEST."""
+        if (self.out_dir / "manifest.json").exists():
+            raise SystemExit(f"{self.run_id} is already scored")
+        rows = read_jsonl(self.out_dir / "transcripts.jsonl")
+        attempts: dict[str, list[Transcript]] = {}
+        for d in rows:
+            t = Transcript(**d)
+            attempts.setdefault(t.transcript_id, []).append(t)
+        ctx, rubric = self.ctx, self.rubric
+        for tid, ts in attempts.items():
+            done = [t for t in ts if t.complete]
+            if done:
+                ctx.transcripts[tid] = done[-1]       # only complete conversations are scored
+        incomplete = [tid for tid, ts in attempts.items() if tid not in ctx.transcripts]
+        restarted = [tid for tid, ts in attempts.items() if tid in ctx.transcripts and len(ts) > 1]
+        per_conv: dict[str, dict] = {}
+        for d in read_jsonl(self.out_dir / TALK_LOG):
+            if d["complete"] or d["transcript_id"] not in per_conv:
+                per_conv[d["transcript_id"]] = {"talk_seconds": d["talk_seconds"], "talk_tokens": d["talk_tokens"]}
+        talk_seconds = sum(v["talk_seconds"] for v in per_conv.values())
+        score_start = time.perf_counter()
+        for tid, t in ctx.transcripts.items():
+            per_conv.setdefault(tid, {})
+            if not rubric.scores_situation(SITUATION_CODE[t.situation]):
+                print(f"  skipped  {tid:<40} rubric {rubric.version} has no rules for '{t.situation}', so it isn't scored")
+                continue
+            t0, u0 = time.perf_counter(), model_usage(self.all_models)
+            try:
+                rec = self.judge.score(t, seed=t.seed)
+            except ModelError as e:
+                # One failed judge call must not stop the run. The message can hold the server address: save only its type.
+                print(f"  judge model error in {tid}: {e}", file=sys.stderr)
+                rec = ctx.scored.get(tid)   # the judge may have submitted before its last call failed
+                if rec is None:
+                    flag_for_human_review(ctx, tid, "JUDGE_FAILED", f"judge model error: {type(e.__cause__ or e).__name__}")
+            secs = time.perf_counter() - t0
+            per_conv[tid].update({"score_seconds": round(secs, 2), "score_tokens": usage_delta(model_usage(self.all_models), u0)})
+            status = rec.overall + (" (provisional)" if rec.provisional else "") if rec else "JUDGE FAILED"
+            print(f"  scored   {tid:<40} {status} · {secs:.0f} s")
+        score_seconds = time.perf_counter() - score_start
+
+        summary = summarize(ctx.transcripts, ctx.scored, ctx.queued)
+        (self.out_dir / "summary.json").write_text(json.dumps(summary, indent=2))
+        gen, rev, judge_model = self.gen, self.rev, self.judge_model
+        manifest = {
+            "run_id": self.run_id, "created_at": self.stamp, "harness_version": __version__, "git": git_info(),
+            "python": platform.python_version(), "config_file": str(self.config_file), "config": self.cfg,
+            "rubric": {"version": rubric.version, "sha256": hashlib.sha256(self.rubric_path.read_bytes()).hexdigest()[:16]},
+            "scenarios": self.hashes if not self.only else {k: self.hashes[k] for k in self.personas},
+            "seeds": self.seeds,
+            "models": {"child_generator": gen.model_id, "child_reviewer": rev.model_id if rev else None,
+                       "judge": judge_model.model_id, "agents": {a.name: a.model_id for a in self.agents}},
+            "guardrails": {"enforce": ctx.enforce, "audit_rate": ctx.audit_rate},
+            "counts": {"transcripts": len(ctx.transcripts), "incomplete": incomplete, "restarted": restarted,
+                       "scored": len(ctx.scored), "review_items": len(ctx.queued), "tool_calls": ctx.tool_calls},
+            "timing": {"conversations": len(ctx.transcripts), "talk_seconds": round(talk_seconds, 2),
+                       "score_seconds": round(score_seconds, 2), "per_conversation": per_conv},
+            "tokens": {"total": model_usage(self.all_models),
+                       "by_role": {"child_generator": model_usage([gen]), "child_reviewer": model_usage([rev] if rev else []),
+                                   "judge": model_usage([judge_model]),
+                                   "agents": {a.name: model_usage([a.model]) for a in self.agents}},
+                       "note": "from each response's usage; 0 for mock models" + ("; this session only, the run was resumed" if self.resumed else "")},
+            "provider_data_retention": self.cfg.get("provider_data_retention", "[record each provider's retention/training settings before publishing]"),
+        }
+        if self.agent_names:
+            manifest["agents_only"] = self.agent_names
+        (self.out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, default=str))
+        (self.out_root / "LATEST").write_text(self.run_id + "\n")
+        return summary
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Run the ChildBench pipeline.")
-    ap.add_argument("--config", required=True)
+    ap.add_argument("--config")
     ap.add_argument("--only", nargs="*", help="scenario ids to run")
     ap.add_argument("--seeds", nargs="*", type=int)
     ap.add_argument("--check-only", action="store_true", help="validate scenarios and rubric, then exit")
     ap.add_argument("--out", default="results")
     ap.add_argument("--estimate", action="store_true", help="print conversation count and expected time, then exit")
     ap.add_argument("--skip-preflight", action="store_true", help="don't check that model servers are up before running")
+    ap.add_argument("--resume", metavar="RUN_ID", help="finish an unscored run: skip its complete chats, start unfinished ones again, then score")
     args = ap.parse_args(argv)
     load_dotenv(REPO_ROOT / ".env")
+    out_root = REPO_ROOT / args.out
 
-    cfg_path = Path(args.config)
-    cfg = yaml.safe_load((cfg_path if cfg_path.is_absolute() else REPO_ROOT / cfg_path).read_text())
-    rubric_path = REPO_ROOT / cfg.get("rubric", "rubrics/v0.yaml")
-    rubric = load_rubric(rubric_path)
-    personas, hashes = load_personas(cfg.get("scenarios", "scenarios/**/*.yaml"))
-    if args.only:
-        missing = set(args.only) - set(personas)
-        if missing:
-            raise SystemExit(f"unknown scenario ids: {sorted(missing)}")
-        personas = {k: v for k, v in personas.items() if k in args.only}
-    g = cfg.get("guardrails", {})
-    unreviewed = [p.id for p in personas.values() if not p.review.approved]
-    print(f"rubric {rubric.version}: {len(rubric.rules)} rules · {len(personas)} scenarios")
-    print(coverage(personas))
-    if unreviewed:
-        msg = f"{len(unreviewed)} scenario(s) have no second reviewer yet: {', '.join(unreviewed)}"
-        if not g.get("allow_unreviewed", False):
-            raise SystemExit(msg + "\nGuardrail: add a reviewer in each file's `review.reviewers`, or set guardrails.allow_unreviewed for a dry run.")
-        print("WARNING: " + msg + " (allowed for this dry run)")
-    if args.check_only:
-        print("check passed")
-        return 0
+    if args.resume:
+        if args.config or args.only or args.seeds:
+            raise SystemExit("--resume takes its config, scenarios and seeds from the run folder; drop --config, --only and --seeds")
+        run = Run.reopen(out_root / args.resume, skip_preflight=args.skip_preflight, quiet=False)
+    else:
+        if not args.config:
+            raise SystemExit("--config is required (or --resume RUN_ID)")
+        cfg_path = Path(args.config)
+        cfg = yaml.safe_load((cfg_path if cfg_path.is_absolute() else REPO_ROOT / cfg_path).read_text())
+        rubric, rubric_path, personas, hashes = load_scenarios(cfg, args.only)
+        if args.check_only:
+            print("check passed")
+            return 0
+        seeds = args.seeds or cfg.get("seeds", [1])
+        if args.estimate:
+            estimate(cfg, len(personas), len(seeds), out_root)
+            return 0
+        run = Run(cfg, args.config, rubric, rubric_path, personas, hashes, seeds, out_root=out_root, only=args.only,
+                  skip_preflight=args.skip_preflight)
 
-    seeds = args.seeds or cfg.get("seeds", [1])
-    if args.estimate:
-        estimate(cfg, len(personas), len(seeds), REPO_ROOT / args.out)
-        return 0
-    roles, temps, demo = cfg["roles"], cfg.get("temperatures", {}), cfg.get("demo", {})
-    gen = make_model(roles["child_generator"])
-    rev = make_model(roles["child_reviewer"]) if roles.get("child_reviewer") else None
-    judge_model = make_model(roles["judge"])
-    for role, spec in roles.items():
-        if spec and spec.get("backend") == "manual":
-            raise SystemExit(f"roles.{role} can't use backend: manual. The relay is only for chatbots under test.")
-    agent_models = [make_model(a["model"]) for a in cfg["agents"]]
-    if any(isinstance(m, ManualModel) for m in agent_models) and not g.get("enforce", True):
-        raise SystemExit("guardrails.enforce must be true for relay runs: an unchecked child line would reach a real app.")
-    all_models = [m for m in [gen, rev, judge_model, *agent_models] if m is not None]
-    if not args.skip_preflight:
-        problems = preflight(all_models)
-        if problems:
-            raise SystemExit("preflight failed, nothing was run:\n  - " + "\n  - ".join(problems))
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-    run_id = f"{stamp}_{run_name(cfg)}_{uuid.uuid4().hex[:4]}"
-    out_dir = REPO_ROOT / args.out / run_id
-    ctx = RunContext(run_id, out_dir, rubric, personas, enforce=g.get("enforce", True),
-                     audit_rate=g.get("audit_rate", 0.10), seed=cfg.get("audit_seed", 0))
-
-    child = ChildSimulator(gen, rev, ctx, temperature=temps.get("child", 0.9), demo_adult_first_draft=demo.get("adult_first_draft", False))
-    judge = Judge(judge_model, ctx, temperature=temps.get("judge", 0.0), demo_bad_quote=demo.get("bad_quote", False))
-    agents = [AgentUnderTest(a["name"], m, system_prompt=a.get("system_prompt"),
-                             temperature=temps.get("agent", 0.7), mock_behavior=a["model"].get("behavior"))
-              for a, m in zip(cfg["agents"], agent_models)]
-
-    n = len(personas) * len(agents) * len(seeds)
-    print(f"\nrun {run_id}: {len(personas)} scenarios x {len(agents)} chatbots x {len(seeds)} seeds = {n} conversations")
-    print(f"max model calls ~ {n * 6 * (2 + (1 if rev else 0)) + n * 14} (turn cap 6, judge cap 14 steps)")
-    per_conv: dict[str, dict] = {}
-    incomplete: list[str] = []
-    talk_start = time.perf_counter()
-    plan = [(p, a, s) for p in personas.values() for a in agents for s in seeds]
-    for p, a, s in plan:
-        if isinstance(a.model, ManualModel):
-            a.model.label, a.model.max_turns = f"{p.id} · {a.name}", p.max_turns
-        t0, u0 = time.perf_counter(), model_usage(all_models)
-        t = converse(p, a, child, ctx, s)
-        secs = time.perf_counter() - t0
-        per_conv[t.transcript_id] = {"talk_seconds": round(secs, 2),
-                                     "talk_tokens": usage_delta(model_usage(all_models), u0)}
-        ctx.write("transcripts.jsonl", t)
-        if t.complete:
-            ctx.transcripts[t.transcript_id] = t   # only complete conversations are scored
-        else:
-            incomplete.append(t.transcript_id)
-        print(f"  talked   {t.transcript_id:<40} {len(t.agent_turns())} turns · {t.ended_because} · {secs:.0f} s")
+    todo = run.todo()
+    n, rev = len(run.plan), run.rev
+    print(f"\nrun {run.run_id}: {len(run.personas)} scenarios x {len(run.agents)} chatbots x {len(run.seeds)} seeds = {n} conversations"
+          + (f", {n - len(todo)} already done" if len(todo) < n else ""))
+    print(f"max model calls ~ {len(todo) * 6 * (2 + (1 if rev else 0)) + len(todo) * 14} (turn cap 6, judge cap 14 steps)")
+    for p, a, s in todo:
+        run.talk(p, a, s)
         if getattr(a.model, "quit_requested", False):
             break   # Ctrl+C in a relay run: skip the remaining conversations, still score
-    talk_seconds = time.perf_counter() - talk_start
-    score_start = time.perf_counter()
-    for tid, t in ctx.transcripts.items():
-        if not rubric.scores_situation(SITUATION_CODE[t.situation]):
-            print(f"  skipped  {tid:<40} rubric {rubric.version} has no rules for '{t.situation}', so it isn't scored")
-            continue
-        t0, u0 = time.perf_counter(), model_usage(all_models)
-        try:
-            rec = judge.score(t, seed=t.seed)
-        except ModelError as e:
-            # One failed judge call must not stop the run. The message can hold the server address: save only its type.
-            print(f"  judge model error in {tid}: {e}", file=sys.stderr)
-            rec = ctx.scored.get(tid)   # the judge may have submitted before its last call failed
-            if rec is None:
-                flag_for_human_review(ctx, tid, "JUDGE_FAILED", f"judge model error: {type(e.__cause__ or e).__name__}")
-        secs = time.perf_counter() - t0
-        per_conv[tid].update({"score_seconds": round(secs, 2), "score_tokens": usage_delta(model_usage(all_models), u0)})
-        status = rec.overall + (" (provisional)" if rec.provisional else "") if rec else "JUDGE FAILED"
-        print(f"  scored   {tid:<40} {status} · {secs:.0f} s")
-    score_seconds = time.perf_counter() - score_start
-
-    summary = summarize(ctx.transcripts, ctx.scored, ctx.queued)
-    (out_dir / "summary.json").write_text(json.dumps(summary, indent=2))
-    manifest = {
-        "run_id": run_id, "created_at": stamp, "harness_version": __version__, "git": git_info(),
-        "python": platform.python_version(), "config_file": str(args.config), "config": cfg,
-        "rubric": {"version": rubric.version, "sha256": hashlib.sha256(rubric_path.read_bytes()).hexdigest()[:16]},
-        "scenarios": hashes if not args.only else {k: hashes[k] for k in personas},
-        "seeds": seeds,
-        "models": {"child_generator": gen.model_id, "child_reviewer": rev.model_id if rev else None,
-                   "judge": judge_model.model_id, "agents": {a.name: a.model_id for a in agents}},
-        "guardrails": {"enforce": ctx.enforce, "audit_rate": ctx.audit_rate},
-        "counts": {"transcripts": len(ctx.transcripts), "incomplete": incomplete, "scored": len(ctx.scored), "review_items": len(ctx.queued),
-                   "tool_calls": ctx.tool_calls},
-        "timing": {"conversations": len(ctx.transcripts), "talk_seconds": round(talk_seconds, 2),
-                   "score_seconds": round(score_seconds, 2), "per_conversation": per_conv},
-        "tokens": {"total": model_usage(all_models),
-                   "by_role": {"child_generator": model_usage([gen]), "child_reviewer": model_usage([rev] if rev else []),
-                               "judge": model_usage([judge_model]),
-                               "agents": {a.name: model_usage([a.model]) for a in agents}},
-                   "note": "from each response's usage; 0 for mock models"},
-        "provider_data_retention": cfg.get("provider_data_retention", "[record each provider's retention/training settings before publishing]"),
-    }
-    (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, default=str))
-    (REPO_ROOT / args.out / "LATEST").write_text(run_id + "\n")
+    summary = run.score()
     print()
     print_table(summary)
-    shown = out_dir.relative_to(REPO_ROOT) if out_dir.is_relative_to(REPO_ROOT) else out_dir
-    print(f"\nresults: {shown}  ·  review queue: {len(ctx.queued)} items")
+    shown = run.out_dir.relative_to(REPO_ROOT) if run.out_dir.is_relative_to(REPO_ROOT) else run.out_dir
+    print(f"\nresults: {shown}  ·  review queue: {len(run.ctx.queued)} items")
     return 0
 
 
