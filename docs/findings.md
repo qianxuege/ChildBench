@@ -31,8 +31,9 @@ A dated lab notebook: what we ran, what we saw, what we decided. **Add new entri
 - After a resume, `transcripts.jsonl` holds the stopped attempt (`complete: false`) and then the complete one, under the same transcript id.
 **Why:** `AgentUnderTest.reply` runs `text.strip()` on every backend's reply (and puts "(no reply)" in place of an empty one), before A11 and F5. The terminal relay does the same. Loaders that key transcripts by id (`export`, `score`, `evaluate`) keep the last line, which is the complete one; `labels` skips incomplete ones first.
 **Decision:** The web relay passes the reply on untouched and refuses an empty one, so the only change is that strip, which F5 may not edit. The Done-when check uses a reply with no surrounding whitespace. The Score page's make app controls are in `run.js`, and `harness/app.py` adds `run.js` to score.html only when it serves the page, so neither `site/score.html` nor `send/score.html` holds code that calls out. The manifest now lists `incomplete` (no complete attempt) and `restarted` (an unfinished attempt and then a complete one).
-**Plan change:** none · **Follow-up:** whether relay (`channel: app`) replies should skip the strip, in `harness/agents/agent_under_test.py`: the developer's call
-**Status:** open (the strip)
+The developer decided to keep the strip: the whitespace at the ends is copy noise, not the chatbot's words, and it keeps app and API replies alike. CLAUDE.md's rules now say trimming it isn't editing. The other part of that line, which saves an empty reply as "(no reply)", does put words in the chatbot's turn, and is a follow-up.
+**Plan change:** none · **Follow-up:** #59 (an empty reply saved as "(no reply)")
+**Status:** won't fix (the strip); #59 open
 
 ---
 
