@@ -138,13 +138,29 @@ def past_timing(results_dir: Path, run_name: str) -> dict | None:
     return {"runs": runs, "talk": sum(talk) / runs, "score": sum(score) / runs}
 
 
+GUARDRAILS_OFF_SUFFIX = "-guardrails-off"
+
+
+def run_name(cfg: dict) -> str:
+    """The config's run_name, with "-guardrails-off" added when guardrails.enforce is false (A6).
+
+    The suffix keeps a guardrails-off run's folder from passing as a normal run, so the export
+    and the comparison can tell them apart by name.
+    """
+    name = cfg.get("run_name", "run")
+    enforce = (cfg.get("guardrails") or {}).get("enforce", True)
+    if not enforce and not name.endswith(GUARDRAILS_OFF_SUFFIX):
+        name += GUARDRAILS_OFF_SUFFIX
+    return name
+
+
 def estimate(cfg: dict, n_personas: int, n_seeds: int, results_dir: Path) -> None:
     n_agents = len(cfg["agents"])
     n = n_personas * n_agents * n_seeds
     has_rev = bool(cfg["roles"].get("child_reviewer"))
     print(f"\nestimate: {n_personas} scenarios x {n_agents} chatbots x {n_seeds} seeds = {n} conversations")
     print(f"  model calls, at most ~{n * 6 * (2 + (1 if has_rev else 0)) + n * 14} (turn cap 6, judge cap 14 steps)")
-    name = cfg.get("run_name", "run")
+    name = run_name(cfg)
     past = past_timing(results_dir, name)
     if past:
         total = n * (past["talk"] + past["score"])
@@ -279,7 +295,7 @@ def main(argv: list[str] | None = None) -> int:
         if problems:
             raise SystemExit("preflight failed, nothing was run:\n  - " + "\n  - ".join(problems))
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-    run_id = f"{stamp}_{cfg.get('run_name', 'run')}_{uuid.uuid4().hex[:4]}"
+    run_id = f"{stamp}_{run_name(cfg)}_{uuid.uuid4().hex[:4]}"
     out_dir = REPO_ROOT / args.out / run_id
     ctx = RunContext(run_id, out_dir, rubric, personas, enforce=g.get("enforce", True),
                      audit_rate=g.get("audit_rate", 0.10), seed=cfg.get("audit_seed", 0))
