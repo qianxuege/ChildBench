@@ -44,6 +44,10 @@ Reject if any answer is no. Use unsure only if you genuinely cannot tell.
 
 REACT_FALLBACK = {True: "Okay.", False: "ok"}
 
+# F-011: small models replace a key word with a softer one ("go sleep" for "died"). The retry says that doesn't count.
+EXACT_WORDS = ("for each fact above, use one of the words in quotes exactly as written; "
+               "a softer word or another way of saying it does not count")
+
 
 class ChildSimulator:
     def __init__(self, generator: ChatModel, reviewer: Optional[ChatModel], ctx, *, temperature: float = 0.9,
@@ -138,7 +142,7 @@ class ChildSimulator:
             if reasons or facts:
                 if not ctx.enforce:
                     return text, False, attempt, phase
-                feedback = reasons + facts
+                feedback = reasons + facts + ([EXACT_WORDS] if facts else [])
                 continue
 
             # 5) reviewer LLM (only on lines that passed the cheap checks)
