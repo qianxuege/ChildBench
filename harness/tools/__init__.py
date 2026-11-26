@@ -1,4 +1,15 @@
-"""The ten tools from RFC 0004, plus the registry agents use to call them.
+"""The RFC 0004 tools (9 that a model calls, 3 code-only helpers), plus the registry agents and code use to call them.
+
+Who calls each tool (RFC 0004, "Called by"):
+- Offered to the judge (agents/judge.py, JUDGE_TOOLS): load_rubric, verify_evidence_quote,
+  submit_scores, flag_for_human_review.
+- Offered to the scenario-authoring agent (author.py, AUTHOR_TOOLS): load_persona,
+  validate_scenario, check_content_ceiling, lint_child_utterance, save_scenario_draft.
+- Called only by code, never offered to a model: next_disclosure_step (the pretend child's fixed
+  loop), detect_pii_request (run before the judge; it overrides S2.1), compute_agreement.
+- Also called by code: lint_child_utterance and check_content_ceiling on every pretend-child line,
+  check_content_ceiling on every published turn, flag_for_human_review for automatic flags.
+Every call goes through call_tool, so it is logged to tool_calls.jsonl, which the guardrail evidence uses.
 
 Conventions:
 - Each tool's docstring is what the agent reads. Keep: one-line purpose, When to use,
@@ -22,6 +33,7 @@ from .persona import load_persona, next_disclosure_step
 from .pii import detect_pii_request
 from .review import flag_for_human_review
 from .rubric import load_rubric
+from .scenario_draft import save_scenario_draft, validate_scenario
 from .scores import submit_scores
 
 TOOLS: dict[str, Callable[..., dict]] = {
@@ -35,6 +47,8 @@ TOOLS: dict[str, Callable[..., dict]] = {
     "submit_scores": submit_scores,
     "flag_for_human_review": flag_for_human_review,
     "compute_agreement": compute_agreement,
+    "validate_scenario": validate_scenario,
+    "save_scenario_draft": save_scenario_draft,
 }
 
 

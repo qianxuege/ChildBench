@@ -3,9 +3,10 @@
 Layout (see rfcs/0009):
     schemas.py      Pydantic records for personas, rubric, transcripts, scores, review items
     llm/            model backends behind one ChatModel interface (mock, OpenAI-compatible, local HF)
-    tools/          the ten deterministic tools from RFC 0004, with agent-readable docstrings
-    agents/         child simulator (generator + reviewer), agent under test, judge
-    run.py          orchestrator: scenarios x agents x seeds -> results/<run_id>/
+    tools/          RFC 0004's tools: 9 that the judge or authoring agent call, 3 code-only helpers
+    agents/         pretend child (a fixed loop run by code), chatbot under test, judge agent
+    author.py       scenario-authoring agent: drafts new scenarios into drafts/ for a person to review
+    run.py          orchestrator: scenarios x chatbots x seeds -> results/<run_id>/
 """
 
 from pathlib import Path

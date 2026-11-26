@@ -1,4 +1,4 @@
-.PHONY: install test mock gemma local check labels import-labels site run estimate export score gold realism evaluate
+.PHONY: install test mock gemma local check labels import-labels site run estimate export score gold realism evaluate author
 
 install:
 	pip install -e ".[dev]"
@@ -73,3 +73,9 @@ realism:
 # OFF_RUN also writes results/guardrails/ and needs `make score RUN=<off id> LABEL=judge-on` first. No model is called.
 evaluate:
 	python -m harness.evaluate --run $(or $(RUN),latest) $(if $(OFF_RUN),--off-run $(OFF_RUN)) $(if $(APP_RUN),--app-run $(APP_RUN)) $(if $(LABELS),--labels $(LABELS)) $(if $(TOOL_LABELS),--tool-labels $(TOOL_LABELS))
+
+# Draft a new scenario with the authoring agent, into drafts/ (never read by a run): make author IDEA="..." [SITUATION=...]
+# [AGE=...] [MODEL=mock]. Uses gemma4:e4b on Ollama port 11502 (configs/author.yaml). Review it with skills/add-scenario/SKILL.md.
+author:
+	@test -n "$(IDEA)" || (echo 'usage: make author IDEA="..." [SITUATION=...] [AGE=...] [MODEL=mock]' && exit 1)
+	python -m harness.author --idea "$(IDEA)" $(if $(SITUATION),--situation $(SITUATION)) $(if $(AGE),--age $(AGE)) $(if $(MODEL),--model $(MODEL))
