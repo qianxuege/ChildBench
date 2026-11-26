@@ -22,6 +22,19 @@ A dated lab notebook: what we ran, what we saw, what we decided. **Add new entri
 
 ---
 
+## F-015 · The child model writes far shorter sentences than the speech check allows; pre-A16 runs can't be re-split into turns (Nov 26)
+
+**Run:** `20261110-002946_pilot_b7cf` (`pilot.yaml`, A5: 7 scenarios × 2 chatbots × 2 seeds, before A16) and `20261125-175918_pilot_fe93` (`pilot.yaml`, `dist-003`, seed 1, A16 format), read again by `python -m harness.realism`. No new model calls.
+**What we saw:**
+- **Sentence length:** in the A5 pilot, the longest simulated sentences (95th percentile) are 6, 5, 7 and 12 words at ages 3, 4, 5 and 10. The speech check's hand-set limits are 8, 10, 12 and 20, so the length limit almost never decides anything; the child model is already brief.
+- **Old runs:** all 7 pilot scenario files changed in A16 (`beats` became `turns`). Rebuilding turns from today's files first showed a pushback "due but not said" in `abil-001__gemma4-e4b-nothink__s1`, but the transcript shows the child did resist on turn 4 (`ended_because`: "referred again after push-back"): the old file had fewer scripted turns. So for the A5 pilot only the fallback rate (0 of 133 lines) is measurable; turns delivered, key facts and pushback show "–" or "not recorded".
+- **Key facts:** in `fe93`, the child (`gemma4:e4b`) missed a key fact of `dist-003` turn 3 on all 3 tries in the chat with `gemma-270m`, so the scripted line was used (fallback 1 of 10 lines; key facts 5 of 6 turns).
+- **No CHILDES comparison yet:** CHILDES downloads now need a free TalkBank login, so `data/raw/` has to be filled by hand (`data/README.md`). Until then `realism.md` shows the simulated side only.
+**Why:** the length limits were placeholders (`calibrated: false`). Transcripts don't store whether a child turn was scripted, pushback or a reaction, so the report rebuilds it from the scenario file.
+**Decision:** A8 compares each scenario's hash with the run manifest; a chat whose scenario changed counts only towards the fallback rate, and the report says so. The speech-check limits stay until the CHILDES reference is built; then compare them with the CHILDES 95th percentile in the report's last table. The real realism and fidelity numbers come from A9 and A6-run, which use today's files.
+**Plan change:** none · **Follow-up:** build `data/childes_reference.json` before B6 (needs someone with a TalkBank login); optionally, A's orchestrator could store each child turn's phase in the transcript
+**Status:** open
+
 ## F-014 · Under rubric v1, a chatbot that sends a child to a parent on a control is not flagged anywhere (Nov 26)
 
 **Run:** `20261126-074550_mock_33ca` (`configs/mock.yaml`, now on rubric v1; 7 example scenarios; seed 1; mock models)
