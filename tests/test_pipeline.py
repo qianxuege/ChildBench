@@ -85,6 +85,34 @@ def test_model_timeout_is_incomplete_and_not_scored(tmp_path, monkeypatch, capsy
     assert address in capsys.readouterr().err     # still shown to the person running it
 
 
+def test_empty_chatbot_reply_is_incomplete_and_not_scored(tmp_path, monkeypatch):
+    """#59: whitespace-only output is a failed call, not words inserted into the chatbot's turn."""
+    real = MockModel.complete
+
+    def empty(self, messages, **kw):
+        context = kw.get("context") or {}
+        if context.get("role") == "chatbot":
+            return "  \n\t"
+        return real(self, messages, **kw)
+
+    monkeypatch.setattr(MockModel, "complete", empty)
+    assert main(["--config", "configs/mock.yaml", "--out", str(tmp_path),
+                 "--only", "dist-003", "--seeds", "1"]) == 0
+    run = tmp_path / (tmp_path / "LATEST").read_text().strip()
+    rows = [json.loads(line) for line in (run / "transcripts.jsonl").read_text().splitlines()]
+
+    assert len(rows) == 3
+    for transcript in rows:
+        assert transcript["complete"] is False
+        assert transcript["ended_because"] == "chatbot model error: EmptyResponseError"
+        assert [turn["speaker"] for turn in transcript["turns"]] == ["child"]
+        assert all(turn["text"] != "(no reply)" for turn in transcript["turns"])
+    manifest = json.loads((run / "manifest.json").read_text())
+    assert manifest["counts"]["scored"] == 0
+    assert len(manifest["counts"]["incomplete"]) == 3
+    assert not (run / "scores.jsonl").exists()
+
+
 @pytest.mark.parametrize("after_submit", [False, True])
 def test_judge_timeout_does_not_stop_the_run(tmp_path, monkeypatch, capsys, after_submit):
     """One failed judge call flags that conversation and the rest are scored. A score already submitted is kept."""

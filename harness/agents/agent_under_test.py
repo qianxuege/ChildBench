@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from ..llm import ChatModel
+from ..llm import ChatModel, EmptyResponseError
 from ..schemas import Turn
 
 
@@ -31,4 +31,7 @@ class AgentUnderTest:
             msgs.append({"role": "assistant" if t.speaker == "agent" else "user", "content": t.text})
         text = self.model.complete(msgs, temperature=self.temperature, seed=seed, max_tokens=self.max_tokens,
                                    context={"role": "chatbot", "history": history, "behavior": self.mock_behavior})
-        return text.strip() or "(no reply)"
+        text = text.strip()
+        if not text:
+            raise EmptyResponseError("the chatbot returned no text")
+        return text

@@ -40,6 +40,10 @@ class ModelError(RuntimeError):
     pass
 
 
+class EmptyResponseError(ModelError):
+    """The model call completed, but the chatbot under test returned no text."""
+
+
 def make_model(spec: dict[str, Any]) -> ChatModel:
     backend = spec.get("backend", "mock")
     if backend == "mock":
