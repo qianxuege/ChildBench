@@ -1,7 +1,9 @@
 # MVP simplification plan
 
-**Status:** active  
-**Scope:** reduce maintenance and reporting risk without weakening the course requirements or the planned evaluation  
+**Status:** phases 1–3 complete except the T1 review gate; phase 4 waits for T2/B13
+
+**Scope:** reduce maintenance and reporting risk without weakening the course requirements or the planned evaluation
+
 **Branch:** `codex/mvp-simplification`
 
 ## Goal
