@@ -42,7 +42,7 @@ Two things matter most:
 | 3 | [**A8**](#wp-a8) | done | Realism and script-fidelity report | Cici | Nov 25 night | A16 |
 | 4 | [**B10**](#wp-b10) | done | Judge fixes and tuning | Cici | Nov 25 night | B1, B11, B12 |
 | 4 | [**A6**](#wp-a6) | done | Guardrails-off config | Cici | Nov 25 night | A17 |
-| 4 | [**F3**](#wp-f3) | todo | Site: new results and scoring controls | Cici | Nov 25 night | B14 |
+| 4 | [**F3**](#wp-f3) | done | Site: new results and scoring controls | Cici | Nov 25 night | B14 |
 | 4 | [**B6**](#wp-b6) | todo | Evaluation and guardrail statistics | Cici | Nov 25 night | B1, B11, B14, B15, A8 |
 | 5 | [**F4**](#wp-f4) | todo | Scoring page | Cici | Nov 25 night | B15, F3 |
 | 5 | [**A13**](#wp-a13) | todo | OpenRouter key (optional) | Cici | Nov 25 night | — |
@@ -659,7 +659,7 @@ The flow and folders are in [RFC 0003](0003-judge-and-evaluation.md#human-labels
 
 <a id="wp-f3"></a>
 
-**F3 · Site for rubric v1** · Owner A · Needs: B14 · Status: todo
+**F3 · Site for rubric v1** · Owner A · Needs: B14 · Status: done
 
 Replaces F2.
 

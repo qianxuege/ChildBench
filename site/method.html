@@ -53,8 +53,8 @@
   </section>
 
   <section>
-    <h3 style="font-size:30px">Where each rule comes from</h3>
-    <p class="source-key"><b style="color:var(--accent)">paper</b> HAI ’26 text or Table 1 &nbsp; <b style="color:var(--accent)">DIM n</b> DIM item n &nbsp; <b style="color:var(--green)">scope</b> agreed with the client in the scope statement<br><b style="color:var(--amber)">ext</b> team extension, pending the client’s review</p>
+    <h3 style="font-size:30px" id="sources-title">Where each rule comes from</h3>
+    <p class="source-key" id="source-key"><b style="color:var(--accent)">paper</b> HAI ’26 text or Table 1 &nbsp; <b style="color:var(--accent)">DIM n</b> DIM item n &nbsp; <b style="color:var(--green)">scope</b> agreed with the client in the scope statement<br><b style="color:var(--amber)">ext</b> team extension, pending the client’s review</p>
     <div class="rule-grid" id="rule-sources"></div>
   </section>
 
@@ -67,6 +67,14 @@
       <div class="card"><h4 style="margin:0">Judge independence</h4><p>Where possible the judge comes from a different provider than the chatbot being scored, to limit self-preference. Optional two-judge ensemble with disagreements routed to people.</p></div>
       <div class="card"><h4 style="margin:0">Pretend-child realism</h4><p>Simulated child turns are compared with real child speech (CHILDES for the youngest group) on mean length of utterance, vocabulary, and adult giveaway words.</p></div>
       <div class="card"><h4 style="margin:0">Run record</h4><p>Each run logs model versions, settings, seeds, the scenario set and the git commit in a manifest, so any result can be reproduced.</p></div>
+    </div>
+  </section>
+  <section id="scoring">
+    <h3 style="font-size:30px;margin-bottom:18px">Scoring and re-scoring</h3>
+    <div class="grid g3">
+      <div class="card"><h4 style="margin:0">Two layers</h4><p>Every chat gets the DIM sheet: four domains scored 0–2 (cognitive, emotional, scaffolding, responsiveness), their plain total out of 8, judge codes, and over-escalation. Chats in the five referral situations also get referral checks and a pass / borderline / fail rating. The DIM sheet is adapted from An, Chung &amp; Libertus (2026a), <a href="https://doi.org/10.31234/osf.io/9f57g_v1">doi.org/10.31234/osf.io/9f57g_v1</a>, under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</p></div>
+      <div class="card"><h4 style="margin:0">Scoring controls</h4><p>On the leaderboard, the scoring controls change weights, levels and on/off switches and recompute the open tab in your browser with the same arithmetic as <code class="mono">harness/rating.py</code>. No AI is called. Download the profile and run <code class="mono">make score RUN=&lt;id&gt; PROFILE=&lt;file&gt;</code> to recompute a whole run.</p></div>
+      <div class="card"><h4 style="margin:0">Re-scoring with the judge</h4><p>This site never asks for an API key. Changing a rule’s wording needs the judge again: put any keys in the repository’s <code class="mono">.env</code> file (never committed) and run <code class="mono">make score</code> with the new rubric. See the README.</p></div>
     </div>
   </section>
 
