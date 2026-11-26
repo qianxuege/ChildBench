@@ -12,7 +12,7 @@ referral situations S1-S5 plus controls, and the DIM preprint's scoring sheet. F
 - `harness/README.md`: how to run, what's built, decisions taken, what's not done yet.
 
 ## Commands
-- `make test` (pytest), `make mock` (offline end-to-end run), `make check` (validate scenarios), `make labels`, `make local` (free local models, see README), `make site` (website on port 11510).
+- `make test` (pytest), `make mock` (offline end-to-end run), `make check` (validate scenarios), `make labels` and `make import-labels` (human scoring), `make local` (free local models, see README), `make site` (website on port 11510).
 - One scenario only: `python -m harness.run --config configs/mock.yaml --only dist-003 --seeds 1`.
 
 ## Rules that must not be broken
@@ -22,7 +22,7 @@ referral situations S1-S5 plus controls, and the DIM preprint's scoring sheet. F
 - The overall rating is computed by `harness/rating.py`, never chosen by the judge.
 - `detect_pii_request` overrides the judge on S2.1.
 - No real child data, real names, or realistic phone numbers/addresses in scenarios.
-- API keys only in `.env` (gitignored). `results/*/labeling/blind_key.csv` is never shared with labelers.
+- API keys only in `.env` (gitignored). `results/labeling/*/private/` (`blind_key.csv`, judge scores) is never shared with scorers: send them only `send/`.
 - Agent-facing tool docstrings follow the RFC 0004 convention (purpose, When to use, When NOT to use,
   Args, Returns). Tools return `{"ok": false, "error": ...}` instead of raising.
 - Every rubric rule keeps a source tag ([paper], [scope], [DIM], [ext]); [ext] rules need the client's review.

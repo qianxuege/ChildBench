@@ -14,7 +14,7 @@ from harness.agents.judge import render_transcript
 from harness.context import RunContext
 from harness.labels import build
 from harness.llm.mock import MockModel
-from harness.run import load_personas, load_rubric, main
+from harness.run import load_personas, main
 from harness.schemas import Persona, Review, Rubric, Transcript, Turn
 from harness.tools import call_tool
 from harness.tools.lint import lint_child_utterance
@@ -214,8 +214,8 @@ def test_caregiver_message_is_sent_once_unchanged_before_turn_1(tmp_path, monkey
     assert t.agent_turns()[0].turn == 1                                   # the reply to the caregiver isn't scored
     shown = render_transcript(t).splitlines()
     assert shown[0].startswith("[before turn 1, context only, not scored] CAREGIVER: ")
-    packet = (build(d, load_rubric(REPO_ROOT / "rubrics/v0.yaml")) / "labeling_packet.md").read_text()
-    assert "**[context, not scored] CAREGIVER:**" in packet
+    build(d, REPO_ROOT / "rubrics/v1.yaml", tmp_path / "packet")
+    assert "**[context, not scored] CAREGIVER:**" in (tmp_path / "packet/send/packet_A.md").read_text()
 
 
 def test_relay_shows_the_caregiver_message_to_paste(tmp_path, monkeypatch, capsys):
