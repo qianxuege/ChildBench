@@ -268,3 +268,54 @@ ul.tight li { margin-bottom: 10px; }
 .tabs a.btn { text-decoration: none; }
 .tabs.links .btn { min-height: 36px; padding: 6px 12px; font-size: 14px; }
 .tabs.links .label { align-self: center; color: var(--dim); font: 12.5px var(--mono); }
+
+/* Rubric v1 (F3): batch tabs, case grid, scoring controls, DIM sheet, credits */
+.batch-bar { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; margin-top: 28px; }
+.batch-bar .btn .mono { margin-left: 8px; opacity: .75; }
+.custom-banner { margin-top: 16px; padding: 11px 16px; border: 1px solid #4a3a22; border-radius: 8px; background: var(--amber-soft); color: var(--amber); font-size: 14.5px; }
+.custom-banner b { color: var(--amber); }
+.grid-tools { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin: 4px 0 16px; }
+.grid-tools .btn, #source-tabs .btn { min-height: 36px; padding: 6px 12px; font-size: 14px; }
+.lvl { display: inline-block; min-width: 22px; padding: 1px 5px; border-radius: 4px; background: #20252f; color: var(--body); font: 600 13px var(--mono); text-align: center; }
+.lvl.l2 { background: var(--green-soft); color: var(--green); }
+.lvl.l1 { background: var(--amber-soft); color: var(--amber); }
+.lvl.l0 { background: var(--coral-soft); color: var(--coral); }
+.lvl.split { background: #2c2440; color: #c9b5ff; }
+.legend .keys .lvl { margin-right: 4px; }
+.case-grid th, .case-grid td { padding: 10px 12px; vertical-align: top; }
+.case-grid thead th { color: var(--text); font: 600 14px var(--sans); }
+.case-grid th.grp { color: var(--dim); font: 400 12.5px var(--mono); border-bottom: 0; }
+.case-row { min-width: 150px; color: var(--text); font: 14px var(--sans); }
+.case-td { min-width: 168px; }
+.case-td.muted { opacity: .5; }
+.case-td.flag { background: #1a1d2a; }
+.case-grid .vline { border-left: 1px solid var(--line); }
+.case { display: flex; flex-direction: column; gap: 6px; color: var(--text); text-decoration: none; }
+.case:hover .case-total { color: var(--accent); }
+.doms { display: flex; gap: 6px; flex-wrap: wrap; }
+.dom { display: inline-flex; align-items: center; gap: 3px; }
+.dom i { color: var(--dim); font: normal 11px var(--mono); }
+.lvl-pair { display: inline-flex; align-items: center; gap: 3px; }
+.lvl-pair small, .case-line small { color: #c9b5ff; font: 11px var(--mono); }
+.case-line { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.case-total { font: 600 16px var(--mono); }
+.tag { display: inline-block; padding: 1px 6px; border-radius: 4px; background: #20252f; color: var(--body); font: 11.5px var(--mono); }
+.tag.coral { background: var(--coral-soft); color: var(--coral); }
+.case-grid tfoot td, .case-grid tfoot th { border-top: 1px solid var(--line); color: var(--body); line-height: 1.45; }
+.controls-grid { display: grid; grid-template-columns: minmax(260px, 1fr) 2.4fr; gap: 16px; align-items: start; }
+.controls-grid td { padding: 8px 12px; }
+.controls-grid input[type="number"] { width: 72px; padding: 6px 8px; border: 1px solid #343b4b; border-radius: 6px; background: var(--panel); color: var(--text); font: 13px var(--mono); }
+.controls-grid select { padding: 6px 8px; border: 1px solid #343b4b; border-radius: 6px; background: var(--panel); color: var(--text); font: 12.5px var(--mono); }
+.controls-grid input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
+.lb-facts { grid-template-columns: repeat(3, 1fr); margin-top: 28px; }
+.badge-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.credit { margin-top: 10px; color: var(--body); font-size: 13px; line-height: 1.45; }
+.scn .note-box { margin-top: 12px; font-size: 13.5px; }
+.bubble.care { align-self: stretch; border: 1px dashed var(--line); background: transparent; }
+.dim-table td.q { font-size: 13.5px; }
+@media (max-width: 900px) { .controls-grid, .lb-facts { grid-template-columns: 1fr; } }
+.rule-grid.v1 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rule-grid.v1 .rule-cell { grid-template-columns: 132px minmax(0, 1fr); }
+.rule-grid.v1 .rid { overflow-wrap: anywhere; }
+.rule-grid.v1 .src { grid-column: 2; white-space: normal; }
+@media (max-width: 760px) { .rule-grid.v1 { grid-template-columns: 1fr; } }

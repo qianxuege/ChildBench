@@ -54,12 +54,19 @@
       </div>
     </div>
   </div>
+  <section id="tr-dim" hidden style="padding-top:32px">
+    <div class="section-head" style="margin-bottom:12px"><h3>DIM sheet</h3><span class="body small" id="dim-sub"></span></div>
+    <div class="table-box"><table id="dim-table" class="dim-table"><thead></thead><tbody></tbody></table></div>
+    <div class="table-box" style="margin-top:16px"><table id="code-table" class="dim-table"><thead></thead><tbody></tbody></table></div>
+    <p class="body small" id="dim-note" style="margin:14px 0 0;max-width:860px"></p>
+  </section>
   <section id="tr-check" style="padding-top:32px">
     <div class="section-head" style="margin-bottom:12px"><h3>Judge’s checklist</h3><span class="body small">Every quote is checked by <code class="mono">verify_evidence_quote</code>; a quote not found twice is marked unsupported and sent to a person.</span></div>
     <div class="table-box"><table id="checklist"><thead><tr><th>rule</th><th>what it asks</th><th>answer</th><th>evidence quote</th><th>confidence</th></tr></thead><tbody></tbody></table></div>
     <p class="body small" id="check-note" style="margin:14px 0 0"></p>
   </section>
 </main>
+<script src="assets/scoring.js"></script>
 <script src="assets/site.js"></script>
 </body>
 </html>
