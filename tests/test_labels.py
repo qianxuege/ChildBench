@@ -99,6 +99,11 @@ def _read(f):
     return [json.loads(x) for x in f.read_text().splitlines()]
 
 
+def _v1_run(runs):
+    """The run scored with v1. Both runs start in the same second, so their folders' order is random."""
+    return next(f.parent for f in _transcript_files(runs) if '"rubric_version":"v1"' in (f.parent / "scores.jsonl").read_text())
+
+
 def _write(f, ts):
     f.write_text("".join(json.dumps(t) + "\n" for t in ts))
 
@@ -469,7 +474,7 @@ def test_judge_scores_from_a_later_scoring(runs, tmp_path, capsys):
 
 def test_original_scores_read_at_import(runs, tmp_path, capsys):
     """Chats scored only after the packet was made: SCORES=original finds them, the default copy doesn't."""
-    shutil.copytree(_transcript_files(runs)[0].parent, tmp_path / "r")
+    shutil.copytree(_v1_run(runs), tmp_path / "r")
     saved = (tmp_path / "r/scores.jsonl").read_text()
     (tmp_path / "r/scores.jsonl").unlink()
     d = tmp_path / "labeling/p"
