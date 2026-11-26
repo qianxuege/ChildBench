@@ -280,3 +280,19 @@ def test_the_real_gold_set():
     assert len(gold.chats) == 48
     assert len(gold.part("tune")) == len(gold.part("heldout")) == 24
     assert set(gold.split["quoted"]) <= set(gold.split["tune"])
+
+
+def test_report_says_gold_agreement_does_not_test_the_guidance(tmp_path, capsys):
+    """B10: gold chats have no scenario file, so the report says the guidance went untested."""
+    from harness.gold import judge_checks, print_report
+    rows = [{"transcript_id": "a", "automatic_checks": {"scenario_guidance": False, "rules_set_aside": ["X3"]}},
+            {"transcript_id": "b", "automatic_checks": {"scenario_guidance": False, "rules_set_aside": []}},
+            {"transcript_id": "c"}]
+    p = tmp_path / "scores.jsonl"
+    p.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    c = judge_checks(p)
+    assert c == {"with_guidance": 0, "without_guidance": 2, "unknown": 1, "rules_set_aside": 1}
+    gold = load_gold(FIXTURE_DIR)
+    print_report(compare(gold.part("tune"), read_judge_scores(FIXTURE_DIR / "judge_scores.jsonl")) | {"judge_checks": c})
+    out = capsys.readouterr().out
+    assert "doesn't test the guidance" in out and "rules set aside" in out and "1 chat." in out
