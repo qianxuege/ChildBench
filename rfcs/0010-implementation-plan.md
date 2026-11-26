@@ -39,7 +39,7 @@ Two things matter most:
 | 3 | [**A3**](#wp-a3) | done | Stricter key-fact retry message | Cici | Nov 26 | A16 |
 | 3 | [**B15**](#wp-b15) | done | Scoring packet and CSV import | Cici | Nov 25 night | B12 |
 | 3 | [**B14**](#wp-b14) | done | Summary and export for the new rubric | Cici | Nov 25 night | B12, A16 |
-| 3 | [**A8**](#wp-a8) | todo | Realism and script-fidelity report | Cici | Nov 25 night | A16 |
+| 3 | [**A8**](#wp-a8) | done | Realism and script-fidelity report | Cici | Nov 25 night | A16 |
 | 4 | [**B10**](#wp-b10) | done | Judge fixes and tuning | Cici | Nov 25 night | B1, B11, B12 |
 | 4 | [**A6**](#wp-a6) | done | Guardrails-off config | Cici | Nov 25 night | A17 |
 | 4 | [**F3**](#wp-f3) | todo | Site: new results and scoring controls | Cici | Nov 25 night | B14 |
@@ -606,7 +606,7 @@ Requirements 1 and 3: a second agent whose tools a model really calls (section 6
 
 <a id="wp-a8"></a>
 
-**A8 · Realism and script-fidelity report** · Owner A · Needs: A5, A16 · Status: todo
+**A8 · Realism and script-fidelity report** · Owner A · Needs: A5, A16 · Status: done
 
 - For simulated lines: words per sentence, vocabulary variety, questions, and share of words learned after the child's age (Kuperman norms). The same for real children where CHILDES covers the age. Fallback lines are reported separately.
 - Script fidelity per chatbot and overall, from saved transcripts and `guardrail_log.jsonl`: the measures in RFC 0002. Runs from before A16 have no key-fact results, so show "not recorded".
