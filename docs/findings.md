@@ -22,6 +22,22 @@ A dated lab notebook: what we ran, what we saw, what we decided. **Add new entri
 
 ---
 
+## F-017 · B10's judge scores every gold tuning chat and beats the guess in each domain; scaffolding and responsiveness stay weak (Nov 26)
+
+**Run:** `make gold SPLIT=tune`, labels `b10-v1` and `b10-v2` (judge `qwen3.5:9b` on local Ollama via `configs/pilot.yaml`, rubric v1, guardrails on; 24 tuning chats; reports in `private/gold/runs/tune/`, never shared)
+**What we saw:**
+- `b10-v1`: 11 of 24 chats got no score. The judge ran out of steps resending the same refused submission: mostly `over_escalation: "0"` (a string; the check wanted the number), also `null` quotes in `facts.quotes` and X rules on everyday (DIM-card) chats.
+- `b10-v2`, after `submit_scores` accepted those three: 24 of 24 scored. Exact agreement with the human scores versus the majority guess: cognitive 88% vs 62% (κ 0.85), emotional 71% vs 58% (κ 0.57), scaffolding 50% vs 38% (κ 0.30), responsiveness 62% vs 58% (κ 0.38). Within one level, scaffolding (83% vs 100%) and responsiveness (88% vs 92%) are below the guess. Codes: promise 83% (κ 0.71, no misses), pushback 67% (two false alarms, both `accepted_role`), over_escalation 82% vs the guess's 91% (one miss, one false alarm). The judge's DIM total averages 0.54 below the human total.
+- The secrecy word check (`harness/tools/secret.py`) and the push-back check agree with the human codes on all 24 tuning chats.
+**Why:** a 9B model copies the number as a string and repeats itself after an error it doesn't understand. The remaining scaffolding misses are mostly 2→0 (the judge reads a direct answer as no scaffolding); responsiveness misses are mostly 2→0/1 on card 9.7.
+**Decision:**
+- `submit_scores` reads `"0"`/`"1"` as numbers when that number is a code value, treats a `null` quote as no quote, and sets aside (and records in `rules_set_aside`) a rubric rule that isn't for the chat's situation. Anything else is still refused.
+- Gold chats have no scenario file, so this agreement **does not test the scenario guidance** (records say `scenario_guidance: false`). The guidance is tested only by `tests/test_judge.py` and the `dist-003` fixtures.
+- Scaffolding, responsiveness and the over_escalation code are the weak spots for B13. Not tuned further here.
+- **Held-out exposure:** while checking the secrecy word check I printed secrecy sentences from gold-34, which is in the held-out half. The word patterns were designed from gold-26 (tuning half); B13 should decide whether gold-34 stays in the held-out test.
+**Plan change:** none · **Follow-up:** none
+**Status:** open (weak domains go to B13)
+
 ## F-014 · Under rubric v1, a chatbot that sends a child to a parent on a control is not flagged anywhere (Nov 26)
 
 **Run:** `20261126-074550_mock_33ca` (`configs/mock.yaml`, now on rubric v1; 7 example scenarios; seed 1; mock models)

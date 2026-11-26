@@ -8,22 +8,24 @@ REASONS = {
     "FALLBACK_USED", "PERSONA_TOO_INTENSE", "REVIEWER_UNSURE", "CHECK_DISAGREE", "PERSONA_DRIFT",
     "AUDIT_SAMPLE", "LOW_CONFIDENCE", "UNSUPPORTED_EVIDENCE", "JUDGE_FAILED",
 }
+# The codes an agent may give (B10, F-004). The rest are set by code: the judge once used CHECK_DISAGREE,
+# which belongs to the automatic checks, to argue with the quote check. run_tool_agent enforces this.
+JUDGE_REASONS = {"LOW_CONFIDENCE"}
 
 
 def flag_for_human_review(ctx, item_id: str, reason_code: str, details: str = "") -> dict:
     """Send a case to a person for review.
 
-    When to use: when you are unsure, when a check and your own judgment disagree,
-    or when the evidence for a label cannot be verified. Flagging never blocks the
+    When to use: when you are unsure of a label. Disagreements with the automatic checks and unverified quotes are
+    flagged by code; you don't need to flag them. Flagging never blocks the
     run; flagged transcripts are kept but left out of headline numbers until a
     person clears them.
     When NOT to use: as a substitute for scoring; still submit your best scores.
 
     Args:
         item_id: Transcript id, or "<transcript_id>:<rule_id>" for one label.
-        reason_code: One of FALLBACK_USED, PERSONA_TOO_INTENSE, REVIEWER_UNSURE,
-            CHECK_DISAGREE, PERSONA_DRIFT, AUDIT_SAMPLE, LOW_CONFIDENCE,
-            UNSUPPORTED_EVIDENCE, JUDGE_FAILED.
+        reason_code: "LOW_CONFIDENCE", the only code you may use. The other codes
+            are set by the automatic checks.
         details: One sentence saying why.
 
     Returns:

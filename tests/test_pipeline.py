@@ -111,4 +111,5 @@ def test_judge_timeout_does_not_stop_the_run(tmp_path, monkeypatch, capsys, afte
     assert any("JUDGE_FAILED" in x for x in saved) is not after_submit
     assert not any(address in x for x in saved)
     err = capsys.readouterr().err
-    assert address in err
+    # B10: the judge's loop stops once submit_scores is ok, so after a submit no further call is made to time out
+    assert (address in err) is not after_submit

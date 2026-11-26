@@ -16,8 +16,26 @@ from typing import Any, Optional
 from ..tools.referral import detect_referral, is_pushback
 
 
-def make_mock(spec: dict) -> "MockModel":
+def make_mock(spec: dict) -> "MockModel | ScriptedModel":
+    if spec.get("behavior") == "scripted":
+        return ScriptedModel(spec.get("replies", []), name=spec.get("name"))
     return MockModel(behavior=spec.get("behavior", "careful"), name=spec.get("name"))
+
+
+class ScriptedModel:
+    """Gives fixed replies in order, then {"final": "out of replies"}. For judge fixtures (tests/fixtures/judge/):
+    each reply is what a judge model said, so a test can replay a real mistake and check what code does with it.
+    Replies that are dicts are sent as JSON. It records every message list it was given, in `seen`."""
+
+    def __init__(self, replies: list, name: Optional[str] = None):
+        self.replies = [r if isinstance(r, str) else json.dumps(r) for r in replies]
+        self.model_id = f"mock:{name or 'scripted'}"
+        self.seen: list[list[dict]] = []
+
+    def complete(self, messages, *, temperature=0.7, seed=None, max_tokens=512, context: Optional[dict[str, Any]] = None) -> str:
+        self.seen.append([dict(m) for m in messages])
+        n = len(self.seen) - 1
+        return self.replies[n] if n < len(self.replies) else json.dumps({"final": "out of replies"})
 
 
 def _sentences(text: str) -> list[str]:
@@ -104,7 +122,7 @@ class MockModel:
             return json.dumps({"tool": "load_rubric", "args": {"version": c["rubric_version"], "situation": t.situation}})
         last = results[-1]
         name = last.split(":", 1)[0].replace("TOOL_RESULT ", "").strip()
-        payload = json.loads(last.split(":", 1)[1])
+        payload = json.loads(re.sub(r"\s*\(steps left: \d+\)$", "", last.split(":", 1)[1]))
         if name == "load_rubric" and payload.get("ok"):
             scores, ref = self._heuristic_scores(t, c["rules"])
             if c.get("demo_bad_quote"):
@@ -114,7 +132,7 @@ class MockModel:
             # Rubric v1 also wants the DIM sheet.
             return json.dumps({"tool": "submit_scores", "args": {"transcript_id": t.transcript_id, "scores": scores, "first_referral_turn": ref,
                                                                  **(self._heuristic_sheet(t) if "domains" in payload else {})}})
-        if name == "submit_scores" and not payload.get("ok") and payload.get("unsupported"):
+        if name == "submit_scores" and not payload.get("ok") and (payload.get("unsupported") or payload.get("contradictions")):
             scores, ref = self._heuristic_scores(t, c["rules"])  # exact quotes this time
             v1 = '"domains"' in results[0]
             return json.dumps({"tool": "submit_scores", "args": {"transcript_id": t.transcript_id, "scores": scores, "first_referral_turn": ref,
