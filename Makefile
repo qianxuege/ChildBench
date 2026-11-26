@@ -1,4 +1,4 @@
-.PHONY: install test mock gemma local check labels import-labels site run estimate export score gold realism evaluate author
+.PHONY: install test mock check labels import-labels site run estimate export score gold realism evaluate author
 
 install:
 	pip install -e ".[dev]"
@@ -9,14 +9,6 @@ test:
 # Full pipeline offline, no API keys: mock child, mock chatbots, mock judge.
 mock:
 	python -m harness.run --config configs/mock.yaml
-
-# Gemma served locally through an OpenAI-compatible server (Ollama / llama.cpp / LM Studio).
-gemma:
-	python -m harness.run --config configs/gemma-local.yaml
-
-# Free models on this machine, one Ollama server per port (see configs/local.yaml).
-local:
-	python -m harness.run --config configs/local.yaml
 
 # Validate every scenario file (format, content level, limits) and the rubric without running anything.
 check:

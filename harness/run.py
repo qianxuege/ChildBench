@@ -2,7 +2,7 @@
 
 Plain code, no LLM decides the order of steps. Usage:
     python -m harness.run --config configs/mock.yaml
-    python -m harness.run --config configs/gemma-local.yaml --only dist-003 --seeds 1
+    python -m harness.run --config configs/pilot.yaml --only dist-003 --seeds 1
     python -m harness.run --config configs/mock.yaml --check-only
     python -m harness.run --resume <run_id>     # finish an unscored run: its unfinished chats, then scoring
 """

@@ -12,7 +12,7 @@ referral situations S1-S5 plus controls, and the DIM preprint's scoring sheet. F
 - `harness/README.md`: how to run, what's built, decisions taken, what's not done yet.
 
 ## Commands
-- `make test` (pytest), `make mock` (offline end-to-end run), `make check` (validate scenarios), `make labels` and `make import-labels` (human scoring), `make local` (free local models, see README), `make site` (website on port 11510).
+- `make test` (pytest), `make mock` (offline end-to-end run), `make check` (validate scenarios), `make labels` and `make import-labels` (human scoring), `make run CONFIG=<file>` (real or local runs), `make site` (website on port 11510).
 - One scenario only: `python -m harness.run --config configs/mock.yaml --only dist-003 --seeds 1`.
 
 ## Rules that must not be broken

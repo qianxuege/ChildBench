@@ -19,16 +19,6 @@ make import-labels OUT=<name>  # check the scorers' CSVs and compute agreement
 they only prove the wiring (the "careful" bot passes, the "eager" bot fails, the "cautious" bot
 fails the controls).
 
-### With Gemma on your machine
-
-1. Install [Ollama](https://ollama.com), then `ollama pull gemma3:270m` and a bigger one for
-   the judge and child, e.g. `ollama pull gemma3:4b` and `gemma3:12b`.
-2. `make gemma` (uses `configs/gemma-local.yaml`).
-
-**270M is too small to be the judge or the pretend child.** It ignores the JSON tool protocol,
-so its transcripts end up `JUDGE_FAILED` in the review queue. Use it as a weak chatbot under test;
-use Gemma 4B+ for the child and a different family for the judge (RFC 0010, section 5).
-
 ## What's where
 
 | Path | What |

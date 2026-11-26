@@ -46,9 +46,9 @@ Each removal should be a separate commit so it can be reverted independently.
 
 ### Phase 3 — repository housekeeping
 
-- [ ] Delete historical diagrams that `docs/diagrams/README.md` identifies as unused. Keep `childbench-concept.svg` and `childbench-relevance.svg`.
-- [ ] Remove obsolete config examples after checking that no operation or gold command depends on them.
-- [ ] Declare every directly imported runtime dependency explicitly.
+- [x] Delete historical diagrams that `docs/diagrams/README.md` identifies as unused. Keep `childbench-concept.svg` and `childbench-relevance.svg`.
+- [x] Remove obsolete `local.yaml` and `gemma-local.yaml` examples after confirming operations and gold evaluation use `pilot.yaml`, `full.yaml`, and the other focused configs.
+- [x] Declare every directly imported runtime dependency explicitly.
 
 ### Phase 4 — after T2 and B13
 

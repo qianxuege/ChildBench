@@ -121,7 +121,7 @@ OLLAMA_HOST=127.0.0.1:11501 OLLAMA_CONTEXT_LENGTH=4096  ollama serve &
 OLLAMA_HOST=127.0.0.1:11502 OLLAMA_CONTEXT_LENGTH=8192  ollama serve &
 OLLAMA_HOST=127.0.0.1:11503 OLLAMA_CONTEXT_LENGTH=16384 ollama serve &
 
-make local
+make run CONFIG=configs/pilot.yaml ARGS="--only dist-003 --seeds 1"  # local smoke test
 ```
 
 | Port | Model | Role |
