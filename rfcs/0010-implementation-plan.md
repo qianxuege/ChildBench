@@ -36,7 +36,7 @@ Two things matter most:
 | 2 | [**A16**](#wp-a16) | done | New scenario format and key-fact check | Cici | Nov 25 night | A15 |
 | 2 | [**B12**](#wp-b12) | done | New rubric and scoring profiles | Cici | Nov 25 night | B1 |
 | 3 | [**A17**](#wp-a17) | done | Write the 15 scenario files | Cici | Nov 25 night | A16 |
-| 3 | [**A3**](#wp-a3) | todo | Stricter key-fact retry message | Cici | Nov 26 | A16 |
+| 3 | [**A3**](#wp-a3) | done | Stricter key-fact retry message | Cici | Nov 26 | A16 |
 | 3 | [**B15**](#wp-b15) | done | Scoring packet and CSV import | Cici | Nov 25 night | B12 |
 | 3 | [**B14**](#wp-b14) | todo | Summary and export for the new rubric | Cici | Nov 25 night | B12, A16 |
 | 3 | [**A8**](#wp-a8) | todo | Realism and script-fidelity report | Cici | Nov 25 night | A16 |
@@ -563,7 +563,7 @@ From the pilot ([F-004](../docs/findings.md), [F-007](../docs/findings.md)): 4 o
 
 <a id="wp-a3"></a>
 
-**A3 · Stricter key-fact retry message** · Owner A · Needs: A16 · Status: todo
+**A3 · Stricter key-fact retry message** · Owner A · Needs: A16 · Status: done
 
 - When a draft misses a key fact, the retry message names the exact `must_say` words and says another way of saying it doesn't count ([F-011](../docs/findings.md): "go sleep" for "died"). The child stays a fixed loop run by code (section 6).
 - **Files:** `harness/agents/child_simulator.py`, `tests/`

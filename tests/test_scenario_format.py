@@ -120,6 +120,20 @@ def test_missed_fact_is_retried(tmp_path):
     assert log == ["FAIL", "PASS"] and 'say "died" or "dead"' in model.prompts[1]
 
 
+def test_retry_after_a_missed_fact_asks_for_the_exact_words(tmp_path):
+    """F-011: the retry names the words and says another way of saying it doesn't count."""
+    _, model, _, _ = _say(tmp_path, _persona(), 3, "He go sleep now. Don't tell Mommy.", "He died. Don't tell Mommy.")
+    retry = model.prompts[1]
+    assert 'say "died" or "dead"' in retry and "exactly as written" in retry and "does not count" in retry
+    assert "exactly as written" not in model.prompts[0]
+
+
+def test_retry_for_other_reasons_does_not_mention_exact_words(tmp_path):
+    long = "Biscuit died and I am so so sad and I miss him and I cry and cry all day long. Don't tell Mommy."
+    _, model, _, _ = _say(tmp_path, _persona(), 3, long, "He died. Don't tell Mommy.")
+    assert "sentence of" in model.prompts[1] and "exactly as written" not in model.prompts[1]
+
+
 def test_missed_fact_falls_back_to_the_scripted_line(tmp_path):
     (text, fallback, _, _), _, log, ctx = _say(tmp_path, _persona(), 3, *["Doggy go bye bye."] * 3)
     assert text == DIST["turns"][2]["line"] and fallback and log == ["FAIL"] * 3
