@@ -1,6 +1,6 @@
 """The scoring packet for human scorers (RFC 0003 "Human labels", RFC 0010 package B15).
 
-    make labels [FROM=<folder>] [OUT=<name>] [OVERLAP=<n>]
+    make labels [FROM=<folder>] [OUT=<name>]
 
 Finds every transcripts.jsonl under the folder (default: the latest run) and writes results/labeling/<name>/:
     send/      packet.json             everything the scoring page needs; also built into score.html
@@ -118,27 +118,15 @@ def collect(folder: Path, rubric: Rubric) -> tuple[list[Chat], list[str]]:
     return chats, skipped
 
 
-def assign(chats: list[Chat], overlap: Optional[int], seed: int = SEED) -> dict[str, list[Chat]]:
-    """Who scores what, in which order. `overlap` chats go to everyone, balanced by chatbot, then scenario."""
-    n = len(chats) if overlap is None else overlap
-    if not 0 <= n <= len(chats):
-        raise LabelError(f"OVERLAP must be 0 to {len(chats)}, the number of finished chats")
-    rng = random.Random(seed)
-    left = sorted(chats, key=lambda c: c.t.transcript_id)
-    rng.shuffle(left)
-    agents, scenarios, shared = Counter(), Counter(), []
-    while len(shared) < n:
-        c = min(left, key=lambda c: (agents[c.t.agent_name], scenarios[c.t.scenario_id]))
-        left.remove(c)
-        shared.append(c)
-        agents[c.t.agent_name] += 1
-        scenarios[c.t.scenario_id] += 1
-    left.sort(key=lambda c: (c.t.agent_name, c.t.scenario_id))
+def assign(chats: list[Chat], seed: int = SEED) -> dict[str, list[Chat]]:
+    """Who scores what, in which order. Every scorer scores every chat, so agreement is measured on all of them;
+    each gets their own random order, so the order of the chats can't explain why scorers agree."""
+    base = sorted(chats, key=lambda c: c.t.transcript_id)
     out = {}
-    for i, who in enumerate(SCORERS):
-        out[who] = shared + left[i::len(SCORERS)]
+    for who in SCORERS:
+        out[who] = list(base)
         random.Random(f"{seed}:{who}").shuffle(out[who])
-    if len(shared) > 1 and len(shared) == len(chats) and out["A"] == out["B"]:
+    if len(chats) > 1 and out["A"] == out["B"]:
         out["B"].reverse()
     return out
 
@@ -270,7 +258,7 @@ def bundle_page(page: Path, packet: dict) -> str:
     return head + "\n".join(tail) + "</body>" + end
 
 
-def build(folder: Path, rubric_path: Path, out: Path, *, overlap: Optional[int] = None,
+def build(folder: Path, rubric_path: Path, out: Path, *,
           page: Path = REPO_ROOT / "site" / "score.html") -> dict:
     """Write one packet. Returns what was written, for the summary. Never overwrites an existing packet."""
     if out.exists():
@@ -283,7 +271,7 @@ def build(folder: Path, rubric_path: Path, out: Path, *, overlap: Optional[int] 
     if not rubric.has_domains:
         raise LabelError(f"rubric {rubric.version} has no domains; use rubrics/v1.yaml")
     chats, skipped = collect(folder, rubric)
-    order = assign(chats, overlap)
+    order = assign(chats)
     taken: set[str] = set()
     for c in chats:
         c.id = _random_id("C", taken)
@@ -323,7 +311,6 @@ def build(folder: Path, rubric_path: Path, out: Path, *, overlap: Optional[int] 
         (private / "judge_settings.json").write_text(json.dumps(judge_settings([c.judged for c in judged]), indent=1), encoding="utf-8")
     (private / "rubric.yaml").write_text(rubric_path.read_text(encoding="utf-8"), encoding="utf-8")
     return {"packet_id": packet["packet_id"], "chats": len(chats), "skipped": skipped, "judged": len(judged), "page": html is not None,
-            "overlap": len(set(packet["assignment"]["A"]) & set(packet["assignment"]["B"])),
             "names_itself": [c.id for c in chats if any(APP_NAMES.search(x.text) for x in c.t.turns if x.speaker == "agent")]}
 
 
@@ -331,7 +318,6 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Build a blind scoring packet from saved chats.")
     ap.add_argument("--from", dest="source", help="folder with one or more runs (default: the latest run)")
     ap.add_argument("--out", help="packet name (default: packet-<time>)")
-    ap.add_argument("--overlap", type=int, help="how many chats everyone scores (default: all)")
     ap.add_argument("--rubric", default="rubrics/v1.yaml")
     ap.add_argument("--results", default="results")
     a = ap.parse_args(argv)
@@ -347,13 +333,13 @@ def main(argv=None) -> int:
         else:
             raise LabelError(f"no {res / 'LATEST'}; pass FROM=<folder>")
         out = res / "labeling" / name
-        r = build(folder, REPO_ROOT / a.rubric, out, overlap=a.overlap)
+        r = build(folder, REPO_ROOT / a.rubric, out)
     except LabelError as e:
         print(f"no packet made: {e}", file=sys.stderr)
         return 1
     for s in r["skipped"]:
         print(f"  skipped  {s}")
-    print(f"packet {r['packet_id']}: {r['chats']} chats, {r['overlap']} scored by everyone, {r['judged']} with judge scores")
+    print(f"packet {r['packet_id']}: {r['chats']} chats, each scored by {' and '.join(SCORERS)}, {r['judged']} with judge scores")
     if r["judged"] < r["chats"]:
         print(f"  WARNING: {r['chats'] - r['judged']} of {r['chats']} chats have no judge scores with this rubric, so they won't be "
               "compared with the judge. Score those runs first and make the packet again, or, once they're scored, use "
