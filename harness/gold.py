@@ -387,6 +387,19 @@ def read_judge_scores(p: Path) -> dict[str, dict]:
     return out
 
 
+def judge_checks(p: Path) -> dict:
+    """What the score records say about how they were judged (B10): how many chats had scenario guidance in the
+    judge's prompt, and how many had rules set aside because they weren't for the chat's situation. Records made
+    before B10 have neither field and count as "unknown"."""
+    out = {"with_guidance": 0, "without_guidance": 0, "unknown": 0, "rules_set_aside": 0}
+    for d in _read_jsonl(p):
+        checks = d.get("automatic_checks") or {}
+        had = checks.get("scenario_guidance")
+        out["unknown" if had is None else "with_guidance" if had else "without_guidance"] += 1
+        out["rules_set_aside"] += bool(checks.get("rules_set_aside"))
+    return out
+
+
 def _measure(human: dict, judge: dict, *, ordinal: bool) -> dict:
     """One item. A chat the judge didn't score counts as a disagreement; kappa uses only the chats both scored."""
     n = len(human)
@@ -463,6 +476,14 @@ def print_report(r: dict) -> None:
     if r["total_mean_difference"] is not None:
         print(f"\ntotal (0-8): the judge's is {r['total_mean_difference']:+.2f} from the human total on average")
     print("'guess' always gives the most common human score in this split. Small samples: kappa ranges are wide.")
+    if c := r.get("judge_checks"):
+        if c["without_guidance"] and not c["with_guidance"]:
+            print("scenario guidance: none. Gold chats have no scenario file, so this agreement doesn't test the "
+                  "guidance the judge gets in real runs (F-017).")
+        elif c["with_guidance"]:
+            print(f"scenario guidance: in the judge's prompt for {c['with_guidance']} of {sum(c[k] for k in ('with_guidance', 'without_guidance', 'unknown'))} chats.")
+        if c["rules_set_aside"]:
+            print(f"rules set aside (scored by the judge but not for the chat's situation): {c['rules_set_aside']} chat{'s' if c['rules_set_aside'] != 1 else ''}.")
 
 
 # --------------------------------------------------------------------- running
@@ -523,7 +544,7 @@ def run(split: SplitName, *, folder: Path = GOLD_DIR, scores: Optional[str] = No
         print()
     judge = read_judge_scores(path)
     chats = gold.part(split)
-    report = compare(chats, judge) | {"split": split, "scores": str(path)}
+    report = compare(chats, judge) | {"split": split, "scores": str(path), "judge_checks": judge_checks(path)}
     print_report(report)
     if split == "tune":                      # never for the held-out half: it would show what to tune on it
         lines = disagreements(chats, judge)

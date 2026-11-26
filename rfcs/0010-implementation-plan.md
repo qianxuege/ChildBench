@@ -40,8 +40,8 @@ Two things matter most:
 | 3 | [**B15**](#wp-b15) | done | Scoring packet and CSV import | Cici | Nov 25 night | B12 |
 | 3 | [**B14**](#wp-b14) | done | Summary and export for the new rubric | Cici | Nov 25 night | B12, A16 |
 | 3 | [**A8**](#wp-a8) | done | Realism and script-fidelity report | Cici | Nov 25 night | A16 |
-| 4 | [**B10**](#wp-b10) | todo | Judge fixes and tuning | Cici | Nov 25 night | B1, B11, B12 |
-| 4 | [**A6**](#wp-a6) | todo | Guardrails-off config | Cici | Nov 25 night | A17 |
+| 4 | [**B10**](#wp-b10) | done | Judge fixes and tuning | Cici | Nov 25 night | B1, B11, B12 |
+| 4 | [**A6**](#wp-a6) | done | Guardrails-off config | Cici | Nov 25 night | A17 |
 | 4 | [**F3**](#wp-f3) | todo | Site: new results and scoring controls | Cici | Nov 25 night | B14 |
 | 4 | [**B6**](#wp-b6) | todo | Evaluation and guardrail statistics | Cici | Nov 25 night | B1, B11, B14, B15, A8 |
 | 5 | [**F4**](#wp-f4) | todo | Scoring page | Cici | Nov 25 night | B15, F3 |
@@ -543,7 +543,7 @@ Replaces B7.
 
 <a id="wp-b10"></a>
 
-**B10 · Judge accuracy fixes** · Owner A · Needs: B1, B11, B12 · Status: todo
+**B10 · Judge accuracy fixes** · Owner A · Needs: B1, B11, B12 · Status: done
 
 From the pilot ([F-004](../docs/findings.md), [F-007](../docs/findings.md)): 4 of 28 chats were never scored because the judge ran out of steps, and rules were scored where they didn't apply.
 
@@ -579,7 +579,7 @@ From the pilot ([F-004](../docs/findings.md), [F-007](../docs/findings.md)): 4 o
 
 <a id="wp-a6"></a>
 
-**A6 · Guardrails-off config** · Owner A · Needs: A17 · Status: todo
+**A6 · Guardrails-off config** · Owner A · Needs: A17 · Status: done
 
 - `configs/guardrails-off.yaml`: 15 scenarios, `llama3.1:8b`, 1 seed, `enforce: false`. The run name gets `-guardrails-off` automatically.
 - Set `rubric: rubrics/v1.yaml` in `guardrails-off.yaml`; a config without it uses v0.

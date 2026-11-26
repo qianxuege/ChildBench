@@ -76,7 +76,21 @@ def run_tool_agent(
     seed: Optional[int] = None,
     max_tokens: int = 2048,
     context: Optional[dict] = None,
+    limits: Optional[dict[str, int]] = None,
+    finish_tool: Optional[str] = None,
+    reserve_steps: int = 0,
+    allowed_values: Optional[dict[str, dict[str, set]]] = None,
 ) -> dict:
+    """Run one agent until it replies {"final": ...}, runs out of steps or breaks the format 3 times.
+
+    limits:         at most this many calls per tool; later calls get an error instead of running.
+    finish_tool:    the call that finishes the job (the judge's submit_scores). Once it returns ok the loop stops,
+                    and in the last `reserve_steps` steps it is the only tool that still runs.
+    allowed_values: {tool: {arg: allowed values}}: other values are refused before the tool runs.
+    """
+    limits, allowed_values = limits or {}, allowed_values or {}
+    used: dict[str, int] = {}
+    finished = nudged = False
     messages = [
         {"role": "system", "content": system + "\n\n" + PROTOCOL + tool_docs(tools)},
         {"role": "user", "content": user},
@@ -96,15 +110,43 @@ def run_tool_agent(
                 break
             messages.append({"role": "user", "content": "FORMAT_ERROR: reply with exactly one JSON object, as described."})
             continue
+        if "final" in obj and finish_tool and not nudged:
+            nudged = True                                # once: a judge that stops early has scored nothing
+            trace.append({"step": step, "error": f"final before {finish_tool}"})
+            messages.append({"role": "user", "content": f"NOT_DONE: nothing is saved until {finish_tool} returns ok. Call it now."})
+            continue
         if "final" in obj:
             final = obj["final"]
             trace.append({"step": step, "final": final})
             break
         name, args = obj.get("tool"), obj.get("args", {})
-        if name not in tools:
-            result = {"ok": False, "error": f"tool '{name}' is not available to you. Available: {tools}"}
-        else:
+        left = max_steps - step - 1                     # steps after this one
+        result = _refusal(name, args, tools, used, limits, allowed_values, finish_tool,
+                          reserved=bool(finish_tool) and not finished and left < reserve_steps)
+        if result is None:
+            used[name] = used.get(name, 0) + 1
             result = call_tool(name, args, ctx)
         trace.append({"step": step, "tool": name, "ok": result.get("ok")})
-        messages.append({"role": "user", "content": f"TOOL_RESULT {name}: {as_json(result)}"})
+        if name == finish_tool and result.get("ok"):
+            finished = True
+            final = f"{name} ok"
+            break
+        note = f" (steps left: {left})" if finish_tool and not finished else ""
+        messages.append({"role": "user", "content": f"TOOL_RESULT {name}: {as_json(result)}{note}"})
     return {"final": final, "trace": trace, "messages": messages}
+
+
+def _refusal(name, args, tools: list[str], used: dict, limits: dict, allowed_values: dict,
+             finish_tool: Optional[str], reserved: bool) -> Optional[dict]:
+    """Why this call won't run, as a tool result, or None if it may."""
+    if name not in tools:
+        return {"ok": False, "error": f"tool '{name}' is not available to you. Available: {tools}"}
+    if reserved and name != finish_tool:
+        return {"ok": False, "error": f"few steps left: call {finish_tool} now with your best answer"}
+    if name in limits and used.get(name, 0) >= limits[name]:
+        hint = f" Call {finish_tool} instead; it checks everything at once." if finish_tool else ""
+        return {"ok": False, "error": f"{name} may be called at most {limits[name]} times.{hint}"}
+    for arg, ok_values in allowed_values.get(name, {}).items():
+        if isinstance(args, dict) and args.get(arg) not in ok_values:
+            return {"ok": False, "error": f"{arg} must be one of {sorted(ok_values)}"}
+    return None
