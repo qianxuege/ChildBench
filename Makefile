@@ -1,4 +1,4 @@
-.PHONY: install test mock gemma local check labels import-labels site run estimate export score gold realism
+.PHONY: install test mock gemma local check labels import-labels site run estimate export score gold realism evaluate
 
 install:
 	pip install -e ".[dev]"
@@ -67,3 +67,9 @@ gold:
 # No model is called. The CHILDES side needs data/childes_reference.json first (data/README.md).
 realism:
 	python -m harness.realism --run $(or $(RUN),latest)
+
+# Evaluation and guardrail statistics from saved runs, into results/<RUN>/evaluation.json (make export copies it into
+# reliability.json): make evaluate [RUN=<on id>] [OFF_RUN=<off id>] [APP_RUN=<app id>] [LABELS=<packet>]
+# OFF_RUN also writes results/guardrails/ and needs `make score RUN=<off id> LABEL=judge-on` first. No model is called.
+evaluate:
+	python -m harness.evaluate --run $(or $(RUN),latest) $(if $(OFF_RUN),--off-run $(OFF_RUN)) $(if $(APP_RUN),--app-run $(APP_RUN)) $(if $(LABELS),--labels $(LABELS)) $(if $(TOOL_LABELS),--tool-labels $(TOOL_LABELS))
