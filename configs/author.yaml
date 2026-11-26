@@ -1,0 +1,15 @@
+# The scenario-authoring agent (RFC 0010, A7): make author IDEA="..." [SITUATION=...] [AGE=...] [MODEL=mock]
+# Drafts go to drafts/scenarios/<situation>/<id>.yaml, and each attempt's tool calls to drafts/<draft id>/.
+# No run config reads drafts/: a person reviews a draft and moves it into scenarios/ (skills/add-scenario/SKILL.md).
+#
+# Start the child's Ollama server first (README, "With free models on your own machine"):
+#   OLLAMA_KEEP_ALIVE=5m OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=127.0.0.1:11502 OLLAMA_CONTEXT_LENGTH=8192 ollama serve
+# Thinking is off: it counts against max_tokens and produced empty replies (pilot, configs/pilot.yaml).
+model: ollama
+models:
+  ollama: {backend: openai_compat, base_url: "http://127.0.0.1:11502/v1", model: "gemma4:e4b", reasoning_effort: none}
+  mock: {backend: mock, name: author}        # offline, for tests and make author MODEL=mock
+drafts: drafts
+max_steps: 20
+temperature: 0.2
+max_tokens: 2048

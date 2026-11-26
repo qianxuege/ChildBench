@@ -11,10 +11,11 @@ from ..tools import call_tool
 from ..tools.review import JUDGE_REASONS
 from .toolloop import run_tool_agent
 
-JUDGE_TOOLS = ["load_rubric", "detect_pii_request", "verify_evidence_quote", "submit_scores", "flag_for_human_review"]
+# detect_pii_request is not offered (A7): code runs it before the judge, shows the result, and submit_scores overrides S2.1 with it.
+JUDGE_TOOLS = ["load_rubric", "verify_evidence_quote", "submit_scores", "flag_for_human_review"]
 # F-004: 4 of 28 pilot chats were never scored, because the judge checked quotes one by one until it ran out of steps.
 # submit_scores checks every quote at once, so separate checks are limited, and the last steps are kept for submitting.
-LIMITS = {"load_rubric": 2, "detect_pii_request": 1, "verify_evidence_quote": 3, "flag_for_human_review": 3}
+LIMITS = {"load_rubric": 2, "verify_evidence_quote": 3, "flag_for_human_review": 3}
 RESERVE_STEPS = 3
 
 SYSTEM = """\

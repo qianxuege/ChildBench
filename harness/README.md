@@ -39,11 +39,12 @@ use Gemma 4B+ for the child and a different family for the judge (RFC 0010, sect
 | Path | What |
 |---|---|
 | `harness/run.py` | Orchestrator: scenarios x chatbots x seeds, stop conditions, manifest, summary |
-| `harness/agents/child_simulator.py` | Generator -> content ceiling -> realism lint -> fake-data check -> reviewer -> retry x3 -> fallback |
+| `harness/agents/child_simulator.py` | The pretend child: a fixed loop run by code, not an agent. Generator -> content ceiling -> realism lint -> fake-data check -> key facts -> reviewer -> retry x3 -> fallback |
 | `harness/agents/agent_under_test.py` | The chatbot being graded. Replies are never edited |
 | `harness/agents/judge.py` | Judge agent: tool loop over load_rubric / verify_evidence_quote / submit_scores (see "How the judge works") |
 | `harness/agents/toolloop.py` | Provider-neutral tool calling: the model replies `{"tool": ..., "args": ...}` |
-| `harness/tools/` | The ten RFC 0004 tools. Their docstrings are what the agents read |
+| `harness/author.py` | Scenario-authoring agent (A7): tool loop over load_persona / validate_scenario / check_content_ceiling / lint_child_utterance / save_scenario_draft (see "How the authoring agent works") |
+| `harness/tools/` | RFC 0004's tools: 9 that a model calls (their docstrings are what it reads), plus 3 helpers only code calls; `tools/__init__.py` lists which ones each agent is offered and which only code calls |
 | `harness/rating.py` | pass / borderline / fail by fixed logic (RFC 0008) |
 | `harness/llm/` | Backends: `mock`, `openai_compat` (Ollama, llama.cpp, LM Studio, Gemini, OpenAI), `hf_local` |
 | `harness/labels.py`, `validate_judge.py` | Blind scoring packet; check the scorers' CSVs, then kappa, missed cases and false alarms |
@@ -76,7 +77,7 @@ use Gemma 4B+ for the child and a different family for the judge (RFC 0010, sect
 ## How the judge works (rubric v1, B10)
 
 - **One step is one model reply with one tool call.** The judge gets 14 steps. Each tool has a call limit
-  (`verify_evidence_quote` 3, `load_rubric` 2, `flag_for_human_review` 3, `detect_pii_request` 1), and the last
+  (`verify_evidence_quote` 3, `load_rubric` 2, `flag_for_human_review` 3), and the last
   3 steps only accept `submit_scores`. The loop stops as soon as `submit_scores` returns ok; a judge that stops
   before that is told nothing is saved yet. On the gold tuning half no chat needed more than 7 steps.
 - **Facts first, then levels.** The judge records what happened (secrecy asked, adult named, crisis line, ...)
@@ -100,6 +101,26 @@ use Gemma 4B+ for the child and a different family for the judge (RFC 0010, sect
 - **New fields in each record's `automatic_checks`:** `scenario_guidance` (true when the judge had a scenario
   file), `rules_set_aside`, `heuristic_secrecy_asked_turn`, `heuristic_secrecy_promise`, alongside
   `heuristic_referral_agrees`.
+
+- **`detect_pii_request` isn't offered to the judge (A7).** Code runs it on every reply first, shows the judge
+  the result, and `submit_scores` overrides S2.1 with it, so the judge's own calls added nothing.
+
+## How the authoring agent works (A7)
+
+- `make author IDEA="..." [SITUATION=...] [AGE=...] [MODEL=mock]` runs `harness/author.py` with the model in
+  `configs/author.yaml` (`gemma4:e4b` on port 11502). The agent gets the idea, a free id, example scenario ids
+  and `skills/add-scenario/template.yaml`, and picks its own tool calls until `save_scenario_draft` returns ok.
+- `load_persona` returns only the child's side of an example (lines, style, age), never `referral`, `good`,
+  `bad` or `must_say`.
+- `validate_scenario` runs the `Persona` checks, the content ceiling and fake-data scan (`scenario_content_problems`),
+  the speech check on every line, a unique id, and whether the referral expectation fits the situation. It
+  returns short reasons and writes nothing. `save_scenario_draft` runs the same check, refuses ids already in
+  `scenarios/` or `drafts/`, sets `review` itself (the agent as author, no reviewers, not client-approved), and
+  writes only `drafts/scenarios/<situation>/<id>.yaml`.
+- After 6 failed validations the tools refuse and the loop stops: nothing is saved.
+- Each attempt's `tool_calls.jsonl` and `summary.json` (steps, validations, failures) go to `drafts/<draft id>/`.
+  `drafts/` is gitignored and no config reads it. A person reviews a draft and moves it into `scenarios/`
+  ([`skills/add-scenario`](../skills/add-scenario/SKILL.md)).
 
 ## Not done yet
 

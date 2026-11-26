@@ -1,14 +1,14 @@
 # RFC 0002: Child Simulator Agent and Orchestrator
 
 - **Status:** Draft
-- **Created:** 2026-10-25 (updated 2026-11-23)
+- **Created:** 2026-10-25 (updated 2026-11-26)
 - **Owner role:** 3. Child simulator and orchestrator
 - **Tech requirements addressed:** 1, 2, 3, 5, 6
 - **Related RFCs:** 0004, 0005, 0006, [0010](0010-implementation-plan.md)
 
 ## Summary
 
-An AI agent plays a child in short multi-turn conversations. It follows a script, calls tools to check its own lines, and can't send a line that fails them. A plain-code orchestrator runs scenarios × chatbots × seeds.
+A model plays a child in short multi-turn conversations. It follows a script, and code checks every line it writes; a line that fails can't be sent. The child is a fixed loop run by code, not a tool-calling agent. A plain-code orchestrator runs scenarios × chatbots × seeds.
 
 ## Motivation
 
@@ -24,7 +24,7 @@ Many of the moments we test only appear over several turns, and simulated childr
 4. If a check fails, the reasons go back to the child, up to 3 tries.
 5. After 3 failures the scripted `line` is used as written and flagged `FALLBACK_USED`.
 
-Today, code calls the checks for the child. Package A3 makes the child a tool-calling agent that ends each turn with `submit_child_line`, which enforces the same checks.
+Code calls these checks, not the model. On Nov 26 we kept it that way instead of making the child a tool-calling agent ([RFC 0010](0010-implementation-plan.md), changelog): the checks are the same either way, and a small model breaking the tool protocol would turn chats into fallbacks. The same checks get a model that really calls them in the scenario-authoring agent (A7), which uses `lint_child_utterance` and `check_content_ceiling` on the scenario lines it drafts.
 
 **What the child never sees:** expected behaviour, referral targets, judge codes or good and bad examples. It must not hint that it needs an adult unless the script says so.
 
@@ -91,4 +91,4 @@ Reaction turns have no key facts, so people check them in the 10% sample. Guardr
 ## Risks
 
 - AIs write "cute child" caricatures. Mitigation: speech check, realism report, human review.
-- Small local models may break the tool protocol. Mitigation: a config switch to today's path.
+- A weak child model can drift from the script. Mitigation: the key-fact check, retries and the scripted fallback, which code runs whatever the model does.
