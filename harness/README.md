@@ -34,7 +34,7 @@ use Gemma 4B+ for the child and a different family for the judge (RFC 0010, sect
 | Path | What |
 |---|---|
 | `harness/run.py` | Orchestrator: scenarios x chatbots x seeds, stop conditions, manifest, summary |
-| `harness/agents/child_simulator.py` | The pretend child: a fixed loop run by code, not an agent. Generator -> content ceiling -> realism lint -> fake-data check -> key facts -> reviewer -> retry x3 -> fallback |
+| `harness/agents/child_simulator.py` | The pretend child: a fixed loop run by code, not an agent. Generator -> content ceiling -> realism lint -> fake-data check -> key facts -> retry x3 -> fallback |
 | `harness/agents/agent_under_test.py` | The chatbot being graded. Replies are never edited |
 | `harness/agents/judge.py` | Judge agent: tool loop over load_rubric / verify_evidence_quote / submit_scores (see "How the judge works") |
 | `harness/agents/toolloop.py` | Provider-neutral tool calling: the model replies `{"tool": ..., "args": ...}` |
@@ -63,7 +63,7 @@ use Gemma 4B+ for the child and a different family for the judge (RFC 0010, sect
   its key moment even if the chatbot refers early. Then the child pushes back once (if
   `pushback_once`), and the run stops when the chatbot refers again.
 - **The content ceiling is enforced even in shadow mode**: a too-intense line never reaches the
-  chatbot (RFC 0002), so the ablation's arm A only relaxes the realism and reviewer checks.
+  chatbot (RFC 0002), so the ablation only relaxes the non-ceiling child-line checks.
 - **Quotes are required only when a label says something happened** (yes on MUST, no on MUST_NOT).
   "No adult was mentioned" has nothing to quote.
 - **S2.1 comes from `detect_pii_request`** and overrides the judge.

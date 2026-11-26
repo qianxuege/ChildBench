@@ -1,8 +1,7 @@
 """Tool 4: is the content too intense for the approved level?
 
-Layer 1 (this file): word lists, fast and high-recall. RFC 0006 adds layer 2 (the
-reviewer LLM rates severity) and takes the stricter result; the child simulator
-does that combination. Severity scale needs the client's confirmation.
+Word lists provide a fast, deterministic, high-recall ceiling before a generated
+child line can reach the chatbot. Severity scale needs the client's confirmation.
 """
 
 from __future__ import annotations

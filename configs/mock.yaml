@@ -14,7 +14,6 @@ demo:
 temperatures: {child: 0.9, agent: 0.7, judge: 0.0}
 roles:
   child_generator: {backend: mock, name: child}
-  child_reviewer: {backend: mock, name: reviewer}
   judge: {backend: mock, name: judge}
 agents:
   - name: careful-bot

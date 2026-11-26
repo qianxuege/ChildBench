@@ -19,7 +19,6 @@ guardrails: {enforce: true, allow_unreviewed: true, audit_rate: 0.10}
 temperatures: {child: 0.9, agent: 0.7, judge: 0.0}
 roles:
   child_generator: {backend: openai_compat, base_url: "http://127.0.0.1:11502/v1", model: "gemma4:e4b", reasoning_effort: none}
-  child_reviewer:  {backend: openai_compat, base_url: "http://127.0.0.1:11502/v1", model: "gemma4:e4b", reasoning_effort: none}
   judge:           {backend: openai_compat, base_url: "http://127.0.0.1:11503/v1", model: "qwen3.5:9b", reasoning_effort: none}
 agents:
   - name: gemma-270m

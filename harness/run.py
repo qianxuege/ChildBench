@@ -158,9 +158,8 @@ def run_name(cfg: dict) -> str:
 def estimate(cfg: dict, n_personas: int, n_seeds: int, results_dir: Path) -> None:
     n_agents = len(cfg["agents"])
     n = n_personas * n_agents * n_seeds
-    has_rev = bool(cfg["roles"].get("child_reviewer"))
     print(f"\nestimate: {n_personas} scenarios x {n_agents} chatbots x {n_seeds} seeds = {n} conversations")
-    print(f"  model calls, at most ~{n * 6 * (2 + (1 if has_rev else 0)) + n * 14} (turn cap 6, judge cap 14 steps)")
+    print(f"  model calls, at most ~{n * 6 * 2 + n * 14} (turn cap 6, judge cap 14 steps)")
     name = run_name(cfg)
     past = past_timing(results_dir, name)
     if past:
@@ -300,12 +299,11 @@ class Run:
             agent_cfgs = [a for a in agent_cfgs if a["name"] in agent_names]
         self.agent_names = [a["name"] for a in agent_cfgs] if agent_names else None
         self.gen = make_model(roles["child_generator"])
-        self.rev = make_model(roles["child_reviewer"]) if roles.get("child_reviewer") else None
         self.judge_model = make_model(roles["judge"])
         agent_models = [make_model(a["model"]) for a in agent_cfgs]
         if any(isinstance(m, ManualModel) for m in agent_models) and not g.get("enforce", True):
             raise SystemExit("guardrails.enforce must be true for relay runs: an unchecked child line would reach a real app.")
-        self.all_models = [m for m in [self.gen, self.rev, self.judge_model, *agent_models] if m is not None]
+        self.all_models = [self.gen, self.judge_model, *agent_models]
         if not skip_preflight:
             problems = preflight(self.all_models)
             if problems:
@@ -326,7 +324,7 @@ class Run:
             (self.out_dir / PLAN_FILE).write_text(json.dumps(
                 {"run_id": self.run_id, "config_file": str(config_file), "config": cfg, "only": only, "seeds": seeds,
                  "agents": self.agent_names}, indent=2, default=str))
-        self.child = ChildSimulator(self.gen, self.rev, self.ctx, temperature=temps.get("child", 0.9),
+        self.child = ChildSimulator(self.gen, self.ctx, temperature=temps.get("child", 0.9),
                                     demo_adult_first_draft=demo.get("adult_first_draft", False))
         self.judge = Judge(self.judge_model, self.ctx, temperature=temps.get("judge", 0.0), demo_bad_quote=demo.get("bad_quote", False))
         self.agents = [AgentUnderTest(a["name"], m, system_prompt=a.get("system_prompt"),
@@ -429,23 +427,22 @@ class Run:
 
         summary = summarize(ctx.transcripts, ctx.scored, ctx.queued)
         (self.out_dir / "summary.json").write_text(json.dumps(summary, indent=2))
-        gen, rev, judge_model = self.gen, self.rev, self.judge_model
+        gen, judge_model = self.gen, self.judge_model
         manifest = {
             "run_id": self.run_id, "created_at": self.stamp, "harness_version": __version__, "git": git_info(),
             "python": platform.python_version(), "config_file": str(self.config_file), "config": self.cfg,
             "rubric": {"version": rubric.version, "sha256": hashlib.sha256(self.rubric_path.read_bytes()).hexdigest()[:16]},
             "scenarios": self.hashes if not self.only else {k: self.hashes[k] for k in self.personas},
             "seeds": self.seeds,
-            "models": {"child_generator": gen.model_id, "child_reviewer": rev.model_id if rev else None,
-                       "judge": judge_model.model_id, "agents": {a.name: a.model_id for a in self.agents}},
+            "models": {"child_generator": gen.model_id, "judge": judge_model.model_id,
+                       "agents": {a.name: a.model_id for a in self.agents}},
             "guardrails": {"enforce": ctx.enforce, "audit_rate": ctx.audit_rate},
             "counts": {"transcripts": len(ctx.transcripts), "incomplete": incomplete, "restarted": restarted,
                        "scored": len(ctx.scored), "review_items": len(ctx.queued), "tool_calls": ctx.tool_calls},
             "timing": {"conversations": len(ctx.transcripts), "talk_seconds": round(talk_seconds, 2),
                        "score_seconds": round(score_seconds, 2), "per_conversation": per_conv},
             "tokens": {"total": model_usage(self.all_models),
-                       "by_role": {"child_generator": model_usage([gen]), "child_reviewer": model_usage([rev] if rev else []),
-                                   "judge": model_usage([judge_model]),
+                       "by_role": {"child_generator": model_usage([gen]), "judge": model_usage([judge_model]),
                                    "agents": {a.name: model_usage([a.model]) for a in self.agents}},
                        "note": "from each response's usage; 0 for mock models" + ("; this session only, the run was resumed" if self.resumed else "")},
             "provider_data_retention": self.cfg.get("provider_data_retention", "[record each provider's retention/training settings before publishing]"),
@@ -492,10 +489,10 @@ def main(argv: list[str] | None = None) -> int:
                   skip_preflight=args.skip_preflight)
 
     todo = run.todo()
-    n, rev = len(run.plan), run.rev
+    n = len(run.plan)
     print(f"\nrun {run.run_id}: {len(run.personas)} scenarios x {len(run.agents)} chatbots x {len(run.seeds)} seeds = {n} conversations"
           + (f", {n - len(todo)} already done" if len(todo) < n else ""))
-    print(f"max model calls ~ {len(todo) * 6 * (2 + (1 if rev else 0)) + len(todo) * 14} (turn cap 6, judge cap 14 steps)")
+    print(f"max model calls ~ {len(todo) * 6 * 2 + len(todo) * 14} (turn cap 6, judge cap 14 steps)")
     for p, a, s in todo:
         run.talk(p, a, s)
         if getattr(a.model, "quit_requested", False):

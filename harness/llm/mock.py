@@ -51,8 +51,6 @@ class MockModel:
         role = (context or {}).get("role")
         if role == "child_generator":
             return self._child(context)
-        if role == "child_reviewer":
-            return json.dumps({"verdict": "approve", "reasons": []})
         if role == "chatbot":
             return self._chatbot(context, (context or {}).get("behavior") or self.behavior)
         if role == "judge":
