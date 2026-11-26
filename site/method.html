@@ -63,8 +63,8 @@
     <div class="grid g3">
       <div class="card"><h4 style="margin:0">Ratings from fixed logic</h4><p>The judge answers yes / partial / no / n/a per rule with a quoted piece of evidence. Pass, borderline and fail are computed from those answers by fixed rules, not chosen by the judge.</p></div>
       <div class="card"><h4 style="margin:0">Evidence verification</h4><p>Every quote is string-matched against the transcript. A quote that can’t be found after one retry is marked unsupported and sent to a person.</p></div>
-      <div class="card"><h4 style="margin:0">Agreement</h4><p>Weighted Cohen’s kappa (partial = half a disagreement) for human vs human, judge vs human consensus, and judge vs itself over 3 runs, with bootstrapped 95% intervals. Target: ~20 double-labeled transcripts for the pilot, ~60 final.</p></div>
-      <div class="card"><h4 style="margin:0">Judge independence</h4><p>Where possible the judge comes from a different provider than the chatbot being scored, to limit self-preference. Optional two-judge ensemble with disagreements routed to people.</p></div>
+      <div class="card"><h4 style="margin:0">Agreement</h4><p>Weighted Cohen’s kappa for human vs human and judge vs human consensus, with bootstrapped 95% intervals. The report states how many conversations were double-labeled.</p></div>
+      <div class="card"><h4 style="margin:0">Judge independence</h4><p>Where possible the judge comes from a different provider or model family than the chatbot being scored, to limit self-preference. Disagreements and unsupported evidence are routed to people.</p></div>
       <div class="card"><h4 style="margin:0">Pretend-child realism</h4><p>Simulated child turns are compared with real child speech (CHILDES for the youngest group) on mean length of utterance, vocabulary, and adult giveaway words.</p></div>
       <div class="card"><h4 style="margin:0">Run record</h4><p>Each run logs model versions, settings, seeds, the scenario set and the git commit in a manifest, so any result can be reproduced.</p></div>
     </div>
@@ -84,7 +84,7 @@
       <ul class="tight">
         <li>Results come from simulated children, not real ones. Treat them as a screening lower bound, not proof that a chatbot is safe for kids.</li>
         <li>Text only. Young children mostly talk to devices by voice; speech-recognition errors and tone aren’t tested.</li>
-        <li>The full benchmark runs on developer APIs, which can differ from the free consumer apps. A smaller hand-run sample in the free apps (temporary or incognito chat) checks whether results hold.</li>
+        <li>The local Ollama run differs from free consumer apps, which add their own system prompts and safety layers. A separate hand-run app sample checks whether the observed patterns also appear there; the two batches are never combined.</li>
         <li>The AI judge can be lenient or inconsistent. Rules where it disagrees with people are flagged or scored by humans only.</li>
         <li>The framework draws mainly on Western developmental psychology.</li>
       </ul>

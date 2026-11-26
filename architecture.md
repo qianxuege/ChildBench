@@ -2,7 +2,7 @@
 
 *A plain-language guide to how ChildBench works, from a scenario file to a score. Details are in the RFCs under [`rfcs/`](rfcs/); [RFC 0010](rfcs/0010-implementation-plan.md) has the current plan and wins where documents differ.*
 
-**Last updated:** 2026-11-25. This page describes the target design. Parts marked **(planned)** aren't built yet; the package id says where they're specified.
+**Last updated:** 2026-11-26. This page describes the implemented design and notes the remaining operations separately.
 
 ## 1. In one paragraph
 
@@ -28,22 +28,22 @@ Children talk to AI chatbots. In some moments a chatbot shouldn't handle things 
 
 <img src="docs/diagrams/childbench-concept.svg" alt="ChildBench pipeline: scenarios go to a pretend child, which talks with the chatbot under test; the transcript goes to the judge and to human scorers, and then to results" width="820" style="max-width: 100%; height: auto;">
 
-1. **Scenarios.** 15 files adapted from the DIM preprint's released cards **(planned, A17)**. Our 7 pilot scenarios are public examples. → [RFC 0005](rfcs/0005-scenarios-and-synthetic-data.md)
+1. **Scenarios.** 15 files adapted from the DIM preprint's released cards. Seven earlier scenarios remain as test fixtures and development examples. → [RFC 0005](rfcs/0005-scenarios-and-synthetic-data.md)
 2. **Orchestrator.** Plain code, no AI. Runs scenarios × chatbots × seeds and saves everything. → [RFC 0002](rfcs/0002-child-simulator-agent.md)
 3. **Conversation.** The pretend child and the chatbot take turns. Local models are called directly through Ollama; free apps are reached by a person copying and pasting (the relay).
 4. **Judge.** Records facts with exact quotes, gives levels and labels. Code checks the quotes and computes the scores. → [RFC 0003](rfcs/0003-judge-and-evaluation.md), [RFC 0008](rfcs/0008-referral-rules-and-rubric.md)
-5. **People.** Two people score every app chat without seeing the chatbot's name or the judge's scores **(planned, B15, F4)**.
+5. **People.** Two people score every app chat without seeing the chatbot's name or the judge's scores. Packet creation and import are implemented; collecting the final labels is still an operation.
 6. **Results.** Exported to a static site after a publishing check. → [RFC 0009](rfcs/0009-technology-stack-and-repo.md)
 
 ## 4. The parts
 
 ### The pretend child
 
-For each turn, code says which scripted line is due. The child says it in its own words. The line is then checked for content level, speech for the age, realistic personal data and, **(planned, A16)**, the key facts. A failed line goes back with reasons, up to 3 tries; then the scripted line is used and flagged.
+For each turn, code says which scripted line is due. The child says it in its own words. The line is then checked for content level, speech for the age, realistic personal data, and required key facts. A failed line goes back with reasons, up to 3 tries; then the scripted line is used and flagged.
 
 - It never sees the expected behaviour, so it can't hint at the right answer.
 - A line above the scenario's content level never reaches the chatbot, with guardrails on or off.
-- **(planned, A3)** The child becomes a tool-calling agent that ends each turn with `submit_child_line`. Today, code calls the checks.
+- The child remains a fixed, code-controlled loop. The separate scenario-authoring agent and judge use the model tool loop; code calls the child-line checks to keep generation bounded and reliable.
 
 ### The chatbot under test
 
@@ -56,7 +56,7 @@ Any model sits behind one adapter: send a message, get a reply. Main results com
 | DIM sheet | Every chat | Four domains 0–2, judge codes, over-escalation |
 | Referral checks | The five referral situations | 12 checks, then pass / borderline / fail |
 
-`harness/rating.py` computes the rating; the judge never picks it. `detect_pii_request` decides check S2.1 even if the judge disagrees. Researchers can change weights and levels in a scoring profile **(planned, B12, F3)**. Today's code still uses the 25-rule rubric v0.
+`harness/rating.py` computes the rating; the judge never picks it. `detect_pii_request` decides check S2.1 even if the judge disagrees. Researchers can change weights and levels in a scoring profile. New runs use rubric v1; v0 remains temporarily for pilot compatibility.
 
 ### Trusting the judge
 
@@ -64,11 +64,11 @@ Tune on 24 gold chats, test once on the other 24, then compare with two human sc
 
 ### Guardrails
 
-They protect four points: before a run, on every child line, during scoring and before publishing. They never touch the chatbot's replies. We run the same 15 scenarios with guardrails on and off and report what changed **(planned, A6, A6-run, B6)**. → [RFC 0006](rfcs/0006-safety-guardrails.md)
+They protect four points: before a run, on every child line, during scoring and before publishing. They never touch the chatbot's replies. The code for the paired guardrails-on/off comparison is implemented; collecting and reporting the final paired runs remains an operation. → [RFC 0006](rfcs/0006-safety-guardrails.md)
 
 ### Site
 
-Plain HTML, CSS and JavaScript reading exported data. **(planned, F3–F5)**: app and Ollama results, scoring controls, a human scoring page, and a Run page that works on the researcher's own computer.
+Plain HTML, CSS and JavaScript read exported data. The static site includes separate app and Ollama batches, scoring controls, a human scoring page, transcripts, and judge-reliability evidence. An optional local Run page exists but is not required for benchmark runs.
 
 ## 5. Example
 

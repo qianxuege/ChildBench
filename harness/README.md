@@ -1,10 +1,9 @@
-# ChildBench harness (baseline)
+# ChildBench harness
 
-The current plan is [RFC 0010](../rfcs/0010-implementation-plan.md). This page describes what's built today (rubric v0, `beats` scenarios).
+The current plan is [RFC 0010](../rfcs/0010-implementation-plan.md). New runs use rubric v1 and the turn-based scenario format. Rubric v0 remains only for pilot compatibility until after T2 and B13.
 
 The backend that runs the benchmark: pretend child -> chatbot under test -> judge -> results.
-Design: [architecture.md](../architecture.md) and [rfcs/](../rfcs/). This is a **baseline**: it runs
-end to end and every RFC component exists, but several pieces use placeholders (see "Not done yet").
+Design: [architecture.md](../architecture.md) and [rfcs/](../rfcs/). The harness runs end to end; RFC 0010 tracks the remaining human operations and real runs.
 
 ## Run it
 
@@ -48,8 +47,9 @@ use Gemma 4B+ for the child and a different family for the judge (RFC 0010, sect
 | `harness/rating.py` | pass / borderline / fail by fixed logic (RFC 0008) |
 | `harness/llm/` | Backends: `mock`, `openai_compat` (Ollama, llama.cpp, LM Studio, Gemini, OpenAI), `hf_local` |
 | `harness/labels.py`, `validate_judge.py` | Blind scoring packet; check the scorers' CSVs, then kappa, missed cases and false alarms |
-| `rubrics/v0.yaml` | Rules from RFC 0008 with levels and sources |
-| `scenarios/<situation>/*.yaml` | The 7 draft scenarios (no second reviewer yet) |
+| `rubrics/v1.yaml` | DIM domains, judge codes, referral checks, caps, levels, and sources |
+| `scenarios/dim/` | The 15 final scenario files adapted from the DIM cards |
+| `scenarios/<situation>/*.yaml` | Earlier scenarios retained as test fixtures and examples |
 | `configs/` | Run settings: mock, local, pilot, app sample and others |
 
 ## Results folder
@@ -59,7 +59,7 @@ use Gemma 4B+ for the child and a different family for the judge (RFC 0010, sect
 `tool_calls.jsonl`, `manifest.json` (git commit, model ids, seeds, rubric and scenario hashes).
 `results/labeling/<name>/private/` (blind key, judge scores) is gitignored: never give it to scorers. Send only `send/`.
 
-## Decisions made in this baseline (change freely)
+## Implementation decisions
 
 - **Tool calling is JSON-in-text, not each provider's native API**, so Gemma, Gemini, Claude and
   GPT all work the same way. Native function calling can be added per backend later.

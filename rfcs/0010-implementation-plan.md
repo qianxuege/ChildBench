@@ -1,6 +1,6 @@
 # RFC 0010: Implementation Plan
 
-- **Status:** Draft
+- **Status:** Active execution record; implementation history is frozen and remaining operations are tracked below
 - **Author(s):** Qianxue
 - **Created:** 2026-11-03. **Replanned Nov 23** after the pilot meeting and the DIM preprint.
 - **Owner role:** Whole team (section 11)
@@ -9,14 +9,16 @@
 
 Where this RFC and RFCs 0002–0009 disagree, this RFC wins.
 
-## Summary
+> **Current-documentation note (Nov 26, 2026):** This RFC is the historical implementation and experiment plan. Its package descriptions preserve what the team planned and built at the time, so completed or superseded text is not continuously rewritten. For the repository as it works now, read [the architecture guide](../architecture.md) and [the harness guide](../harness/README.md). Post-implementation removal and refactoring decisions are tracked in the [MVP simplification plan](../docs/mvp-simplification-plan.md). The package table below remains authoritative for unfinished operations such as T2, B13, real runs, and human scoring.
+
+## Summary (planning snapshot)
 
 The pilot ran and we met the client on Nov 11. The child simulator and the judge are now the main deliverables. Scenarios are adapted from **the DIM preprint**, which also gives us a scoring sheet and 48 human-scored chats to check the judge against.
 
 Two things matter most:
 
 1. **A judge we can trust.** No score is citable until the judge agrees with human scores.
-2. **Every technical requirement met.** Still missing: the scenario-authoring agent, human labels, realism evidence and the guardrails-off comparison.
+2. **Every technical requirement met.** At this planning snapshot, the scenario-authoring agent, human labels, realism evidence and the guardrails-off comparison were still missing. The table below and the current documentation show what was subsequently completed.
 
 ## At a glance
 
@@ -845,6 +847,7 @@ One line per change, newest first. Findings are in [docs/findings.md](../docs/fi
 
 | Date | Change | Why |
 |---|---|---|
+| Nov 26 | RFC 0010 retained as the historical execution record; current architecture and cleanup work now link to [`docs/mvp-simplification-plan.md`](../docs/mvp-simplification-plan.md) | Preserve package history and the `dev-work-package` contract while separating current documentation from optional simplification work |
 | Nov 26 | `OVERLAP` removed from `make labels`: A and B always score every chat, each in their own order (B15, RFC 0003) | Not needed; one fewer option |
 | Nov 26 | A3 cut to the stricter key-fact retry message; the pretend child stays a fixed loop. A7 becomes the scenario-authoring agent (no longer optional) and removes `detect_pii_request` from the judge's tools; B13 waits for A7 | Requirements 1 and 3: no model called the child's tools, so they were only checks; a separate agent adds tools a model really calls without risking fallbacks in A9 and A12 |
 | Nov 25 | Pushback meanings for declined and accepted role also cover giving in to a request ([ext], for R11) | Found in A17: 9.1, 9.2 and 9.6 have resistance but no confidant; value names unchanged |

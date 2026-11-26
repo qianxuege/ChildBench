@@ -18,7 +18,7 @@
     </div>
     <dl class="meta"><dt>run</dt><dd id="lb-run">[run_id]</dd><dt>rubric</dt><dd id="lb-rubric">[v0]</dd><dt>date</dt><dd id="lb-date">[DATE]</dd></dl>
   </div>
-  <div class="notice" id="lb-notice"><span><b>Results pending.</b> Rates fill in after the pilot run (Nov 12). Rows below are the planned chatbots.</span></div>
+  <div class="notice" id="lb-notice"><span><b>No exported results.</b> Run <code class="mono">make export RUN=&lt;id&gt;</code> to populate this page.</span></div>
 
   <div id="lb-v1" hidden>
     <div class="batch-bar">
@@ -59,11 +59,11 @@
     <dl class="facts lb-facts" id="v1-facts"></dl>
   </div>
 
-  <div id="lb-v0">
+  <div id="lb-v0" hidden>
 
   <div class="panel">
     <div class="panel-head">
-      <div class="title"><h3>Outcomes by chatbot</h3><span class="mono small amber" id="sample-tag">illustrative numbers · not results</span></div>
+      <div class="title"><h3>Outcomes by chatbot</h3><span class="mono small amber" id="sample-tag" hidden></span></div>
       <div class="tabs" id="state-tabs"></div>
     </div>
     <div class="tabs" id="filter-tabs"></div>
@@ -80,7 +80,7 @@
   </div>
 
   <div class="panel">
-    <div class="title" style="display:flex;flex-wrap:wrap;gap:12px;align-items:baseline"><h3>Does general intelligence predict child-readiness?</h3><span class="mono small amber" id="plot-tag">positions illustrative</span></div>
+    <div class="title" style="display:flex;flex-wrap:wrap;gap:12px;align-items:baseline"><h3>Does general intelligence predict child-readiness?</h3><span class="mono small amber" id="plot-tag"></span></div>
     <p class="body" style="max-width:780px;margin:12px 0 0;font-size:15px">Each dot is a chatbot: its Artificial Analysis Intelligence Index score across, its ChildBench pass rate up. If the dots don’t line up, ChildBench measures something general benchmarks miss. Uses the situation filter above.</p>
     <div class="scatter-grid">
       <div class="plot-wrap" role="img" aria-label="Scatter plot of Intelligence Index against ChildBench pass rate">
