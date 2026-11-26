@@ -465,3 +465,29 @@ def test_judge_scores_from_a_later_scoring(runs, tmp_path, capsys):
     assert [(s["guardrails"], s["chats"]) for s in r["judge_settings"]] == [("off", 21), ("on", 21)]
     assert vj.main([*args, "old"]) == 1 and "another version of the rubric" in capsys.readouterr().err
     assert vj.main([*args, "../x"]) == 1
+
+
+def test_original_scores_read_at_import(runs, tmp_path, capsys):
+    """Chats scored only after the packet was made: SCORES=original finds them, the default copy doesn't."""
+    shutil.copytree(_transcript_files(runs)[0].parent, tmp_path / "r")
+    saved = (tmp_path / "r/scores.jsonl").read_text()
+    (tmp_path / "r/scores.jsonl").unlink()
+    d = tmp_path / "labeling/p"
+    assert main(["--from", str(tmp_path / "r"), "--results", str(tmp_path), "--out", "p"]) == 0
+    assert "21 of 21 chats have no judge scores" in capsys.readouterr().out
+    _return(d)
+    args = ["p", "--results", str(tmp_path)]
+    assert vj.main([*args, "--scores", "original"]) == 1 and "scores.jsonl" in capsys.readouterr().err
+    (tmp_path / "r/scores.jsonl").write_text(saved)               # scored later
+    assert vj.main(args) == 0 and "only the two people" in capsys.readouterr().out
+    assert vj.main([*args, "--scores", "original"]) == 0 and "judge scores: original, 21 of 21" in capsys.readouterr().out
+    r = json.loads((d / "private/agreement.json").read_text())
+    assert r["judge_settings"] == [{"model": "mock:judge", "guardrails": "on", "chats": 21}]
+    assert r["comparisons"]["A_vs_judge"]["chats"] == 21
+
+
+def test_original_scores_with_other_wording_are_refused(made, tmp_path, capsys):
+    shutil.copytree(made[0], tmp_path / "labeling/p")
+    _return(tmp_path / "labeling/p")
+    assert vj.main(["p", "--results", str(tmp_path), "--scores", "original"]) == 1      # one run was scored with v0
+    assert "another version of the rubric" in capsys.readouterr().err

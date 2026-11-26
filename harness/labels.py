@@ -354,6 +354,10 @@ def main(argv=None) -> int:
     for s in r["skipped"]:
         print(f"  skipped  {s}")
     print(f"packet {r['packet_id']}: {r['chats']} chats, {r['overlap']} scored by everyone, {r['judged']} with judge scores")
+    if r["judged"] < r["chats"]:
+        print(f"  WARNING: {r['chats'] - r['judged']} of {r['chats']} chats have no judge scores with this rubric, so they won't be "
+              "compared with the judge. Score those runs first and make the packet again, or, once they're scored, use "
+              "make import-labels SCORES=original (or SCORES=<label> for a rescore).")
     if r["names_itself"]:
         print(f"  WARNING: a reply names an AI app or company, so these chats may not be blind: {', '.join(r['names_itself'])}")
     print("  send/score.html is ready" if r["page"] else "  site/score.html doesn't exist yet (F4): scorers use the CSV sheet and packet_<letter>.md")

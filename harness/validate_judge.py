@@ -1,10 +1,13 @@
 """Check and import the scorers' CSVs, then compute agreement (RFC 0003 "Human labels", RFC 0010 package B15).
 
     make import-labels OUT=<name>
+    make import-labels OUT=<name> SCORES=original    # judge scores from each run's own scores.jsonl, read now
     make import-labels OUT=<name> SCORES=<label>     # judge scores from each run's rescore_<label>/, if they were scored again
 
-Without SCORES, the judge's answers are the copy made with the packet (private/judge_labels.csv). Either way they must be
-from the packet's rubric wording, and agreement.json says which were used.
+Without SCORES, the judge's answers are the copy make labels saved in private/judge_labels.csv. It still works if the run
+folders have moved, but has no scores made after the packet. With SCORES, every run must have those scores, or nothing is
+imported. Either way they must be from the packet's rubric wording, and agreement.json says which were used, by which judge
+model and guardrails setting.
 
 Reads results/labeling/<name>/returned/*.csv, never changes them, and stops with a list of what to fix if anything is wrong.
 With every scorer's CSV in and correct, writes to results/labeling/<name>/private/:
@@ -226,13 +229,16 @@ def _agreed(p: Path, packet: dict, rows: list[dict]) -> Answers:
     return out
 
 
-def rescored(label: str, key: dict[str, dict[str, str]], rubric: Rubric) -> tuple[Answers, list[dict]]:
-    """The judge's answers from every run's rescore_<label>/, and its settings. A chat the judge failed on is left out."""
-    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", label):
+def judge_scores_from(label: str, key: dict[str, dict[str, str]], rubric: Rubric) -> tuple[Answers, list[dict]]:
+    """The judge's answers from every run's own scores ("original") or rescore_<label>/, and its settings.
+
+    A chat the judge failed on is left out. Raises LabelError if any run lacks the scores, or they use other wording.
+    """
+    if label != "original" and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", label):
         raise LabelError(f"SCORES '{label}' may only have letters, digits, '.', '_' and '-'")
     found, problems = {}, []
     for d in sorted({r["run_folder"] for r in key.values()}):
-        p = Path(d) / f"rescore_{label}" / "scores.jsonl"
+        p = Path(d) / ("" if label == "original" else f"rescore_{label}") / "scores.jsonl"
         if not p.is_file():
             problems.append(f"no {p}")
             continue
@@ -264,7 +270,7 @@ def import_labels(folder: Path, scores: Optional[str] = None) -> dict:
     everyone = dict(labels)
     judge, source, settings = {}, None, []
     if scores:
-        (judge, settings), source = rescored(scores, key, rubric), f"rescore_{scores}"
+        (judge, settings), source = judge_scores_from(scores, key, rubric), "original" if scores == "original" else f"rescore_{scores}"
     elif (private / "judge_labels.csv").exists():
         judge, source = {r["chat_id"]: r for r in read_csv(private / "judge_labels.csv")[1]}, "the copy made with the packet"
         if (private / "judge_settings.json").exists():
@@ -304,7 +310,7 @@ def import_labels(folder: Path, scores: Optional[str] = None) -> dict:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Check the scorers' CSVs and compute agreement.")
     ap.add_argument("name", help="the packet's OUT name")
-    ap.add_argument("--scores", help="use the judge scores in each run's rescore_<label>/")
+    ap.add_argument("--scores", help="'original' for each run's own scores.jsonl, or a label for its rescore_<label>/")
     ap.add_argument("--results", default="results")
     a = ap.parse_args(argv)
     folder = REPO_ROOT / a.results / "labeling" / a.name

@@ -28,7 +28,7 @@ labels:
 	python -m harness.labels $(if $(FROM),--from "$(FROM)") $(if $(OUT),--out "$(OUT)") $(if $(OVERLAP),--overlap $(OVERLAP))
 
 # Check the CSVs in results/labeling/<OUT>/returned/ and compute agreement: make import-labels OUT=<name>
-# SCORES=<label> takes the judge's scores from each run's rescore_<label>/ instead of the copy made with the packet.
+# SCORES=original reads each run's own scores.jsonl now, and SCORES=<label> its rescore_<label>/, instead of the copy made with the packet.
 import-labels:
 	@test -n "$(OUT)" || (echo "usage: make import-labels OUT=<name>" && exit 1)
 	python -m harness.validate_judge "$(OUT)" $(if $(SCORES),--scores "$(SCORES)")
