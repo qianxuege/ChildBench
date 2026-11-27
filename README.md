@@ -92,6 +92,8 @@ From the pilot: 7 scenarios × 2 small local models × 2 seeds, 28 conversations
 
 Needs Python 3.11+.
 
+### 1. Install and verify
+
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
@@ -99,42 +101,117 @@ pip install -e ".[dev]"
 make test    # unit tests
 make check   # validate scenarios and rubric
 make mock    # full run offline, no keys; its numbers mean nothing
-make site    # the public website, at http://127.0.0.1:11510
 ```
 
-**Website.** `make site` serves the static files in `site/`, exactly as the public sees them. It shows what
-`make export RUN=<id>` wrote to `site/data/`. Use it to check the site before deploying.
+### 2. Start the child and judge
 
-**Manual app runs.** Use the terminal relay with `make run CONFIG=configs/app-sample.yaml`. It shows each checked
-line, copies it when a system clipboard is available, and records the whole reply pasted back by the researcher.
-Pressing Ctrl+C saves the current chat as incomplete. Resume later with
-`python -m harness.run --resume <run_id>`. The pretend child and judge use the local model ports described below.
-
-**With local models:** install [Ollama](https://ollama.com). Tested on a Mac with 24 GB of memory.
+Install [Ollama](https://ollama.com). The app workflow needs two local models: the pretend child and the judge.
+It was tested on a Mac with 24 GB of memory.
 
 ```bash
-ollama serve &      # any one server, just for the downloads; stop it afterwards
-ollama pull gemma3:270m && ollama pull gemma4:e4b && ollama pull qwen3.5:9b
+ollama serve &      # one temporary server for downloading; stop it afterwards
+ollama pull gemma4:e4b && ollama pull qwen3.5:9b
 
-export OLLAMA_KEEP_ALIVE=30s OLLAMA_MAX_LOADED_MODELS=1
-OLLAMA_HOST=127.0.0.1:11501 OLLAMA_CONTEXT_LENGTH=4096  ollama serve &
-OLLAMA_HOST=127.0.0.1:11502 OLLAMA_CONTEXT_LENGTH=8192  ollama serve &
-OLLAMA_HOST=127.0.0.1:11503 OLLAMA_CONTEXT_LENGTH=16384 ollama serve &
-
-make run CONFIG=configs/pilot.yaml ARGS="--only dist-003 --seeds 1"  # local smoke test
+OLLAMA_KEEP_ALIVE=10m OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=127.0.0.1:11502 OLLAMA_CONTEXT_LENGTH=8192  ollama serve &
+OLLAMA_KEEP_ALIVE=30s OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=127.0.0.1:11503 OLLAMA_CONTEXT_LENGTH=16384 ollama serve &
 ```
 
 | Port | Model | Role |
 |---|---|---|
-| 11501 | `gemma3:270m` | Weak chatbot under test |
-| 11502 | `gemma4:e4b` | Pretend child; stronger chatbot under test |
+| 11502 | `gemma4:e4b` | Pretend child |
 | 11503 | `qwen3.5:9b` | Judge |
+| 11504 | `llama3.1:8b` | Local chatbot under test in A9 only |
 
-The short keep-alive stops the two large models from being in memory together. Thinking is off for both, because it used up the token limit and gave empty replies.
+Only ports 11502 and 11503 are needed for a consumer-app run. The child stays loaded longer because the researcher
+may take several minutes to relay each reply. The judge's short keep-alive avoids keeping both large models in memory.
+Thinking is off for both because it used the token limit and sometimes produced empty replies.
 
-**New scenarios:** `make author IDEA="..." [SITUATION=...] [AGE=...]` has the authoring agent draft one into `drafts/` (Ollama port 11502; `MODEL=mock` offline). No run reads `drafts/`: a person reviews the draft and moves it into `scenarios/`, as [`add-scenario`](skills/add-scenario/SKILL.md) explains.
+### 3. Prepare temporary or incognito app chats
 
-**With a free app:** `make run CONFIG=configs/app-sample.yaml` shows each child line, copies it for you, and reads the reply back. Use a private chat, paste only the lines shown, and never edit replies. Details: [RFC 0010, section 7](rfcs/0010-implementation-plan.md#7-chatbots-api-and-app-and-the-manual-relay).
+For every conversation, open a fresh private browser window and then enable the provider's own private-chat mode.
+From a normal logged-in chat, the control is usually in the top-right corner:
+
+- **ChatGPT:** select the temporary-chat icon at the top right. The model picker is beside the message box.
+- **Claude:** select the ghost icon at the top right to use Incognito. The selected model appears at the bottom of the message box.
+- **Gemini:** select the temporary-chat control at the top right. The model picker is inside the message box.
+
+Before pasting the first child line, look at the model picker. When the terminal relay asks which model the app shows,
+type that name exactly as displayed; it is saved as `app_model_shown`. Do not infer an API model name when the app
+shows only a product label such as `Auto` or `Everyday help`.
+
+We use these modes because the providers say these chats are not used to train or improve their models:
+[ChatGPT Temporary Chat](https://help.openai.com/en/articles/8914046-temporary-chat-in-chatgpt),
+[Claude Incognito](https://support.claude.com/en/articles/12260368-use-incognito-chats), and
+[Gemini Temporary Chat](https://support.google.com/gemini/answer/13594961). They are still not zero-retention or
+anonymous modes: providers may retain or inspect chats for safety, abuse prevention, or organization policy. Check
+the notice shown in the app because retention rules can change. Repeated safety testing can also trigger warnings,
+rate limits, or account review. ChildBench therefore sends only approved, mild, entirely fictional scenarios to
+consumer apps. Stop if an app displays an account or policy warning; do not try to bypass it.
+
+<details>
+<summary>ChatGPT temporary chat and model picker</summary>
+
+![ChatGPT temporary chat with the temporary-chat indicator and model picker open](docs/screenshots/chatgpt-temporary.png)
+
+</details>
+
+<details>
+<summary>Claude Incognito and model display</summary>
+
+![Claude with the Incognito control at the top right and the selected model shown beside the composer](docs/screenshots/claude-incognito.png)
+
+</details>
+
+<details>
+<summary>Gemini temporary chat and model picker</summary>
+
+![Gemini temporary chat with the temporary-chat indicator and model picker open](docs/screenshots/gemini-temporary.png)
+
+</details>
+
+### 4. Run the consumer-app relay
+
+Estimate the workload, then start the supported app workflow:
+
+```bash
+make estimate CONFIG=configs/app-sample.yaml
+make run CONFIG=configs/app-sample.yaml
+```
+
+The relay covers the configured ChatGPT, Claude, and Gemini chats. It shows each guardrail-checked child line, copies
+it when a system clipboard is available, and records the complete chatbot reply pasted back by the researcher. Paste
+only what the relay displays and never edit the chatbot reply. To test the workflow on one scenario before running the
+whole queue, append `ARGS="--only dim-4.1-context"` to either command.
+
+Pressing Ctrl+C saves the current conversation as incomplete. Resume the same run with:
+
+```bash
+python -m harness.run --resume <run_id>
+```
+
+Completed conversations and their scores are retained; only unfinished conversations restart.
+
+### 5. View transcripts and scores from a saved run
+
+Export the saved run into the local site, then serve it:
+
+```bash
+make export RUN=20261127-162514_app-sample_8c3c PREVIEW=1
+make site
+```
+
+Open <http://127.0.0.1:11510>, choose **Results**, and select a case to see its transcript, DIM scores, referral
+rating, evidence quotes, guardrail record, and recorded app model. This run uses `PREVIEW=1` because its scenario has
+not yet received the required independent second review. Preview output is local-only and must not be deployed.
+
+For another saved run, replace the value after `RUN=` with its directory name under `results/`. `make site` does not
+run or resume any conversations; it only serves the static data most recently written by `make export`.
+
+### 6. Draft a new scenario
+
+`make author IDEA="..." [SITUATION=...] [AGE=...]` has the authoring agent draft one into `drafts/` using Ollama port
+11502 (`MODEL=mock` works offline). No run reads `drafts/`: a person reviews the draft and moves it into `scenarios/`,
+as [`add-scenario`](skills/add-scenario/SKILL.md) explains.
 
 ### Full evaluation loop
 
@@ -172,12 +249,9 @@ This is the complete path from conversations to the local results site. First co
    make gold SPLIT=tune JUDGE_GUARDRAILS=off LABEL=judge-off
    ```
 
-4. **Collect the 24 consumer-app chats through the terminal relay.** Keep the child and judge servers on ports 11502 and 11503; a longer child-model keep-alive avoids reloading it between manual turns. Use a new private browser window and the app's private-chat mode for every chat. Paste only the displayed child line and paste each complete chatbot reply back unchanged.
+4. **Collect the 24 consumer-app chats through the terminal relay.** Follow steps 2–4 above, including the temporary/incognito-chat precautions. The same `configs/app-sample.yaml` workflow is used for the relay test and the final queue; the optional `--only` modifier selects the test case.
 
    ```bash
-   make estimate CONFIG=configs/app-sample.yaml
-   make run CONFIG=configs/app-sample.yaml ARGS="--only dim-4.1-context"  # relay smoke test
-   make run CONFIG=configs/app-sample.yaml
    APP_RUN=$(cat results/LATEST)
    ```
 
