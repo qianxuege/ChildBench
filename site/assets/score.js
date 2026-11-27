@@ -163,17 +163,25 @@ const S = {
   answers: {}, notes: {}, cur: 0,
   tried: new Set(),          // chats the scorer has left, or tried to download with: their blanks are shown in amber
   saved: null,               // time of the last save, or false when storage failed
+  qScroll: 0, guideOpen: false, // keep the long question panel and guide stable if the work view is rebuilt
 };
+let scrollSaveTimer = null;
 
 const scorerKey = () => `${STORE}.${S.packet.packet_id}.scorer`;
 const workKey = () => `${STORE}.${S.packet.packet_id}.${S.who}`;
 const mine = () => chatsFor(S.packet, S.who);
 
 function save() {
-  const ok = storage.set(workKey(), { answers: S.answers, notes: S.notes, cur: S.cur, tried: [...S.tried], at: new Date().toISOString() });
+  const ok = storage.set(workKey(), { answers: S.answers, notes: S.notes, cur: S.cur, tried: [...S.tried],
+    qScroll: S.qScroll, guideOpen: S.guideOpen, at: new Date().toISOString() });
   S.saved = ok ? new Date() : false;
   const el = $("#sc-saved");
   if (el) el.textContent = savedText();
+}
+
+function saveScrollSoon() {
+  clearTimeout(scrollSaveTimer);
+  scrollSaveTimer = setTimeout(save, 150);
 }
 
 function savedText() {
@@ -188,6 +196,8 @@ function load() {
   S.notes = w.notes && typeof w.notes === "object" ? w.notes : {};
   S.tried = new Set(Array.isArray(w.tried) ? w.tried : []);
   S.cur = Number.isInteger(w.cur) && w.cur >= 0 && w.cur < mine().length ? w.cur : 0;
+  S.qScroll = Number.isFinite(w.qScroll) && w.qScroll >= 0 ? w.qScroll : 0;
+  S.guideOpen = w.guideOpen === true;
   S.saved = null;
 }
 
@@ -300,12 +310,21 @@ function go(i) {
   if (i < 0 || i >= list.length || i === S.cur) return;
   S.tried.add(list[S.cur].id);        // leaving a chat shows its blanks from now on
   S.cur = i;
+  S.qScroll = 0;
+  S.guideOpen = false;
   save();
-  renderWork();
+  renderWork(null, false);
   window.scrollTo({ top: $("#sc-root").offsetTop - 12 });
 }
 
-function renderWork(flash) {
+function renderWork(flash, preserveView = true) {
+  if (preserveView) {
+    const oldQuestions = $(".sc-q-col");
+    if (oldQuestions) S.qScroll = oldQuestions.scrollTop;
+    const oldGuide = $("#sc-guide");
+    if (oldGuide) S.guideOpen = oldGuide.open;
+  }
+
   const p = S.packet, list = mine();
   if (!list.length) {
     $("#sc-root").replaceChildren(errorBox(`Scorer ${S.who} has no chats in this packet`, ["Check the letter you were given."]));
@@ -326,7 +345,7 @@ function renderWork(flash) {
       h("div", { class: "track sc-track" }, h("div", { class: "seg", style: `width:${(100 * done / list.length).toFixed(1)}%;background:var(--accent)` })),
       h("div", { class: "dim small", id: "sc-saved" }, savedText())),
     h("div", { class: "tabs" },
-      h("button", { class: "btn", type: "button", onclick: () => $("#sc-guide").showModal() }, "Full guide"),
+      h("button", { class: "btn", type: "button", onclick: openGuide }, "Full guide"),
       h("button", { class: "btn on", type: "button", onclick: download }, "Download CSV"),
       h("label", { class: "btn", for: "sc-resume", title: "Load a CSV you downloaded from this page before" }, "Load a CSV"),
       h("input", { type: "file", id: "sc-resume", class: "sc-file", accept: ".csv,text/csv", onchange: (e) => resume(e.target.files[0], e.target) }),
@@ -342,6 +361,15 @@ function renderWork(flash) {
       h("span", { class: "mono dim" }, `${S.cur + 1} / ${list.length}`),
       h("button", { class: "btn", type: "button", disabled: S.cur === list.length - 1, onclick: () => go(S.cur + 1) }, "Next chat →")),
     renderGuide());
+
+  const questions = $(".sc-q-col");
+  questions.scrollTop = S.qScroll;
+  questions.addEventListener("scroll", () => { S.qScroll = questions.scrollTop; saveScrollSoon(); }, { passive: true });
+  const guide = $("#sc-guide");
+  guide.addEventListener("close", () => {
+    if (S.guideOpen) { S.guideOpen = false; save(); }
+  });
+  if (S.guideOpen) guide.showModal();
 }
 
 function renderChat(c, i, n) {
@@ -424,12 +452,24 @@ function refreshCounts(c) {
 
 // ------------------------------------------------------------------ the full guide
 
+function openGuide() {
+  S.guideOpen = true;
+  save();
+  $("#sc-guide").showModal();
+}
+
+function closeGuide() {
+  S.guideOpen = false;
+  save();
+  $("#sc-guide").close();
+}
+
 function renderGuide() {
   const p = S.packet, qs = p.questions;
   const lg = p.length_guides || {};
   return h("dialog", { id: "sc-guide", class: "sc-dialog", "aria-label": "Full scoring guide" },
     h("div", { class: "sc-dialog-head" }, h("h3", {}, "Scoring guide"),
-      h("button", { class: "btn", type: "button", onclick: () => $("#sc-guide").close() }, "Close")),
+      h("button", { class: "btn", type: "button", onclick: closeGuide }, "Close")),
     h("ol", { class: "body sc-how" },
       h("li", {}, "Work alone. Don’t discuss chats until both sheets are in."),
       h("li", {}, "Read the whole chat, then answer every question beside it. A question that doesn’t apply to a chat isn’t shown."),
