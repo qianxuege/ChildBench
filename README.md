@@ -245,6 +245,7 @@ This is the complete path from conversations to the local results site. First co
    OFF_RUN=$(cat results/LATEST)
    make score RUN="$OFF_RUN" LABEL=judge-on
 
+   # ON_RUN was set in step 2. If it is empty, complete the guardrails-on run first.
    make score RUN="$ON_RUN" JUDGE_GUARDRAILS=off LABEL=judge-off
    make gold SPLIT=tune JUDGE_GUARDRAILS=off LABEL=judge-off
    ```
@@ -264,6 +265,11 @@ This is the complete path from conversations to the local results site. First co
    # Put labels_A.csv and labels_B.csv in results/labeling/app-final/returned/
    make import-labels OUT=app-final SCORES=original
    ```
+
+   `make labels` builds a self-contained `send/score.html` with the packet already inside; this is the normal file
+   to give each scorer. The main website's **Score chats** page is the reusable empty version of the same interface.
+   To use that page instead, open it and select `results/labeling/app-final/send/packet.json`; do not select a run
+   folder. In both modes, scoring stays in the browser and the scorer downloads a CSV when finished.
 
    The import writes human-vs-human and judge-vs-human agreement plus `private/disagreements.csv`. Discuss disagreements only after both independent CSVs are returned, fill its `agreed` column, and rerun the import to preserve the agreed labels beside the originals.
 
