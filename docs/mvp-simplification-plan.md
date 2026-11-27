@@ -1,6 +1,6 @@
 # MVP simplification plan
 
-**Status:** phases 1–3 complete except the T1 review gate; T2 is complete and phase 4 waits for B13
+**Status:** phases 1–3 complete except the reviewer gate now inside A9; T2 is complete and phase 4 waits for B13
 
 **Scope:** reduce maintenance and reporting risk without weakening the course requirements or the planned evaluation
 
@@ -33,7 +33,7 @@ Do not remove evaluation evidence merely because its module is large. In particu
 - [x] Remove invented leaderboard, scenario, transcript, and guardrail fallback data. With no export, show an explicit empty state and the command that creates data.
 - [x] Correct stale public claims about review, age coverage, judge repetition, ensembles, and API runs.
 - [x] Update `architecture.md` and `harness/README.md` to describe the implemented v1 workflow.
-- [ ] Refuse real app runs with unreviewed scenarios after T1 supplies reviewer metadata.
+- [ ] Refuse real app runs with unreviewed scenarios after A9 supplies reviewer metadata.
 
 This phase comes first because inaccurate public text can invalidate an otherwise correct result.
 

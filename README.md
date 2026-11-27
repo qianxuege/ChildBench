@@ -6,7 +6,7 @@ ChildBench is an open benchmark that plays short conversations between a simulat
 
 Team 20, Carnegie Mellon University, Introduction to AI, Fall 2026.
 
-> **Status, Nov 27, 2026: core implementation built; evaluation operations in progress.** The 15 scenarios, rubric, judge, guardrails, authoring agent and evaluation tooling are built, and the T2 input audit found no source-data problems. T1 scenario review, T4 code review, judge freeze, real runs and human labels remain. **There are no results worth citing yet.** [RFC 0010](rfcs/0010-implementation-plan.md#who-does-what-in-order) tracks the remaining operations.
+> **Status, Nov 27, 2026: core implementation built; evaluation operations in progress.** The 15 scenarios, rubric, judge, guardrails, authoring agent and evaluation tooling are built, and the T2 input audit found no source-data problems. B13 judge freeze is next, followed by A9's scenario review and local run; code review, app runs and human labels remain. **There are no results worth citing yet.** [RFC 0010](rfcs/0010-implementation-plan.md#who-does-what-in-order) tracks the remaining operations.
 
 **Contents:** [Concept](#core-concept) · [Why it matters](#why-it-matters) · [Scope](#project-scope) · [How it works](#how-it-works) · [Technical requirements](#technical-requirements) · [Pilot findings](#what-we-know-so-far) · [Run it](#run-it) · [Responsible AI](#responsible-ai) · [What's next](#whats-next) · [Authors](#authors) · [References](#references)
 
@@ -36,7 +36,7 @@ Regulators are asking too: the U.S. FTC has ordered seven companies that offer A
 
 | | Included |
 |---|---|
-| **Scenarios** | 15 adapted from the preprint's released cards (An et al., 2026a): five referral situations, two controls and everyday moments; awaiting the independent T1 review |
+| **Scenarios** | 15 adapted from the preprint's released cards (An et al., 2026a): five referral situations, two controls and everyday moments; awaiting the independent review at the start of A9 |
 | **Chatbots** | Free ChatGPT, Claude and Gemini apps on 8 scenarios, 24 chats; one local model on all 15 |
 | **Scoring** | A four-domain sheet (0–2 each) on every chat; 12 referral checks on the five referral situations |
 | **Evidence** | Judge vs 48 human-scored chats, two human scorers on all 24 app chats, guardrails on vs off |
@@ -73,7 +73,7 @@ Full explanation: [architecture.md](architecture.md). Design decisions: [rfcs/](
 | 3 | At least 5 custom tools, documented for agents | 9 tools that a model calls, each with an agent-facing docstring ([RFC 0004](rfcs/0004-agentic-tools.md)): the judge's 4 (`load_rubric`, `verify_evidence_quote`, `submit_scores`, `flag_for_human_review`) and the authoring agent's 5 (`load_persona`, `validate_scenario`, `check_content_ceiling`, `lint_child_utterance`, `save_scenario_draft`). Three more are helpers only code calls, and aren't counted | Done |
 | 4 | Skill folder used by the team or made for the client | [`dev-work-package`](.claude/skills/dev-work-package/SKILL.md), which takes a work package from plan to pull request; [`add-scenario`](skills/add-scenario/SKILL.md) for the client, which runs the authoring agent and walks a person through reviewing its draft | Done |
 | 5 | Evaluation | Judge vs gold set, human vs human, tool accuracy, child realism and script fidelity | Tooling done; final runs and labels pending |
-| 6 | Data protection and simulated-data quality | Synthetic data only, fake-data and content checks; key-fact checks and scenario reviews | Checks done; T1 review pending |
+| 6 | Data protection and simulated-data quality | Synthetic data only, fake-data and content checks; key-fact checks and scenario reviews | Checks done; A9 review pending |
 | 7 | Safety guardrails | Content, speech, fake-data, key-fact, quote and publishing checks ([RFC 0006](rfcs/0006-safety-guardrails.md)) | Done |
 | 7.1 | With vs without guardrails | The same 15 scenarios, guardrails on and off: counts and side-by-side examples | Code done; paired runs pending |
 
@@ -138,7 +138,7 @@ The short keep-alive stops the two large models from being in memory together. T
 
 ### Full evaluation loop
 
-This is the complete path from conversations to the local results site. Do it only after T1 has added a second reviewer to every final scenario and B13 has frozen the judge. `configs/full.yaml` and `configs/guardrails-off.yaml` deliberately refuse unreviewed scenarios.
+This is the complete path from conversations to the local results site. First complete B13. A9 then begins with an independent review that adds a second reviewer to every final scenario; `configs/full.yaml` and `configs/guardrails-off.yaml` deliberately refuse to run until that is done.
 
 1. **Validate and start the three models.** The child, judge and chatbot each use a separate Ollama port. Keep the judge and both run configs identical after B13.
 
@@ -223,7 +223,7 @@ A referral isn't always to a parent: scenarios list suitable adults, because a p
 
 ## What's next
 
-The immediate gates are T4 code review and T1 scenario review, then B13 chooses and freezes the judge. Only after those gates do the final Ollama, app and guardrails-off runs begin; human scoring and export follow them. The exact dependencies are in [RFC 0010](rfcs/0010-implementation-plan.md#who-does-what-in-order).
+The immediate next step is B13: choose and freeze the judge on the audited gold set. A9 follows, beginning with independent scenario review and then the 15-chat Ollama run. Code review, the full app workflow, human scoring and export follow in the order shown in [RFC 0010](rfcs/0010-implementation-plan.md#who-does-what-in-order).
 
 **Open concerns**
 

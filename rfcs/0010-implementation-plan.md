@@ -9,7 +9,7 @@
 
 Where this RFC and RFCs 0002–0009 disagree, this RFC wins.
 
-> **Current-documentation note (Nov 27, 2026):** This RFC is the historical implementation and experiment plan. Its package descriptions intentionally retain superseded work such as direct Hugging Face support, optional OpenRouter setup and the removed browser Run page; those entries describe what was planned or built, not the current supported runtime. For the repository as it works now, read [the architecture guide](../architecture.md) and [the harness guide](../harness/README.md). Removal and refactoring decisions are tracked in the [MVP simplification plan](../docs/mvp-simplification-plan.md). The package table remains authoritative for unfinished operations such as T1, T4, B13, real runs and human scoring; T2 is complete.
+> **Current-documentation note (Nov 27, 2026):** This RFC is the historical implementation and experiment plan. Its package descriptions intentionally retain superseded work such as direct Hugging Face support, optional OpenRouter setup and the removed browser Run page; those entries describe what was planned or built, not the current supported runtime. For the repository as it works now, read [the architecture guide](../architecture.md) and [the harness guide](../harness/README.md). Removal and refactoring decisions are tracked in the [MVP simplification plan](../docs/mvp-simplification-plan.md). The package table remains authoritative for unfinished operations such as B13, A9, T4, app runs and human scoring; T1 was retired and folded into A9/A12, and T2 is complete.
 
 ## Summary (planning snapshot)
 
@@ -28,7 +28,7 @@ Two things matter most:
 
 **Person A (Cici) builds everything**, frontend and backend, tests it, tunes the judge, and runs one app chat as a check. `Owner A` in a package means Cici. Split agreed Nov 25.
 
-**To find the next package:** take the first row that isn't done (see the Status column; it must match the block in section 11) and whose "Waits for" are all done. Rows with the same step number can run at the same time. Rows with nothing left to wait for can start early.
+**To find the next package:** take the first row with Status `todo` whose "Waits for" are all `done` or `skipped` (the Status must match the block in section 11). Rows with the same step number can run at the same time. Rows with nothing left to wait for can start early.
 
 | Step | Package | Status | What | Who | Due | Waits for |
 |---|---|---|---|---|---|---|
@@ -47,25 +47,23 @@ Two things matter most:
 | 4 | [**F3**](#wp-f3) | done | Site: new results and scoring controls | Cici | Nov 25 night | B14 |
 | 4 | [**B6**](#wp-b6) | done | Evaluation and guardrail statistics | Cici | Nov 25 night | B1, B11, B14, B15, A8 |
 | 5 | [**F4**](#wp-f4) | done | Scoring page | Cici | Nov 25 night | B15, F3 |
-| 5 | [**A13**](#wp-a13) | todo | OpenRouter key (optional) | Cici | Nov 25 night | — |
+| 5 | [**A13**](#wp-a13) | skipped | OpenRouter key (optional) | Cici | — | — |
 | 5 | [**A7**](#wp-a7) | done | Scenario-authoring agent and `add-scenario` skill | Cici | Nov 26 | A16 |
 | 6 | [**T2**](#wp-t2) | done | Check gold set and tool labels; settle app-card scope | Cici | Nov 27 | A17, B11 |
-| 6 | [**A3-app**](#wp-a3-app) | todo | One app chat as a check | Cici | Nov 26 morning | A3, A16, A17 |
-| 6 | [**T4**](#wp-t4) | todo | Claude and Codex review all the code | Cici | Nov 26 morning | A3, A6, A8, A17, B6, B10, B14, B15, F3, F4 |
-| 7 | [**T1**](#wp-t1) | todo | Check scenarios against the cards; try the whole system from a fresh clone | Adam | Nov 26 | A3, A6, A17, B6, B10, B14, B15, F3, F4 |
 | 7 | [**F5**](#wp-f5) | done | Run page (`make app`); merge by Nov 26 evening or after Nov 28 | Cici | Nov 26 evening | A3, A16, B1, A6, F3, F4 |
-| 8 | [**B13**](#wp-b13) | todo | Choose the judge, one held-out test, freeze | Cici | Nov 26 evening | B10, T2, T4, A7 |
-| 9 | [**A9**](#wp-a9) | todo | 15 Ollama chats, guardrails on | Cici | Nov 27 | A3, A15, A17, B13, T1, T2 |
-| 9 | [**A12**](#wp-a12) | todo | 24 app chats: 8 ChatGPT, 8 Claude, 8 Gemini | Adam | Nov 28 | A3-app, A15, A17, B13, T1, T2 |
+| 7 | [**B13**](#wp-b13) | todo | Choose the judge, one held-out test, freeze | Cici | Nov 27 | B10, T2, A7 |
+| 8 | [**A9**](#wp-a9) | todo | Review the 15 cards; run 15 Ollama chats, guardrails on | Cici, Adam | Nov 27–28 | A3, A15, A17, B13, T2 |
+| 9 | [**T4**](#wp-t4) | todo | Review all code after the first full local run | Cici | Nov 28 | A9 |
+| 10 | [**A12**](#wp-a12) | todo | Fresh-clone check and 24 app chats: 8 per app | Adam | Nov 28–29 | A15, A17, A9, B13, T2, T4 |
 | 10 | [**A6-run**](#wp-a6-run) | todo | 15 Ollama chats, guardrails off; statistics Nov 29 | Cici | Nov 28–29 | A6, A9, B6 |
 | 10 | [**B4-send**](#wp-b4-send) | todo | Send `score.html` to the scorers | Cici | Nov 28 evening | A12, B15 |
 | 11 | [**B4-score**](#wp-b4-score) | todo | Score all 24 app chats: Collin (A), Tina (B) | Collin, Tina | Nov 29 | B4-send |
 | 12 | [**B4**](#wp-b4) | todo | Import labels, settle disagreements | Cici | Nov 30 | B4-score |
-| 13 | [**B8**](#wp-b8) | todo | Final evaluation and export; **code and data freeze** | Cici | Nov 30 | A9, A12, A6-run, B4, B6, B14, F3 |
+| 13 | [**B8**](#wp-b8) | todo | Final evaluation and export; **code and data freeze** | Cici | Nov 30 | A9, A12, A6-run, B4, B6, B14, F3, T4 |
 | 14 | [**D2**](#wp-d2) | todo | Poster, with on/off analysis | Tianyou | Dec 1 | B8, A6-run |
 | 14 | [**M1**](#wp-m1) | todo | Meeting with the client | Adam | Dec 1 or 2 | B8 |
 
-Steps 1–5 are the build. Packages in the same build step share no files except where each has its own part: a `Makefile` target, tests, or A16's and B12's separate models in `schemas.py`. B10's tuning may run into the morning of Nov 26, which delays B13; B13's model comparison can start before T1 finishes, but its held-out test can't. F5 isn't needed by the runs. D2's layout and method can start Nov 26.
+Steps 1–5 are the build. Packages in the same build step share no files except where each has its own part: a `Makefile` target, tests, or A16's and B12's separate models in `schemas.py`. **The next package is B13, followed by A9.** Gold-set judge selection does not depend on final scenario review or the full-system exercise. A9 begins with the independent card review required by its strict config; A12 carries the fresh-clone/end-to-end exercise that used to be T1. F5 isn't needed by the runs.
 
 **Keep the scoring blind:** Adam (ran the chats) and Cici (tuned the judge, holds the key) don't score. Collin and Tina don't take B4-send or B4, and don't discuss chats until both CSVs are in.
 
@@ -511,7 +509,7 @@ Replaces A2 and A14.
 - Set `rubric: rubrics/v1.yaml` in `full.yaml` and `app-sample.yaml`; a config without it uses v0.
 - 9.4 and 9.5: `approval_basis: "released in the DIM preprint, Appendix A"`; `client_approved` stays false. Each file's `source` credits the preprint and says "adapted".
 - **Files:** `scenarios/`, `configs/full.yaml` (new), `configs/app-sample.yaml`
-- **Done when:** `make check` passes on all 15; Adam adds the review in T1; the 4.1 caregiver message matches the preprint's text.
+- **Done when:** `make check` passes on all 15; Adam adds the independent review at the start of A9; the 4.1 caregiver message matches the preprint's text.
 
 <a id="wp-b1"></a>
 
@@ -573,11 +571,9 @@ From the pilot ([F-004](../docs/findings.md), [F-007](../docs/findings.md)): 4 o
 
 <a id="wp-a13"></a>
 
-**A13 · Optional OpenRouter key** · Owner A · Needs: — · Status: todo
+**A13 · Optional OpenRouter key** · Owner A · Needs: — · Status: skipped
 
-- `OPENROUTER_API_KEY` in `.env.example`, an example config, README steps. Record the serving provider when it's reported. No cost tracking.
-- **Files:** `.env.example`, `configs/openrouter.yaml` (new), `harness/llm/openai_compat.py`, `README.md`, `tests/`
-- **Done when:** a test reads the key from the environment and gives a clear message when it's missing.
+- Skipped during MVP simplification. B13 uses available local candidates; do not add another provider unless a required run needs it.
 
 <a id="wp-a6"></a>
 
@@ -693,25 +689,13 @@ Lets a researcher run chats from the site instead of the terminal. The public si
 
 #### Checks before the freeze
 
-<a id="wp-a3-app"></a>
+**A3-app was folded into A12 on Nov 27.** A12's fresh-clone exercise begins with the same one-chat relay smoke test before the 24 app chats.
 
-**A3-app · One app chat** · Owner A · *Operation* · Needs: A3, A16, A17 · Status: todo
-
-- One relay chat with card 4.1, to check the new format and the retry message. It doesn't count in the full run.
-- **Done when:** the chat is saved, complete and loads; problems are fixed.
-
-<a id="wp-t1"></a>
-
-**T1 · Try the whole system** · Owner: Adam · *Operation* · Needs: A3, A6, A17, B6, B10, B14, B15, F3, F4 · Status: todo
-
-- Compare each of the 15 scenario files with its card in the preprint's Appendix A: lines and order, key facts, good and bad replies, suitable adults, and our additions (age cue, content level, pushback line). Fix differences with Cici, then add your name to `reviewers`.
-- From a fresh clone: tests, mock run, one Ollama run, `make score`, `make labels`, score two chats, `make import-labels`, `make evaluate`, export, click through the site.
-- If F5 is ready, run one chat from the Run page. If A7 is ready, add a scenario with `/add-scenario`, review the draft, and say whether it was usable. File bugs as issues.
-- **Done when:** every scenario has a reviewer; each step works, or has an issue; bugs that block a run are fixed.
+**T1 was retired on Nov 27.** Its independent card review is now the first part of A9, because the strict local-run config refuses unreviewed scenarios. Its fresh-clone and end-to-end workflow check is now part of A12, so system validation happens in the same package as the full manual app run rather than as a separate work package.
 
 <a id="wp-t4"></a>
 
-**T4 · Review the code** · Owner A · *Operation* · Needs: A3, A6, A8, A17, B6, B10, B14, B15, F3, F4 · Status: todo
+**T4 · Review the code** · Owner A · *Operation* · Needs: A9 · Status: todo
 
 - Once the build is finished, Claude and Codex each review all the code on `main` separately, against `CLAUDE.md` and this plan. This replaces reviewing each PR. Until then, `make test` is run on each package before merging.
 - Check each comment before acting on it, fix the real bugs, and rerun `make test`, `make check` and `make mock`. If A13, A7 or F5 is built later, review it when it's finished.
@@ -729,26 +713,29 @@ Lets a researcher run chats from the site instead of the terminal. The public si
 
 <a id="wp-b13"></a>
 
-**B13 · Choose and freeze the judge** · Owner A · *Operation* · Needs: B10, T2, T4, A7 (T1 before the held-out test; A13 for a hosted judge) · Status: todo
+**B13 · Choose and freeze the judge** · Owner A · *Operation* · Needs: B10, T2, A7 (A13 only if a hosted candidate is required) · Status: todo
 
-- Compare `qwen3.5:9b` with at least one stronger model on the tuning half. Pick one, run the held-out half once, then freeze them on Nov 26: no lock, just record the commit, model and rubric hash, and don't change the judge, rubric or profile after that.
+- Compare `qwen3.5:9b` with at least one stronger model on the tuning half. Pick one, run the held-out half once, then freeze it: no lock, just record the commit, model and rubric hash, and don't change the judge, rubric or profile after that. T2 already audited the gold inputs; scenario review and full-run code review do not block this gold-only decision.
 - **Done when:** held-out agreement per domain is saved and shared; weak items are marked human-only.
 
 #### Full run and evaluation
 
 <a id="wp-a9"></a>
 
-**A9 · Ollama run** · Owner A · *Operation* · Needs: A3, A15, A17, B13, T1, T2 · Status: todo
+**A9 · Scenario review and Ollama run** · Owners: Cici (run), Adam (independent review) · *Operation* · Needs: A3, A15, A17, B13, T2 · Status: todo
 
-- `configs/full.yaml`: 15 files × `llama3.1:8b` × 1 seed, guardrails on. Try one chat first: on a 24 GB Mac it takes turns in memory with the child model. Also the "on" side of the guardrail comparison. Check `make estimate` first.
-- **Done when:** 15 conversations are in the team Drive; any incomplete ones are noted.
+- Before the run, Adam compares all 15 scenario files with their Appendix A cards: lines and order, key facts, good and bad replies, suitable adults, and our additions (age cue, content level, pushback line). Fix differences with Cici, then add Adam to each file's `reviewers`. This is not a separate package; `configs/full.yaml` enforces it by refusing unreviewed scenarios.
+- Then run `configs/full.yaml`: 15 files × `llama3.1:8b` × 1 seed, guardrails on. Estimate first and try one chat before all 15; on a 24 GB Mac the models take turns in memory. This is also the "on" side of the guardrail comparison.
+- **Done when:** every final scenario has an independent reviewer; 15 conversations are in the team Drive; any incomplete ones are noted.
 
 <a id="wp-a12"></a>
 
-**A12 · App run** · Owner: Adam · *Operation* · Needs: A3-app, A15, A17, B13, T1, T2 · Status: todo
+**A12 · Fresh-clone check and full app run** · Owner: Adam · *Operation* · Needs: A15, A17, A9, B13, T2, T4 · Status: todo
 
-- The 24 priority-1 chats (section 9), 8 each in ChatGPT, Claude and Gemini, following section 7's rules. Due Nov 28.
-- **Done when:** the cleared app chats are saved and scored; skipped or incomplete ones are noted.
+- From a fresh clone, run tests, a mock run, one relay chat, `make score`, `make labels`, score two chats, `make import-labels`, `make evaluate`, export and click through the site. File blocking bugs before continuing. This is the end-to-end check formerly in T1.
+- Run the 24 priority-1 chats (section 9), 8 each in ChatGPT, Claude and Gemini, following section 7's privacy and relay rules.
+- Also try the `add-scenario` skill with the mock authoring model, review its draft and report whether the workflow was usable. The removed browser Run page is not part of this check.
+- **Done when:** the fresh-clone path works or has issues filed; the cleared app chats are saved and scored; skipped or incomplete chats are noted.
 
 <a id="wp-a6-run"></a>
 
@@ -785,7 +772,7 @@ Lets a researcher run chats from the site instead of the terminal. The public si
 
 <a id="wp-b8"></a>
 
-**B8 · Final scores and export** · Owner A · *Operation* · Needs: A9, A12, A6-run, B4, B6, B14, F3 · Status: todo
+**B8 · Final scores and export** · Owner A · *Operation* · Needs: A9, A12, A6-run, B4, B6, B14, F3, T4 · Status: todo
 
 - Nov 30, once the labels are in: final evaluation, normal export, click through the site, send results to the client.
 - **Done when:** the site shows the full run with only cleared material.
@@ -848,6 +835,7 @@ One line per change, newest first. Findings are in [docs/findings.md](../docs/fi
 
 | Date | Change | Why |
 |---|---|---|
+| Nov 27 | Retired T1: its card review moved into A9 and its fresh-clone/end-to-end check into A12; A3-app also folded into A12; B13 is next, followed by A9 | Judge selection uses the T2-audited gold set, while scenario review belongs at the strict local-run gate and system testing belongs with the full app workflow |
 | Nov 27 | T2 completed; R1 excludes 9.1, 9.3 and 9.8 from app runs | Eight gold chats matched the PDF, the six tool-label sets are ready, and the preprint released those three cards without testing them in Section 5 |
 | Nov 27 | S2.1 became hybrid: a positive `detect_pii_request` match forces `no`, while no match leaves the judge's semantic label | F-023 exposed a detector false negative; F-025 keeps deterministic protection without treating pattern absence as proof |
 | Nov 26 | RFC 0010 retained as the historical execution record; current architecture and cleanup work now link to [`docs/mvp-simplification-plan.md`](../docs/mvp-simplification-plan.md) | Preserve package history and the `dev-work-package` contract while separating current documentation from optional simplification work |
