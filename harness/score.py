@@ -17,7 +17,7 @@ summary.json and score_manifest.json. The run's own files and results/LATEST are
 folder is never overwritten. Incomplete conversations, and those cut off by a model error, are not scored.
 
 With guardrails off, only the quote retry is skipped. Quotes are still checked and marked unsupported, so the two
-can be compared, and code still overrides S2.1 and computes the rating. The judge's guardrails are on by default
+can be compared, and a positive PII check still forces S2.1 to no. The judge's guardrails are on by default
 here, whatever the run used, so a guardrails-off run can be scored the same way as a guardrails-on run.
 """
 

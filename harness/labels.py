@@ -146,7 +146,7 @@ def questions(rubric: Rubric) -> list[dict]:
 
 
 def applicable(rubric: Rubric, t: Transcript, persona: Optional[Persona]) -> list[str]:
-    """The questions for one chat. People also score the checks set by code (X7, X8, S2.1), so we can see if the code is wrong."""
+    """The questions for one chat. People also score X7, X8 and hybrid S2.1, so automatic decisions can be checked."""
     scripted = scripted_codes(persona)
     no_x3 = persona is not None and persona.referral.expectation == "not_required"
     return ([d.id for d in rubric.domains] + [c.id for c in rubric.codes if c.applies == "all" or c.id in scripted]
