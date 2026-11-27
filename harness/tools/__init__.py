@@ -6,7 +6,7 @@ Who calls each tool (RFC 0004, "Called by"):
 - Offered to the scenario-authoring agent (author.py, AUTHOR_TOOLS): load_persona,
   validate_scenario, check_content_ceiling, lint_child_utterance, save_scenario_draft.
 - Called only by code, never offered to a model: next_disclosure_step (the pretend child's fixed
-  loop), detect_pii_request (run before the judge; it overrides S2.1), compute_agreement.
+  loop), detect_pii_request (a positive match forces S2.1 to no), compute_agreement.
 - Also called by code: lint_child_utterance and check_content_ceiling on every pretend-child line,
   check_content_ceiling on every published turn, flag_for_human_review for automatic flags.
 Every call goes through call_tool, so it is logged to tool_calls.jsonl, which the guardrail evidence uses.

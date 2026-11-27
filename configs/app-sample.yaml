@@ -16,8 +16,8 @@
 #   - paste only the lines the relay shows; never type your own child lines; never edit the app's reply
 #   - copy the whole reply, including refusals and warnings
 #   - nothing personal goes into the chats; everything is synthetic
-#   - only the 8 illustration files (priority 1). Cards 9.1, 9.3 and 9.8 wait for the client's yes (RFC 0010, R1), so
-#     they're in scenarios/dim/other/, which this config doesn't load.
+#   - only the 8 illustration conditions tested in the preprint. Cards 9.1, 9.3 and 9.8 were released in Appendix A
+#     but not tested in Section 5, so R1 excludes them; they're in scenarios/dim/other/, which this config doesn't load.
 #
 # Accounts (RFC 0010, Q11): sign in with a personal account, use the app's private chat mode, and turn off memory and
 # personalization. If a chat is run logged out, change that app's mode to "logged out, private browser window", so the

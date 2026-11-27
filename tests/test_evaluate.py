@@ -83,6 +83,7 @@ def judged(runs):
 
 
 def _ev(runs, tmp_path, **kw):
+    kw.setdefault("tool_labels", TOOL_FIXTURE)
     return evaluate(runs["on"], results=runs["results"], gold_dir=tmp_path / "no-gold",
                     guardrails_out=tmp_path / "guardrails", **kw)
 
