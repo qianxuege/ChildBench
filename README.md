@@ -92,6 +92,8 @@ From the pilot: 7 scenarios × 2 small local models × 2 seeds, 28 conversations
 
 Needs Python 3.11+.
 
+### 1. Install and verify
+
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
@@ -99,48 +101,173 @@ pip install -e ".[dev]"
 make test    # unit tests
 make check   # validate scenarios and rubric
 make mock    # full run offline, no keys; its numbers mean nothing
-make site    # the public website, at http://127.0.0.1:11510
 ```
 
-**Website.** `make site` serves the static files in `site/`, exactly as the public sees them. It shows what
-`make export RUN=<id>` wrote to `site/data/`. Use it to check the site before deploying.
+### 2. Start the child and judge
 
-**Manual app runs.** Use the terminal relay with `make run CONFIG=configs/app-sample.yaml`. It shows each checked
-line, copies it when a system clipboard is available, and records the whole reply pasted back by the researcher.
-Pressing Ctrl+C saves the current chat as incomplete. Resume later with
-`python -m harness.run --resume <run_id>`. The pretend child and judge use the local model ports described below.
-
-**With local models:** install [Ollama](https://ollama.com). Tested on a Mac with 24 GB of memory.
+Install [Ollama](https://ollama.com). The app workflow needs two local models: the pretend child and the judge.
+It was tested on a Mac with 24 GB of memory.
 
 ```bash
-ollama serve &      # any one server, just for the downloads; stop it afterwards
-ollama pull gemma3:270m && ollama pull gemma4:e4b && ollama pull qwen3.5:9b
+ollama serve &      # one temporary server for downloading; stop it afterwards
+ollama pull gemma4:e4b && ollama pull qwen3.5:9b
 
-export OLLAMA_KEEP_ALIVE=30s OLLAMA_MAX_LOADED_MODELS=1
-OLLAMA_HOST=127.0.0.1:11501 OLLAMA_CONTEXT_LENGTH=4096  ollama serve &
-OLLAMA_HOST=127.0.0.1:11502 OLLAMA_CONTEXT_LENGTH=8192  ollama serve &
-OLLAMA_HOST=127.0.0.1:11503 OLLAMA_CONTEXT_LENGTH=16384 ollama serve &
-
-make run CONFIG=configs/pilot.yaml ARGS="--only dist-003 --seeds 1"  # local smoke test
+OLLAMA_KEEP_ALIVE=10m OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=127.0.0.1:11502 OLLAMA_CONTEXT_LENGTH=8192  ollama serve &
+OLLAMA_KEEP_ALIVE=30s OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=127.0.0.1:11503 OLLAMA_CONTEXT_LENGTH=16384 ollama serve &
 ```
 
 | Port | Model | Role |
 |---|---|---|
-| 11501 | `gemma3:270m` | Weak chatbot under test |
-| 11502 | `gemma4:e4b` | Pretend child; stronger chatbot under test |
+| 11502 | `gemma4:e4b` | Pretend child |
 | 11503 | `qwen3.5:9b` | Judge |
+| 11504 | `llama3.1:8b` | Local chatbot under test in A9 only |
 
-The short keep-alive stops the two large models from being in memory together. Thinking is off for both, because it used up the token limit and gave empty replies.
+Only ports 11502 and 11503 are needed for a consumer-app run. The child stays loaded longer because the researcher
+may take several minutes to relay each reply. The judge's short keep-alive avoids keeping both large models in memory.
+Thinking is off for both because it used the token limit and sometimes produced empty replies.
 
-**New scenarios:** `make author IDEA="..." [SITUATION=...] [AGE=...]` has the authoring agent draft one into `drafts/` (Ollama port 11502; `MODEL=mock` offline). No run reads `drafts/`: a person reviews the draft and moves it into `scenarios/`, as [`add-scenario`](skills/add-scenario/SKILL.md) explains.
+### 3. Prepare temporary or incognito app chats
 
-**With a free app:** `make run CONFIG=configs/app-sample.yaml` shows each child line, copies it for you, and reads the reply back. Use a private chat, paste only the lines shown, and never edit replies. Details: [RFC 0010, section 7](rfcs/0010-implementation-plan.md#7-chatbots-api-and-app-and-the-manual-relay).
+For every conversation, open a fresh private browser window and then enable the provider's own private-chat mode.
+From a normal logged-in chat, the control is usually in the top-right corner:
 
-### Full evaluation loop
+- **ChatGPT:** select the temporary-chat icon at the top right. The model picker is beside the message box.
+- **Claude:** select the ghost icon at the top right to use Incognito. The selected model appears at the bottom of the message box.
+- **Gemini:** select the temporary-chat control at the top right. The model picker is inside the message box.
 
-This is the complete path from conversations to the local results site. First complete B13. A9 then begins with an independent review that adds a second reviewer to every final scenario; `configs/full.yaml` and `configs/guardrails-off.yaml` deliberately refuse to run until that is done.
+Before pasting the first child line, look at the model picker. When the terminal relay asks which model the app shows,
+type that name exactly as displayed; it is saved as `app_model_shown`. Do not infer an API model name when the app
+shows only a product label such as `Auto` or `Everyday help`.
 
-1. **Validate and start the three models.** The child, judge and chatbot each use a separate Ollama port. Keep the judge and both run configs identical after B13.
+We use these modes because the providers say these chats are not used to train or improve their models:
+[ChatGPT Temporary Chat](https://help.openai.com/en/articles/8914046-temporary-chat-in-chatgpt),
+[Claude Incognito](https://support.claude.com/en/articles/12260368-use-incognito-chats), and
+[Gemini Temporary Chat](https://support.google.com/gemini/answer/13594961). They are still not zero-retention or
+anonymous modes: providers may retain or inspect chats for safety, abuse prevention, or organization policy. Check
+the notice shown in the app because retention rules can change. Repeated safety testing can also trigger warnings,
+rate limits, or account review. ChildBench therefore sends only approved, mild, entirely fictional scenarios to
+consumer apps. Stop if an app displays an account or policy warning; do not try to bypass it.
+
+<details>
+<summary>ChatGPT temporary chat and model picker</summary>
+
+![ChatGPT temporary chat with the temporary-chat indicator and model picker open](docs/screenshots/chatgpt-temporary.png)
+
+</details>
+
+<details>
+<summary>Claude Incognito and model display</summary>
+
+![Claude with the Incognito control at the top right and the selected model shown beside the composer](docs/screenshots/claude-incognito.png)
+
+</details>
+
+<details>
+<summary>Gemini temporary chat and model picker</summary>
+
+![Gemini temporary chat with the temporary-chat indicator and model picker open](docs/screenshots/gemini-temporary.png)
+
+</details>
+
+### 4. Test the consumer-app relay
+
+Before committing to all 24 chats, test the supported relay on one scenario—one conversation in each app:
+
+```bash
+make estimate CONFIG=configs/app-sample.yaml ARGS="--only dim-4.1-context"
+make run CONFIG=configs/app-sample.yaml ARGS="--only dim-4.1-context"
+```
+
+The relay covers the configured ChatGPT, Claude, and Gemini chats. It shows each guardrail-checked child line, copies
+it when a system clipboard is available, and records the complete chatbot reply pasted back by the researcher. Paste
+only what the relay displays and never edit the chatbot reply. The complete 24-chat command appears once in the full
+consumer-app workflow below.
+
+Pressing Ctrl+C saves the current conversation as incomplete. Resume the same run with:
+
+```bash
+python -m harness.run --resume <run_id>
+```
+
+Completed conversations and their scores are retained; only unfinished conversations restart.
+
+### 5. View transcripts and scores from a saved run
+
+Export the saved run into the local site, then serve it:
+
+```bash
+make export RUN=20261127-162514_app-sample_8c3c PREVIEW=1
+make site
+```
+
+Open <http://127.0.0.1:11510>, choose **Results**, and select a case to see its transcript, DIM scores, referral
+rating, evidence quotes, guardrail record, and recorded app model. This run uses `PREVIEW=1` because its scenario has
+not yet received the required independent second review. Preview output is local-only and must not be deployed.
+
+For another saved run, replace the value after `RUN=` with its directory name under `results/`. `make site` does not
+run or resume any conversations; it only serves the static data most recently written by `make export`.
+
+### 6. Draft a new scenario
+
+`make author IDEA="..." [SITUATION=...] [AGE=...]` has the authoring agent draft one into `drafts/` using Ollama port
+11502 (`MODEL=mock` works offline). No run reads `drafts/`: a person reviews the draft and moves it into `scenarios/`,
+as [`add-scenario`](skills/add-scenario/SKILL.md) explains.
+
+### Full consumer-app loop: 24 chats and human scoring
+
+This workflow collects and human-scores the final ChatGPT, Claude, and Gemini sample. Complete B13 first and keep its
+judge frozen. The scenario review in A9 must also be complete before publishing results.
+
+1. **Collect the 24 app chats.** Start the child and judge as described in step 2 above, prepare the three apps as in
+   step 3, then run all eight scenarios through all three apps. Capture `LATEST` immediately so a later command cannot
+   replace the app run id.
+
+   ```bash
+   make estimate CONFIG=configs/app-sample.yaml
+   make run CONFIG=configs/app-sample.yaml
+   APP_RUN=$(cat results/LATEST)
+   ```
+
+   Ctrl+C saves the current conversation as incomplete. Resume with
+   `python -m harness.run --resume "$APP_RUN"`; completed conversations and scores stay intact, while only unfinished
+   conversations restart.
+
+2. **Create the blind scoring packet.** Both scorers score every app chat independently.
+
+   ```bash
+   make labels FROM="results/$APP_RUN" OUT=app-final
+   ```
+
+3. **Send the scoring page.** Send each scorer only `results/labeling/app-final/send/score.html` and tell them their
+   assigned letter, A or B. The HTML is self-contained with the blinded packet inside, so the entire `send/` folder is
+   not required. Its Markdown and CSV files are backups for anyone who cannot use the HTML. Never send `private/`.
+
+   The main website's **Score chats** page is the reusable empty version of the same interface. To use it instead,
+   select `results/labeling/app-final/send/packet.json`; do not select a run folder. In either mode, scoring stays in
+   the browser.
+
+4. **Collect and import the human scores.** After scoring every chat, each scorer clicks **Download CSV** and sends
+   that file back. Put both files in `returned/`. Their generated names include the packet id; renaming is optional.
+
+   ```bash
+   # Put labels_A_*.csv and labels_B_*.csv in results/labeling/app-final/returned/
+   make import-labels OUT=app-final SCORES=original
+   ```
+
+   The import writes human-vs-human and judge-vs-human agreement plus `private/disagreements.csv`. Discuss
+   disagreements only after both independent CSVs are returned, fill the `agreed` column, and rerun the import.
+
+At this point the app workflow is complete: `APP_RUN` identifies the 24 chats and `app-final` identifies their human
+labels. The final website is built after the independent guardrail experiment below is also complete.
+
+### Separate guardrails-on/off experiment
+
+This experiment uses one local chatbot, not the consumer apps or their human-scoring packet. It compares matched
+15-scenario runs with child guardrails on and off, then separately checks the judge's evidence guardrail. First finish
+B13 and A9's independent scenario review; both configs deliberately refuse unreviewed scenarios.
+
+1. **Validate and start the three local models.** Keep the child, chatbot, frozen judge, scenarios, seed and commit
+   identical between the two runs.
 
    ```bash
    make test && make check
@@ -151,57 +278,55 @@ This is the complete path from conversations to the local results site. First co
    OLLAMA_KEEP_ALIVE=30s OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=127.0.0.1:11504 OLLAMA_CONTEXT_LENGTH=8192  ollama serve &
    ```
 
-2. **Run the 15 local conversations with guardrails on.** Estimate first and try one scenario before spending time on all 15. Each completed conversation is scored by the frozen judge during the run.
+2. **Run the guardrails-on side.** This is also A9's 15-chat local run.
 
    ```bash
    make estimate CONFIG=configs/full.yaml
-   make run CONFIG=configs/full.yaml ARGS="--only dim-4.1-context"
    make run CONFIG=configs/full.yaml
    ON_RUN=$(cat results/LATEST)
    make realism RUN="$ON_RUN"
    ```
 
-3. **Run the matched guardrails-off side.** It uses the same 15 scenarios, models and seed. The content ceiling remains enforced. Re-score the off transcripts with judge guardrails on so both sides are compared under the same judge conditions. Guardrails-off transcripts are internal and must not be published.
+3. **Run the matched guardrails-off side and normalize its judging.** The content ceiling remains enforced even in
+   this run. Its original scoring also disables the judge's quote retry, so re-score these saved transcripts with
+   judge guardrails on before comparing the child guardrails.
 
    ```bash
    make run CONFIG=configs/guardrails-off.yaml
    OFF_RUN=$(cat results/LATEST)
    make score RUN="$OFF_RUN" LABEL=judge-on
+   ```
 
+4. **Measure the judge's guardrail separately.** These commands reuse the guardrails-on transcripts and gold tuning
+   half; they do not rerun a chatbot.
+
+   ```bash
+   # ON_RUN was set in step 2. If it is empty, run the guardrails-on side first.
    make score RUN="$ON_RUN" JUDGE_GUARDRAILS=off LABEL=judge-off
    make gold SPLIT=tune JUDGE_GUARDRAILS=off LABEL=judge-off
    ```
 
-4. **Collect the 24 consumer-app chats through the terminal relay.** Keep the child and judge servers on ports 11502 and 11503; a longer child-model keep-alive avoids reloading it between manual turns. Use a new private browser window and the app's private-chat mode for every chat. Paste only the displayed child line and paste each complete chatbot reply back unchanged.
+5. **Compute the on/off comparison.** This writes `results/guardrails/guardrails.csv`, `.json`, and `.md`. The off-run
+   transcripts are internal and must never be published.
 
    ```bash
-   make estimate CONFIG=configs/app-sample.yaml
-   make run CONFIG=configs/app-sample.yaml ARGS="--only dim-4.1-context"  # relay smoke test
-   make run CONFIG=configs/app-sample.yaml
-   APP_RUN=$(cat results/LATEST)
+   make evaluate RUN="$ON_RUN" OFF_RUN="$OFF_RUN"
    ```
 
-   Ctrl+C keeps the current chat as incomplete. Resume the same queue with `python -m harness.run --resume "$APP_RUN"`; completed chats and scores are retained, while only unfinished chats restart.
+### Combine both completed workflows and view the site
 
-5. **Create and return the blind human-scoring packet.** Both scorers score every app chat. Send each person only `results/labeling/app-final/send/score.html` and their assigned letter—never the `private/` folder. They open the page locally and return the downloaded CSVs.
+After the app labels and guardrail experiment are both complete, run the combined evaluation and export. This does
+not call any model again.
 
-   ```bash
-   make labels FROM="results/$APP_RUN" OUT=app-final
-   # Put labels_A.csv and labels_B.csv in results/labeling/app-final/returned/
-   make import-labels OUT=app-final SCORES=original
-   ```
+```bash
+make evaluate RUN="$ON_RUN" OFF_RUN="$OFF_RUN" APP_RUN="$APP_RUN" LABELS=app-final
+make export RUN="$ON_RUN" APP_RUN="$APP_RUN"
+make site
+```
 
-   The import writes human-vs-human and judge-vs-human agreement plus `private/disagreements.csv`. Discuss disagreements only after both independent CSVs are returned, fill its `agreed` column, and rerun the import to preserve the agreed labels beside the originals.
-
-6. **Compute the combined evaluation and export it.** This joins the local run, app run, human labels, gold evaluation, tool accuracy, realism and guardrail comparison. It does not call a model again.
-
-   ```bash
-   make evaluate RUN="$ON_RUN" OFF_RUN="$OFF_RUN" APP_RUN="$APP_RUN" LABELS=app-final
-   make export RUN="$ON_RUN" APP_RUN="$APP_RUN"
-   make site
-   ```
-
-   Open `http://127.0.0.1:11510` and check every page before publishing. `results/$ON_RUN/evaluation.json` contains the combined evaluation; `results/guardrails/` contains the on/off comparison; `site/data/` contains the publishable export.
+Open <http://127.0.0.1:11510> and check every page before publishing. `results/$ON_RUN/evaluation.json` contains the
+combined evaluation, `results/guardrails/` contains the on/off comparison, and `site/data/` contains the publishable
+export.
 
 There is intentionally no single final benchmark ranking. Each chat keeps its four DIM scores, DIM total, referral rating and codes. App chats show both human scorers' computed totals and ratings, with the judge alongside them; agreement and missed/false-alarm tables say how much those scores can be trusted.
 
