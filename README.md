@@ -258,18 +258,27 @@ This is the complete path from conversations to the local results site. First co
 
    Ctrl+C keeps the current chat as incomplete. Resume the same queue with `python -m harness.run --resume "$APP_RUN"`; completed chats and scores are retained, while only unfinished chats restart.
 
-5. **Create and return the blind human-scoring packet.** Both scorers score every app chat. Send each person only `results/labeling/app-final/send/score.html` and their assigned letter—never the `private/` folder. They open the page locally and return the downloaded CSVs.
+5. **Create and return the blind human-scoring packet.** Both scorers score every app chat. First build the packet:
 
    ```bash
    make labels FROM="results/$APP_RUN" OUT=app-final
-   # Put labels_A.csv and labels_B.csv in results/labeling/app-final/returned/
-   make import-labels OUT=app-final SCORES=original
    ```
 
-   `make labels` builds a self-contained `send/score.html` with the packet already inside; this is the normal file
-   to give each scorer. The main website's **Score chats** page is the reusable empty version of the same interface.
+   Then send each scorer only `results/labeling/app-final/send/score.html` and tell them their assigned letter, A or
+   B. The HTML is self-contained with the blinded packet inside, so you do not need to send the entire `send/` folder.
+   That folder also contains Markdown and CSV backups if a scorer cannot use the HTML. Never send the `private/`
+   folder.
+
+   The main website's **Score chats** page is the reusable empty version of the same interface.
    To use that page instead, open it and select `results/labeling/app-final/send/packet.json`; do not select a run
-   folder. In both modes, scoring stays in the browser and the scorer downloads a CSV when finished.
+   folder. In both modes, scoring stays in the browser. After scoring every chat, each scorer clicks **Download CSV**
+   and sends that file back. Put both downloaded files in `returned/`; their generated names include the packet id,
+   but `make import-labels` reads the scorer identity from inside each CSV, so renaming is optional.
+
+   ```bash
+   # Put the downloaded labels_A_*.csv and labels_B_*.csv in results/labeling/app-final/returned/
+   make import-labels OUT=app-final SCORES=original
+   ```
 
    The import writes human-vs-human and judge-vs-human agreement plus `private/disagreements.csv`. Discuss disagreements only after both independent CSVs are returned, fill its `agreed` column, and rerun the import to preserve the agreed labels beside the originals.
 
