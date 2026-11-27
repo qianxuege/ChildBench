@@ -136,7 +136,7 @@ Where there's no answer, we use the default, so work isn't blocked.
 | **Scoring profile** | A YAML file with weights, levels and on/off switches |
 | **Control** | A chat where a good chatbot should simply help |
 | **Over-escalation** | Bringing in a crisis line, professional or authority when the scenario doesn't call for it |
-| **Fallback** | The scripted `line` itself, used when the child agent fails its checks 3 times |
+| **Fallback** | The scripted `line` itself, used when the pretend-child model fails its checks 3 times |
 | **Shadow mode** | Guardrails off: checks run and log `SHADOW_FAIL` but don't block. The content ceiling always blocks |
 | **Manual relay** | A person passing checked child lines into a free app and copying replies back (section 7) |
 | **Operation** | A package that is a run or a task, not code |
@@ -147,20 +147,20 @@ This is the definition of done.
 
 | # | Requirement | What we show | Status | Package |
 |---|---|---|---|---|
-| 1 | Agentic workflow | The judge and the scenario-authoring agent each run their own tool loop: the model picks the next tool. The team also built the packages with Claude Code and `dev-work-package`. The pretend child is a fixed loop run by code, not an agent (section 6) | Judge done; authoring agent missing | A7 |
+| 1 | Agentic workflow | The judge and the scenario-authoring agent each run their own tool loop: the model picks the next tool. The team also built the packages with Claude Code and `dev-work-package`. The pretend child is a fixed loop run by code, not an agent (section 6) | Done | A7 |
 | 2 | Pretrained model | Ollama models, optional hosted models | Done | A13 (optional) |
-| 3 | ≥5 tools with LLM-facing docstrings | Count only tools a model calls. Judge: `load_rubric`, `verify_evidence_quote`, `submit_scores`, `flag_for_human_review`. Authoring agent: `load_persona`, `validate_scenario`, `check_content_ceiling`, `lint_child_utterance`, `save_scenario_draft`. The other tools are checks that code calls (requirement 7); RFC 0004 says which is which | Judge's 4 done; 5 in A7 | A7 |
+| 3 | ≥5 tools with LLM-facing docstrings | Count only tools a model calls. Judge: `load_rubric`, `verify_evidence_quote`, `submit_scores`, `flag_for_human_review`. Authoring agent: `load_persona`, `validate_scenario`, `check_content_ceiling`, `lint_child_utterance`, `save_scenario_draft`. The other tools are checks that code calls (requirement 7); RFC 0004 says which is which | Done: 9 model-called tools | A7 |
 | 4 | Skill folder, used by the team or made for the client | `.claude/skills/dev-work-package/`, used to build the packages; `add-scenario` for the client, which runs the authoring agent (A7) | Done | A7 |
-| 5 | Evaluation | Judge vs gold scores, human vs human, realism, tool accuracy | Missing | B13, B4, A8, B6 |
-| 6 | Simulated-data quality | Source and reviewers per scenario, key-fact checks, realism and script-fidelity report | Partial | A16, A17, A8 |
-| 7 | Guardrails | Content, speech and fake-data checks; quote check; a positive `detect_pii_request` result forces S2.1 to `no`, while a miss leaves the judge's label; publishing check; authoring drafts can't run until a person reviews them | Done; A16 adds key facts | A16 |
-| 7.1 | With vs without guardrails | Same 15 scenarios, one Ollama chatbot, on and off: results table and side-by-side examples ([RFC 0006](0006-safety-guardrails.md#withwithout-comparison-requirement-71)) | Missing | A6, A6-run, B6 |
-| Client | Customizable rubric | Scoring profiles, re-scoring, site controls | Missing | B1, B12, F3 |
-| Client | Controls | Over-escalation on every chat | Missing | B12, B14 |
+| 5 | Evaluation | Judge vs gold scores, human vs human, realism, tool accuracy | Tooling done; B13 and final human labels pending | B13, B4, A8, B6 |
+| 6 | Simulated-data quality | Source and reviewers per scenario, key-fact checks, realism and script-fidelity report | Checks done; A9 independent review pending | A16, A17, A8, A9 |
+| 7 | Guardrails | Content, speech and fake-data checks; quote check; a positive `detect_pii_request` result forces S2.1 to `no`, while a miss leaves the judge's label; publishing check; authoring drafts can't run until a person reviews them | Done | A16 |
+| 7.1 | With vs without guardrails | Same 15 scenarios, one Ollama chatbot, on and off: results table and side-by-side examples ([RFC 0006](0006-safety-guardrails.md#withwithout-comparison-requirement-71)) | Code done; A6-run pending | A6, A6-run, B6 |
+| Client | Customizable rubric | Scoring profiles, re-scoring, site controls | Done | B1, B12, F3 |
+| Client | Controls | Over-escalation on every chat | Done | B12, B14 |
 
 ### 3. Decisions
 
-- **The child agent sees only its own lines and style.** Expected behaviour goes to the judge. The chatbot sees neither.
+- **The pretend-child model sees only its own lines and style.** Expected behaviour goes to the judge. The chatbot sees neither.
 - **Code computes scores.** The judge reports facts, levels and quotes; `rating.py` applies caps, weights and the overall rating.
 - **DIM domains and codes come first on the site**, before any total. One number can hide the difference between too little and too much escalation.
 - **Pass / borderline / fail** applies to the five referral situations only.
@@ -698,7 +698,7 @@ Lets a researcher run chats from the site instead of the terminal. The public si
 **T4 · Review the code** · Owner A · *Operation* · Needs: A9 · Status: todo
 
 - Once the build is finished, Claude and Codex each review all the code on `main` separately, against `CLAUDE.md` and this plan. This replaces reviewing each PR. Until then, `make test` is run on each package before merging.
-- Check each comment before acting on it, fix the real bugs, and rerun `make test`, `make check` and `make mock`. If A13, A7 or F5 is built later, review it when it's finished.
+- Check each comment before acting on it, fix the real bugs, and rerun `make test`, `make check` and `make mock`. Review the supported CLI, relay, authoring, scoring, evaluation and static-site paths; A13 is skipped and the removed F5 browser runner is historical only.
 - **Done when:** both reviews have run; every bug that affects a run or a score is fixed; the rest are fixed or have an issue; the three commands pass.
 
 <a id="wp-t2"></a>
