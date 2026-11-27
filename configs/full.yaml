@@ -7,8 +7,8 @@
 #   OLLAMA_KEEP_ALIVE=30s OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=127.0.0.1:11504 OLLAMA_CONTEXT_LENGTH=8192  ollama serve
 # Models: ollama pull gemma4:e4b && ollama pull qwen3.5:9b && ollama pull llama3.1:8b
 #
-# make estimate and --only work once T1 has added a reviewer to each file: allow_unreviewed is off, so this config refuses
-# scenarios that only their author has seen.
+# make estimate and --only work once A9's independent pre-run review has added a reviewer to each file:
+# allow_unreviewed is off, so this config refuses scenarios that only their author has seen.
 #   make estimate CONFIG=configs/full.yaml
 #   make run CONFIG=configs/full.yaml ARGS="--only dim-4.1-context"   # try one chat first (24 GB Mac: models take turns)
 #   make run CONFIG=configs/full.yaml

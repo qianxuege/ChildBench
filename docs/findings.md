@@ -22,6 +22,28 @@ A dated lab notebook: what we ran, what we saw, what we decided. **Add new entri
 
 ---
 
+## F-027 · T1 duplicated checks that belong at the real-run gates (Nov 27)
+
+**Run:** work-package dependency review after the documentation audit; no model calls.
+**What we saw:** T1 separately combined scenario-card review with a fresh-clone system exercise, which left B13 waiting on work unrelated to its gold-set judge decision and repeated the relay smoke test before A12.
+**Why:** The original plan grouped pre-freeze checks by person rather than by the operation they protect. Scenario review is enforced by A9's strict config, while the fresh-clone workflow is best tested immediately before the full manual app run.
+**Decision:** T1 is retired as a standalone package. Its independent card review is the first part of A9; its fresh-clone/end-to-end exercise and A3-app smoke test are part of A12. B13 is now the next package, followed by A9. T4 no longer blocks B13, but still blocks A12 and final export.
+**Plan change:** RFC 0010 changelog, Nov 27 · **Follow-up:** B13
+**Status:** fixed
+
+---
+
+## F-026 · Public documentation lagged the implemented MVP (Nov 27)
+
+**Run:** repository-wide source and documentation audit on `codex/docs-repo-audit`; no model calls.
+**What we saw:** The top-level README still called scenarios, scoring and key-fact checks planned; `CLAUDE.md` and `architecture.md` described S2.1 as a full code override; RFC 0009 still presented removed Hugging Face, OpenRouter and browser Run paths as the current stack. The MVP plan also still said it waited for T2 after T2 was complete.
+**Why:** Implementation, simplification and T2 landed faster than the overview documents were reconciled. RFC 0010 also mixes a deliberately retained implementation history with the live operations table.
+**Decision:** Current guides now describe the supported CLI, Ollama-compatible, manual-relay and hybrid-scoring paths. RFC 0010 has a prominent historical-record note rather than rewriting old package history. Remaining work is stated as T1, T4, B13, real runs and human labels.
+**Plan change:** none · **Follow-up:** none
+**Status:** fixed
+
+---
+
 ## F-025 · A negative PII pattern check could erase the judge's correct semantic finding (Nov 27)
 
 **Run:** code-path review after F-023, covering v0 and v1 `submit_scores`; no model calls.

@@ -1,7 +1,7 @@
 # RFC 0009: Technology Stack, Repository and Site
 
 - **Status:** Draft
-- **Created:** 2026-10-26 (updated 2026-11-23)
+- **Created:** 2026-10-26 (updated 2026-11-27)
 - **Owner role:** 3. Child simulator and orchestrator (with 5 for the site)
 - **Tech requirements addressed:** 2, 6
 - **Related RFCs:** 0002, 0003, 0004, 0007, [0010](0010-implementation-plan.md)
@@ -20,7 +20,7 @@ Plain Python, YAML and JSONL files, and a static HTML site. No hosted database o
 |---|---|---|
 | Language | Python 3.11+, `make` commands | Model clients and statistics are all Python |
 | Orchestration | Plain Python | The outer loop is fixed, so no AI or framework needs to decide it |
-| Model access | One OpenAI-compatible client (Ollama, OpenRouter); local Hugging Face; `manual` relay; mock | Changing provider is a config change |
+| Model access | One OpenAI-compatible client (Ollama and compatible servers); `manual` terminal relay; mock | Keeps one automated interface plus the consumer-app path |
 | Agent tools | Python functions with docstrings, called through JSON in text | Works the same on every model |
 | Validation | Pydantic | Catches bad scenarios and malformed judge output |
 | Config | YAML | Easy to edit and review |
@@ -29,7 +29,7 @@ Plain Python, YAML and JSONL files, and a static HTML site. No hosted database o
 | Tests | pytest, mock models, no keys | Anyone can run them |
 | Secrets | `.env`, gitignored | Keys never reach the site or the repo |
 | Site | Plain HTML, CSS and JavaScript reading `site/data/` | No build step or hosted server |
-| Diagrams | Mermaid source plus rendered SVG | Easy to edit, displays everywhere |
+| Diagrams | Two hand-written SVGs | No diagram build step or generated-source drift |
 
 ### Results and reproducibility
 
@@ -37,9 +37,9 @@ Each run writes `results/<run_id>/` with transcripts, scores, guardrail log, rev
 
 ### Site
 
-`make export` writes `site/data/`, after the publishing check in RFC 0006. Pages: overview, method, scenarios, case grid, transcripts and judge reliability. Researchers can change the scoring profile in the browser (RFC 0008). The site never asks for an API key.
+`make export` writes `site/data/`, after the publishing check in RFC 0006. Pages: overview, method, scenarios, case grid, transcripts, judge reliability and standalone human scoring. Researchers can change the scoring profile in the browser (RFC 0008). The site never asks for an API key.
 
-**Running from the site:** `make app` adds a Run page on the researcher's own computer (`127.0.0.1`), using Python's standard library (RFC 0010, F5). The public site stays static.
+Benchmark runs use the CLI. Consumer-app chats use the terminal relay through `make run CONFIG=configs/app-sample.yaml`; the optional browser Run page was removed during MVP simplification.
 
 ### Data protection
 
@@ -54,4 +54,4 @@ Synthetic data only, fictional names, keys in `.env`. The gold set stays in `pri
 ## Risks
 
 - Check provider terms before publishing replies, and CHILDES terms before including any data.
-- The preprint citation is still to be confirmed (RFC 0010, R10).
+- Provider terms still need checking before any chatbot replies are published.

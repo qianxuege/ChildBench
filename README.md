@@ -6,7 +6,7 @@ ChildBench is an open benchmark that plays short conversations between a simulat
 
 Team 20, Carnegie Mellon University, Introduction to AI, Fall 2026.
 
-> **Status, Nov 25, 2026: in development.** The pipeline runs end to end and a pilot is done. The final scenarios, rubric and judge checks are being built, and the full run is due Nov 27–30. **There are no results worth citing yet.** Parts marked *planned* aren't built. [RFC 0010](rfcs/0010-implementation-plan.md#who-does-what-in-order) has the order, owners and dates.
+> **Status, Nov 27, 2026: core implementation built; evaluation operations in progress.** The 15 scenarios, rubric, judge, guardrails, authoring agent and evaluation tooling are built, and the T2 input audit found no source-data problems. B13 judge freeze is next, followed by A9's scenario review and local run; code review, app runs and human labels remain. **There are no results worth citing yet.** [RFC 0010](rfcs/0010-implementation-plan.md#who-does-what-in-order) tracks the remaining operations.
 
 **Contents:** [Concept](#core-concept) · [Why it matters](#why-it-matters) · [Scope](#project-scope) · [How it works](#how-it-works) · [Technical requirements](#technical-requirements) · [Pilot findings](#what-we-know-so-far) · [Run it](#run-it) · [Responsible AI](#responsible-ai) · [What's next](#whats-next) · [Authors](#authors) · [References](#references)
 
@@ -36,9 +36,9 @@ Regulators are asking too: the U.S. FTC has ordered seven companies that offer A
 
 | | Included |
 |---|---|
-| **Scenarios** | 15 adapted from the preprint's released cards (An et al., 2026a): five referral situations, two controls and everyday moments *(planned)* |
+| **Scenarios** | 15 adapted from the preprint's released cards (An et al., 2026a): five referral situations, two controls and everyday moments; awaiting the independent review at the start of A9 |
 | **Chatbots** | Free ChatGPT, Claude and Gemini apps on 8 scenarios, 24 chats; one local model on all 15 |
-| **Scoring** | A four-domain sheet (0–2 each) on every chat; 12 referral checks on the five referral situations *(planned)* |
+| **Scoring** | A four-domain sheet (0–2 each) on every chat; 12 referral checks on the five referral situations |
 | **Evidence** | Judge vs 48 human-scored chats, two human scorers on all 24 app chats, guardrails on vs off |
 
 **Out of scope:** voice, images, real children or their data, severe content, real children's products, fine-tuning any model, a single overall score or ranking, and proof of any product's safety.
@@ -48,10 +48,10 @@ The five referral situations come from An et al. (2026b): a request beyond the c
 ## How it works
 
 1. **Scenario.** A file lists the child's age, lines, key facts, and what a good and a bad reply look like. The child and the chatbot never see the good and bad parts.
-2. **Pretend child.** It says each line in its own words. Each line is checked for content level, age-appropriate speech and realistic personal data, and *(planned)* for the key facts. After 3 failed tries the scripted line is used and flagged.
+2. **Pretend child.** It says each line in its own words. Each line is checked for content level, age-appropriate speech, realistic personal data and the required key facts. After 3 failed tries the scripted line is used and flagged.
 3. **Conversation.** Apps are reached by a person copying and pasting each checked line and reply (the relay). Local models are called directly.
 4. **Judge.** It records facts with exact quotes. Code rejects invented quotes, applies fixed rules and computes the rating.
-5. **People.** Two scorers rate the app chats without seeing the chatbot's name or the judge's scores *(planned)*. We report weighted kappa (agreement beyond chance), missed cases and false alarms.
+5. **People.** The blind scoring packet and checked CSV import are built. Two scorers still need to rate the final app chats without seeing the chatbot's name or the judge's scores. We report weighted kappa (agreement beyond chance), missed cases and false alarms.
 6. **Results.** Scores and transcripts are exported to a static site after a publishing check. App and local results stay separate.
 
 Full explanation: [architecture.md](architecture.md). Design decisions: [rfcs/](rfcs/).
@@ -72,10 +72,10 @@ Full explanation: [architecture.md](architecture.md). Design decisions: [rfcs/](
 | 2 | Pretrained models | Gemma and Qwen through Ollama; nothing is trained | Done |
 | 3 | At least 5 custom tools, documented for agents | 9 tools that a model calls, each with an agent-facing docstring ([RFC 0004](rfcs/0004-agentic-tools.md)): the judge's 4 (`load_rubric`, `verify_evidence_quote`, `submit_scores`, `flag_for_human_review`) and the authoring agent's 5 (`load_persona`, `validate_scenario`, `check_content_ceiling`, `lint_child_utterance`, `save_scenario_draft`). Three more are helpers only code calls, and aren't counted | Done |
 | 4 | Skill folder used by the team or made for the client | [`dev-work-package`](.claude/skills/dev-work-package/SKILL.md), which takes a work package from plan to pull request; [`add-scenario`](skills/add-scenario/SKILL.md) for the client, which runs the authoring agent and walks a person through reviewing its draft | Done |
-| 5 | Evaluation | Judge vs gold set, human vs human, tool accuracy, child realism and script fidelity | *Planned* |
-| 6 | Data protection and simulated-data quality | Synthetic data only, fake-data and content checks; key-fact checks and scenario reviews | Partly done |
-| 7 | Safety guardrails | Content, speech, fake-data, quote and publishing checks ([RFC 0006](rfcs/0006-safety-guardrails.md)) | Done; key-fact check *planned* |
-| 7.1 | With vs without guardrails | The same 15 scenarios, guardrails on and off: counts and side-by-side examples | *Planned* (Nov 28–29) |
+| 5 | Evaluation | Judge vs gold set, human vs human, tool accuracy, child realism and script fidelity | Tooling done; final runs and labels pending |
+| 6 | Data protection and simulated-data quality | Synthetic data only, fake-data and content checks; key-fact checks and scenario reviews | Checks done; A9 review pending |
+| 7 | Safety guardrails | Content, speech, fake-data, key-fact, quote and publishing checks ([RFC 0006](rfcs/0006-safety-guardrails.md)) | Done |
+| 7.1 | With vs without guardrails | The same 15 scenarios, guardrails on and off: counts and side-by-side examples | Code done; paired runs pending |
 
 **About 7.1.** Guardrails apply to our agents, never to the chatbot's replies. "Off" means failed checks are logged but not blocked, so both runs are measured the same way. The content limit stays on in both. With 15 pairs we report counts, not significance.
 
@@ -86,7 +86,7 @@ From the pilot: 7 scenarios × 2 small local models × 2 seeds, 28 conversations
 - **Secrecy:** in one scenario, once the child asked for secrecy, neither local model pointed the child to an adult ([F-005](docs/findings.md)).
 - **Over-attachment:** one ChatGPT chat stayed warm as a "bestie", never said it was an AI, and gave no concrete step to an adult ([F-007](docs/findings.md)).
 - **Our judge made mistakes:** 4 of 28 chats went unscored, and it scored rules that didn't apply ([F-004](docs/findings.md)). That is why judge accuracy is our main focus.
-- **Our own checks had bugs:** "I won't tell Mommy" counted as a referral ([F-008](docs/findings.md)), and a timeout was scored as a chatbot failure ([F-009](docs/findings.md)). Both fixes are *planned*.
+- **Our own checks had bugs:** "I won't tell Mommy" counted as a referral ([F-008](docs/findings.md)), and a timeout was scored as a chatbot failure ([F-009](docs/findings.md)). Both bugs are fixed and covered by tests.
 
 ## Run it
 
@@ -136,6 +136,75 @@ The short keep-alive stops the two large models from being in memory together. T
 
 **With a free app:** `make run CONFIG=configs/app-sample.yaml` shows each child line, copies it for you, and reads the reply back. Use a private chat, paste only the lines shown, and never edit replies. Details: [RFC 0010, section 7](rfcs/0010-implementation-plan.md#7-chatbots-api-and-app-and-the-manual-relay).
 
+### Full evaluation loop
+
+This is the complete path from conversations to the local results site. First complete B13. A9 then begins with an independent review that adds a second reviewer to every final scenario; `configs/full.yaml` and `configs/guardrails-off.yaml` deliberately refuse to run until that is done.
+
+1. **Validate and start the three models.** The child, judge and chatbot each use a separate Ollama port. Keep the judge and both run configs identical after B13.
+
+   ```bash
+   make test && make check
+   ollama pull gemma4:e4b && ollama pull qwen3.5:9b && ollama pull llama3.1:8b
+
+   OLLAMA_KEEP_ALIVE=30s OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=127.0.0.1:11502 OLLAMA_CONTEXT_LENGTH=8192  ollama serve &
+   OLLAMA_KEEP_ALIVE=30s OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=127.0.0.1:11503 OLLAMA_CONTEXT_LENGTH=16384 ollama serve &
+   OLLAMA_KEEP_ALIVE=30s OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=127.0.0.1:11504 OLLAMA_CONTEXT_LENGTH=8192  ollama serve &
+   ```
+
+2. **Run the 15 local conversations with guardrails on.** Estimate first and try one scenario before spending time on all 15. Each completed conversation is scored by the frozen judge during the run.
+
+   ```bash
+   make estimate CONFIG=configs/full.yaml
+   make run CONFIG=configs/full.yaml ARGS="--only dim-4.1-context"
+   make run CONFIG=configs/full.yaml
+   ON_RUN=$(cat results/LATEST)
+   make realism RUN="$ON_RUN"
+   ```
+
+3. **Run the matched guardrails-off side.** It uses the same 15 scenarios, models and seed. The content ceiling remains enforced. Re-score the off transcripts with judge guardrails on so both sides are compared under the same judge conditions. Guardrails-off transcripts are internal and must not be published.
+
+   ```bash
+   make run CONFIG=configs/guardrails-off.yaml
+   OFF_RUN=$(cat results/LATEST)
+   make score RUN="$OFF_RUN" LABEL=judge-on
+
+   make score RUN="$ON_RUN" JUDGE_GUARDRAILS=off LABEL=judge-off
+   make gold SPLIT=tune JUDGE_GUARDRAILS=off LABEL=judge-off
+   ```
+
+4. **Collect the 24 consumer-app chats through the terminal relay.** Keep the child and judge servers on ports 11502 and 11503; a longer child-model keep-alive avoids reloading it between manual turns. Use a new private browser window and the app's private-chat mode for every chat. Paste only the displayed child line and paste each complete chatbot reply back unchanged.
+
+   ```bash
+   make estimate CONFIG=configs/app-sample.yaml
+   make run CONFIG=configs/app-sample.yaml ARGS="--only dim-4.1-context"  # relay smoke test
+   make run CONFIG=configs/app-sample.yaml
+   APP_RUN=$(cat results/LATEST)
+   ```
+
+   Ctrl+C keeps the current chat as incomplete. Resume the same queue with `python -m harness.run --resume "$APP_RUN"`; completed chats and scores are retained, while only unfinished chats restart.
+
+5. **Create and return the blind human-scoring packet.** Both scorers score every app chat. Send each person only `results/labeling/app-final/send/score.html` and their assigned letter—never the `private/` folder. They open the page locally and return the downloaded CSVs.
+
+   ```bash
+   make labels FROM="results/$APP_RUN" OUT=app-final
+   # Put labels_A.csv and labels_B.csv in results/labeling/app-final/returned/
+   make import-labels OUT=app-final SCORES=original
+   ```
+
+   The import writes human-vs-human and judge-vs-human agreement plus `private/disagreements.csv`. Discuss disagreements only after both independent CSVs are returned, fill its `agreed` column, and rerun the import to preserve the agreed labels beside the originals.
+
+6. **Compute the combined evaluation and export it.** This joins the local run, app run, human labels, gold evaluation, tool accuracy, realism and guardrail comparison. It does not call a model again.
+
+   ```bash
+   make evaluate RUN="$ON_RUN" OFF_RUN="$OFF_RUN" APP_RUN="$APP_RUN" LABELS=app-final
+   make export RUN="$ON_RUN" APP_RUN="$APP_RUN"
+   make site
+   ```
+
+   Open `http://127.0.0.1:11510` and check every page before publishing. `results/$ON_RUN/evaluation.json` contains the combined evaluation; `results/guardrails/` contains the on/off comparison; `site/data/` contains the publishable export.
+
+There is intentionally no single final benchmark ranking. Each chat keeps its four DIM scores, DIM total, referral rating and codes. App chats show both human scorers' computed totals and ratings, with the judge alongside them; agreement and missed/false-alarm tables say how much those scores can be trusted.
+
 ## Responsible AI
 
 | Risk | What we do | What remains |
@@ -153,6 +222,8 @@ The short keep-alive stops the two large models from being in memory together. T
 A referral isn't always to a parent: scenarios list suitable adults, because a parent can be the source of harm.
 
 ## What's next
+
+The immediate next step is B13: choose and freeze the judge on the audited gold set. A9 follows, beginning with independent scenario review and then the 15-chat Ollama run. Code review, the full app workflow, human scoring and export follow in the order shown in [RFC 0010](rfcs/0010-implementation-plan.md#who-does-what-in-order).
 
 **Open concerns**
 
