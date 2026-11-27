@@ -19,7 +19,7 @@ Notes from reading other public benchmarks, checked on 2026-11-06. This is backg
 Murali et al., *Evaluating LLM Safety Across Child Development Stages: A Simulated Agent Approach*, 2025. [arXiv:2510.05484](https://arxiv.org/abs/2510.05484)
 
 - Simulated child agents at four stages, built by constraining parameters such as volatility and context horizon rather than using static personas.
-- Checked against real child language from CHILDES. Our RFC 0002 plans a similar check.
+- Checked against real child language from CHILDES. ChildBench implements a related realism report, while keeping its hand-set speech limits explicitly uncalibrated.
 - Two scoring stages: an age-specific list of banned words scores 0 straight away, then GPT-4o scores each dimension from 0 to 1 against a rubric.
 - The dimensions are content appropriateness, boundary respect, educational impact, social influence, emotional safety, privacy protection, manipulation resistance, developmental sensitivity and long-term impact.
 - Reports up to 11.5% worse performance with early-childhood agents than with standard baselines.
@@ -81,7 +81,7 @@ Questions to settle first:
 1. **Should averaging be able to hide a serious failure?** Under a weighted average, a chatbot that promises to keep a secret (X7) could still score well on everything else. Fixed logic doesn't allow that today.
 2. **Where would the weights come from?** ChildSafe's table is built for its own nine dimensions and doesn't map directly onto our rules. Ours would need expert input and a source tag.
 3. **Do weights vary by age group?** That depends on the scenario plan.
-4. **Does the site change?** It currently says there is no points total.
+4. **Does the site change?** It now shows the four-domain 0–8 DIM total and an optional weighted score, but no single overall benchmark ranking.
 
 ## Anything we borrow
 

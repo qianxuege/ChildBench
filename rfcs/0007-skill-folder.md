@@ -1,21 +1,21 @@
 # RFC 0007: Skill Folder
 
 - **Status:** Draft
-- **Created:** 2026-10-25 (updated 2026-11-23)
+- **Created:** 2026-10-25 (updated 2026-11-27)
 - **Owner role:** 5. Site and poster
 - **Tech requirements addressed:** 1, 4
 - **Related RFCs:** 0005, 0009, [0010](0010-implementation-plan.md) (A7)
 
 ## Summary
 
-Requirement 4 asks for a skill folder with a `SKILL.md` and/or templates that the team used to develop the solution, or designed for the client. We meet it with a skill the team uses. A second one, for the client, is optional.
+Requirement 4 asks for a skill folder with a `SKILL.md` and/or templates that the team used to develop the solution, or designed for the client. We meet it with one team skill and one client-facing skill.
 
 ## Detailed design
 
 | Skill | For | What it does | Status |
 |---|---|---|---|
 | `dev-work-package` in `.claude/skills/` | The team | Takes one work package from RFC 0010 from dependency check to PR | In use; meets requirement 4 |
-| `add-scenario` in `skills/` | The client and other researchers | Walks through writing a scenario from a template, then runs `make check` | Optional (A7) |
+| `add-scenario` in `skills/` | The client and other researchers | Runs the authoring agent, reviews its draft and validates the promoted scenario | Built and linked into `.claude/skills/` (A7) |
 
 Example calls: `/dev-work-package A16`, `/add-scenario over-attachment, age 5, child says "you're my best friend"`.
 
@@ -30,7 +30,7 @@ Example calls: `/dev-work-package A16`, `/add-scenario over-attachment, age 5, c
 
 ## Evaluation
 
-`dev-work-package`: the merged pull requests it produced. `add-scenario`, if built: a teammate adds a scenario with it and `make check` passes.
+`dev-work-package`: the merged pull requests it produced. `add-scenario`: a teammate runs the mock authoring path, reviews a draft and confirms that the promoted scenario passes `make check`.
 
 ## Risks
 

@@ -9,7 +9,7 @@
 
 Where this RFC and RFCs 0002–0009 disagree, this RFC wins.
 
-> **Current-documentation note (Nov 26, 2026):** This RFC is the historical implementation and experiment plan. Its package descriptions preserve what the team planned and built at the time, so completed or superseded text is not continuously rewritten. For the repository as it works now, read [the architecture guide](../architecture.md) and [the harness guide](../harness/README.md). Post-implementation removal and refactoring decisions are tracked in the [MVP simplification plan](../docs/mvp-simplification-plan.md). The package table below remains authoritative for unfinished operations such as T2, B13, real runs, and human scoring.
+> **Current-documentation note (Nov 27, 2026):** This RFC is the historical implementation and experiment plan. Its package descriptions intentionally retain superseded work such as direct Hugging Face support, optional OpenRouter setup and the removed browser Run page; those entries describe what was planned or built, not the current supported runtime. For the repository as it works now, read [the architecture guide](../architecture.md) and [the harness guide](../harness/README.md). Removal and refactoring decisions are tracked in the [MVP simplification plan](../docs/mvp-simplification-plan.md). The package table remains authoritative for unfinished operations such as T1, T4, B13, real runs and human scoring; T2 is complete.
 
 ## Summary (planning snapshot)
 

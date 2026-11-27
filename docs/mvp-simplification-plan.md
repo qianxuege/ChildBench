@@ -1,16 +1,16 @@
 # MVP simplification plan
 
-**Status:** phases 1–3 complete except the T1 review gate; phase 4 waits for T2/B13
+**Status:** phases 1–3 complete except the T1 review gate; T2 is complete and phase 4 waits for B13
 
 **Scope:** reduce maintenance and reporting risk without weakening the course requirements or the planned evaluation
 
-**Branch:** `codex/mvp-simplification`
+**Implementation:** merged in PR #61; documentation reconciled on Nov 27
 
 ## Goal
 
 Ship one reliable ChildBench workflow whose results can be explained and audited. Prefer one supported path over several optional paths, honest empty states over sample results, and deterministic checks over unused model roles.
 
-This is a maintenance plan, not a new RFC work package. RFC 0010 remains the source of truth for T2, B13, the real runs, human scoring, and the final freeze.
+This is a maintenance plan, not a new RFC work package. RFC 0010 remains the source of truth for B13, the real runs, human scoring, and the final freeze. T2 was completed on Nov 27.
 
 ## MVP boundary
 
@@ -52,14 +52,14 @@ Each removal should be a separate commit so it can be reverted independently.
 - [x] Remove obsolete `local.yaml` and `gemma-local.yaml` examples after confirming operations and gold evaluation use `pilot.yaml`, `full.yaml`, and the other focused configs.
 - [x] Declare every directly imported runtime dependency explicitly.
 
-### Phase 4 — after T2 and B13
+### Phase 4 — after B13
 
 - [ ] Archive the pilot artifacts that need rubric v0.
 - [ ] Give gold evaluation a focused judge config if it still depends on `configs/pilot.yaml`.
 - [ ] Make rubric v1 the only supported runtime and export format.
 - [ ] Remove v0 branches and their compatibility tests from schemas, rating, summary, scoring, export, and the site.
 
-Do not begin this phase before T2 and the judge freeze. It has the largest simplification payoff but also the highest regression risk.
+Do not begin this phase before the judge freeze. T2 is complete, but B13 still needs rubric v0 and the held-out evaluation path. This phase has the largest simplification payoff and the highest regression risk.
 
 ## Deliberately deferred refactors
 
@@ -84,6 +84,7 @@ For every phase:
 
 | Date | Decision | Reason |
 |---|---|---|
+| 2026-11-27 | Keep phase 4 blocked on B13 after T2 completed | The held-out judge test still depends on rubric v0 compatibility. |
 | 2026-11-26 | Put this plan in `docs/`, not `RFCs/` | It records cross-cutting maintenance and does not change the benchmark design or create a new operation. |
 | 2026-11-26 | Start with truthful presentation and documentation | Lowest regression risk and highest reporting-integrity benefit before T2. |
 | 2026-11-26 | Defer v0 removal until after T2/B13 | Gold, pilot, export, and compatibility tests still reference v0. |

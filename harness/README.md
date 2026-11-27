@@ -1,6 +1,6 @@
 # ChildBench harness
 
-The current plan is [RFC 0010](../rfcs/0010-implementation-plan.md). New runs use rubric v1 and the turn-based scenario format. Rubric v0 remains only for pilot compatibility until after T2 and B13.
+The current operations are in [RFC 0010](../rfcs/0010-implementation-plan.md). New runs use rubric v1 and the turn-based scenario format. Rubric v0 remains only for pilot and held-out-evaluation compatibility until after B13; T2 is complete.
 
 The backend that runs the benchmark: pretend child -> chatbot under test -> judge -> results.
 Design: [architecture.md](../architecture.md) and [rfcs/](../rfcs/). The harness runs end to end; RFC 0010 tracks the remaining human operations and real runs.
@@ -36,7 +36,7 @@ fails the controls).
 | `rubrics/v1.yaml` | DIM domains, judge codes, referral checks, caps, levels, and sources |
 | `scenarios/dim/` | The 15 final scenario files adapted from the DIM cards |
 | `scenarios/<situation>/*.yaml` | Earlier scenarios retained as test fixtures and examples |
-| `configs/` | Run settings: mock, local, pilot, app sample and others |
+| `configs/` | Run settings: mock, full, pilot, app sample and focused evaluation configs |
 
 ## Results folder
 

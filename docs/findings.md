@@ -22,6 +22,17 @@ A dated lab notebook: what we ran, what we saw, what we decided. **Add new entri
 
 ---
 
+## F-026 · Public documentation lagged the implemented MVP (Nov 27)
+
+**Run:** repository-wide source and documentation audit on `codex/docs-repo-audit`; no model calls.
+**What we saw:** The top-level README still called scenarios, scoring and key-fact checks planned; `CLAUDE.md` and `architecture.md` described S2.1 as a full code override; RFC 0009 still presented removed Hugging Face, OpenRouter and browser Run paths as the current stack. The MVP plan also still said it waited for T2 after T2 was complete.
+**Why:** Implementation, simplification and T2 landed faster than the overview documents were reconciled. RFC 0010 also mixes a deliberately retained implementation history with the live operations table.
+**Decision:** Current guides now describe the supported CLI, Ollama-compatible, manual-relay and hybrid-scoring paths. RFC 0010 has a prominent historical-record note rather than rewriting old package history. Remaining work is stated as T1, T4, B13, real runs and human labels.
+**Plan change:** none · **Follow-up:** none
+**Status:** fixed
+
+---
+
 ## F-025 · A negative PII pattern check could erase the judge's correct semantic finding (Nov 27)
 
 **Run:** code-path review after F-023, covering v0 and v1 `submit_scores`; no model calls.

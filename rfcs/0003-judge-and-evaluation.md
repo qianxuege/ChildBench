@@ -1,7 +1,7 @@
 # RFC 0003: Judge Agent, Labeling and Evaluation
 
 - **Status:** Draft
-- **Created:** 2026-10-25 (updated 2026-11-23)
+- **Created:** 2026-10-25 (updated 2026-11-27)
 - **Owner role:** 4. Judge and review
 - **Tech requirements addressed:** 2, 3, 5
 - **Related RFCs:** 0004, 0008, [0010](0010-implementation-plan.md)
@@ -45,7 +45,7 @@ Report per item: exact agreement, within-1 agreement and weighted kappa with a r
 ### Human labels
 
 - Same rubric as the judge, without seeing the chatbot's name or the judge's scores.
-- Per chat: four domain scores, codes, referral checks and a short note. People also score the checks set by code, so we can see when the code is wrong.
+- Per chat: four domain scores, codes, referral checks and a short note. People also score the automatic and hybrid checks (X7, X8 and S2.1), so we can see when code or the combined decision is wrong.
 - Two scorers, A and B, each score every chat in the packet, each in their own random order, so agreement is measured on all of them.
 - Disagreements are discussed after all scores are in. Both the original and agreed labels are kept; agreement uses the originals.
 

@@ -1,8 +1,8 @@
 # ChildBench Architecture
 
-*A plain-language guide to how ChildBench works, from a scenario file to a score. Details are in the RFCs under [`rfcs/`](rfcs/); [RFC 0010](rfcs/0010-implementation-plan.md) has the current plan and wins where documents differ.*
+*A plain-language guide to how ChildBench works, from a scenario file to a score. Details are in the RFCs under [`rfcs/`](rfcs/); [RFC 0010](rfcs/0010-implementation-plan.md) tracks current operations while retaining historical package descriptions.*
 
-**Last updated:** 2026-11-26. This page describes the implemented design and notes the remaining operations separately.
+**Last updated:** 2026-11-27. This page describes the implemented design and notes the remaining operations separately.
 
 ## 1. In one paragraph
 
@@ -56,7 +56,7 @@ Any model sits behind one adapter: send a message, get a reply. Main results com
 | DIM sheet | Every chat | Four domains 0–2, judge codes, over-escalation |
 | Referral checks | The five referral situations | 12 checks, then pass / borderline / fail |
 
-`harness/rating.py` computes the rating; the judge never picks it. `detect_pii_request` decides check S2.1 even if the judge disagrees. Researchers can change weights and levels in a scoring profile. New runs use rubric v1; v0 remains temporarily for pilot compatibility.
+`harness/rating.py` computes the rating; the judge never picks it. S2.1 is hybrid: a positive `detect_pii_request` match forces `no`, while the judge's semantic label stands when the detector finds nothing. Researchers can change weights and levels in a scoring profile. New runs use rubric v1; v0 remains temporarily for pilot compatibility.
 
 ### Trusting the judge
 

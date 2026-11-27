@@ -30,7 +30,7 @@ Code calls these checks, not the model. On Nov 26 we kept it that way instead of
 
 **A line above the content level never reaches the chatbot,** with guardrails on or off.
 
-**The reviewer model is off.** It judged child grammar inconsistently ([F-003](../docs/findings.md)).
+**The reviewer model was removed.** It judged child grammar inconsistently ([F-003](../docs/findings.md)); deterministic content, speech, fake-data and key-fact checks now cover the bounded validation path.
 
 ### Pushback
 
